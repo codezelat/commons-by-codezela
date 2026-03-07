@@ -23,8 +23,21 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ArrowLeft, Save, Send, Loader2, X } from "lucide-react";
-import { BlockEditor } from "@/components/editor/block-editor";
+import dynamic from "next/dynamic";
 import { CoverImageUploader } from "./cover-image-uploader";
+
+const BlockEditor = dynamic(
+  () =>
+    import("@/components/editor/block-editor").then((m) => ({
+      default: m.BlockEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[460px] animate-pulse rounded-lg bg-muted/40" />
+    ),
+  },
+);
 
 interface ArticleEditorProps {
   mode: "create" | "edit";
@@ -115,7 +128,10 @@ export function ArticleEditor({
               {mode === "create" ? "New Article" : "Edit Article"}
             </h1>
             {article && (
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p
+                className="text-xs text-muted-foreground mt-0.5"
+                suppressHydrationWarning
+              >
                 Last saved {new Date(article.updated_at).toLocaleString()}
               </p>
             )}
