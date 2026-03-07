@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extension-placeholder";
@@ -54,7 +54,18 @@ function buildImgStyle(align: string, width: string | null) {
 const ImageResizable = Image.extend({
   addAttributes() {
     return {
-      ...this.parent?.(),
+      src: {
+        default: null,
+      },
+      alt: {
+        default: null,
+      },
+      title: {
+        default: null,
+      },
+      height: {
+        default: null,
+      },
       align: {
         default: "center",
         parseHTML: (el) => {
@@ -78,13 +89,13 @@ const ImageResizable = Image.extend({
       align: string;
       width: string | null;
     };
-    const {
-      "data-align": _a,
-      "data-width": _w,
-      class: _c,
-      style: _s,
-      ...rest
-    } = HTMLAttributes;
+
+    const rest = { ...HTMLAttributes };
+    delete rest["data-align"];
+    delete rest["data-width"];
+    delete rest.class;
+    delete rest.style;
+
     return [
       "img",
       { ...rest, class: "rounded-lg my-4", style: buildImgStyle(align, width) },
@@ -95,13 +106,21 @@ const ImageResizable = Image.extend({
 // ────────────────────────────────────────────────────────────────────────────
 
 interface BlockEditorProps {
-  initialContent?: Record<string, unknown>;
+  initialContent?: Record<string, unknown> | string;
   onChange?: (data: { json: unknown; html: string; text: string }) => void;
 }
 
 export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+
+  function emitEditorState(editor: Editor) {
+    onChangeRef.current?.({
+      json: editor.getJSON(),
+      html: editor.getHTML(),
+      text: editor.getText(),
+    });
+  }
 
   const editor = useEditor({
     extensions: [
@@ -292,12 +311,8 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
         return false;
       },
     },
-    onUpdate: ({ editor }) => {
-      const json = editor.getJSON();
-      const html = editor.getHTML();
-      const text = editor.getText();
-      onChangeRef.current?.({ json, html, text });
-    },
+    onCreate: ({ editor }) => emitEditorState(editor),
+    onUpdate: ({ editor }) => emitEditorState(editor),
     immediatelyRender: false,
   });
 

@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ArrowLeft, Save, Send, Loader2, X } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -46,6 +45,50 @@ interface ArticleEditorProps {
   tags: { id: string; name: string; slug: string }[];
 }
 
+type EditorDocument = Record<string, unknown>;
+
+function hasBrokenImageNodes(node: unknown): boolean {
+  if (!node || typeof node !== "object") {
+    return false;
+  }
+
+  const record = node as {
+    type?: unknown;
+    attrs?: { src?: unknown } | null;
+    content?: unknown;
+  };
+
+  if (record.type === "image") {
+    return typeof record.attrs?.src !== "string" || record.attrs.src.length === 0;
+  }
+
+  return Array.isArray(record.content)
+    ? record.content.some(hasBrokenImageNodes)
+    : false;
+}
+
+function getInitialEditorContent(article?: Article): EditorDocument | string | undefined {
+  if (!article) {
+    return undefined;
+  }
+
+  if (article.content && !hasBrokenImageNodes(article.content)) {
+    return article.content as EditorDocument;
+  }
+
+  return article.content_html || (article.content as EditorDocument | undefined);
+}
+
+function formatSavedAt(timestamp: string): string {
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.valueOf())) {
+    return timestamp;
+  }
+
+  return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
 export function ArticleEditor({
   mode,
   article,
@@ -54,6 +97,7 @@ export function ArticleEditor({
 }: ArticleEditorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const initialEditorContent = getInitialEditorContent(article);
 
   const [title, setTitle] = useState(article?.title || "");
   const [excerpt, setExcerpt] = useState(article?.excerpt || "");
@@ -107,7 +151,7 @@ export function ArticleEditor({
           toast.success("Article saved!");
           router.refresh();
         }
-      } catch (err) {
+      } catch {
         toast.error("Failed to save article");
       }
     });
@@ -128,11 +172,8 @@ export function ArticleEditor({
               {mode === "create" ? "New Article" : "Edit Article"}
             </h1>
             {article && (
-              <p
-                className="text-xs text-muted-foreground mt-0.5"
-                suppressHydrationWarning
-              >
-                Last saved {new Date(article.updated_at).toLocaleString()}
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Last saved {formatSavedAt(article.updated_at)}
               </p>
             )}
           </div>
@@ -172,9 +213,7 @@ export function ArticleEditor({
           {/* Editor */}
           <div className="min-h-[500px] rounded-lg border bg-background">
             <BlockEditor
-              initialContent={
-                article?.content as Record<string, unknown> | undefined
-              }
+              initialContent={initialEditorContent}
               onChange={setEditorContent}
             />
           </div>
