@@ -156,30 +156,24 @@ export default async function PublicArticlePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <main className="mx-auto max-w-6xl px-6 py-12 sm:px-8">
+      <main className="mx-auto max-w-5xl px-6 py-10">
         <article className="mx-auto max-w-3xl">
           {/* Breadcrumb */}
-          <div className="editorial-fade-in mb-8 flex flex-wrap items-center gap-2 text-[12px] font-medium uppercase tracking-[0.14em] text-stone-400">
+          <div className="pub-fade-in mb-6">
             <Link
               href="/articles"
-              className="transition-colors hover:text-stone-900"
+              className="text-[12px] font-medium text-neutral-400 transition-colors hover:text-neutral-700"
             >
-              Articles
+              &larr; Articles
             </Link>
-            {article.category_name && (
-              <>
-                <span className="text-stone-300">/</span>
-                <span className="text-stone-600">{article.category_name}</span>
-              </>
-            )}
           </div>
 
           {/* Article Header */}
-          <header className="editorial-fade-in-delay-1 editorial-fade-in mb-10 space-y-6">
+          <header className="pub-fade-in pub-fade-in-d1 mb-10 space-y-5">
             {/* Tags */}
             <div className="flex flex-wrap items-center gap-2">
               {article.category_name && (
-                <Badge className="rounded-md border-none bg-stone-900 px-2.5 py-0.5 text-xs font-medium text-[#faf8f5]">
+                <Badge className="rounded-md border-none bg-neutral-900 px-2.5 py-0.5 text-xs font-medium text-white">
                   {article.category_name}
                 </Badge>
               )}
@@ -187,7 +181,7 @@ export default async function PublicArticlePage({
                 <Link
                   key={tag.id}
                   href={`/articles?tag=${tag.slug}`}
-                  className="rounded-md bg-stone-100 px-2.5 py-1 text-[11px] font-medium text-stone-500 transition-colors hover:bg-stone-200 hover:text-stone-700"
+                  className="rounded-md bg-neutral-100 px-2.5 py-1 text-[11px] font-medium text-neutral-500 transition-colors hover:bg-emerald-50 hover:text-emerald-700"
                 >
                   {tag.name}
                 </Link>
@@ -195,21 +189,14 @@ export default async function PublicArticlePage({
             </div>
 
             {/* Title */}
-            <h1 className="font-display text-4xl leading-[1.15] tracking-tight text-stone-900 sm:text-[3.25rem] sm:leading-[1.12]">
+            <h1 className="font-display text-4xl leading-[1.15] tracking-tight text-neutral-900 sm:text-[3.25rem] sm:leading-[1.12]">
               {article.title}
             </h1>
 
-            {/* Description */}
-            {description && (
-              <p className="max-w-2xl text-lg leading-relaxed text-stone-500">
-                {description}
-              </p>
-            )}
-
             {/* Meta line */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-stone-200/60 pb-6 text-sm text-stone-400">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-neutral-200/60 pb-6 text-sm text-neutral-400">
               {article.author_name && (
-                <span className="font-medium text-stone-700">
+                <span className="font-medium text-neutral-700">
                   {article.author_name}
                 </span>
               )}
@@ -223,7 +210,7 @@ export default async function PublicArticlePage({
 
           {/* Cover Image */}
           {article.cover_image && (
-            <div className="editorial-fade-in editorial-fade-in-delay-2 relative -mx-6 mb-10 aspect-[16/9] overflow-hidden rounded-2xl sm:-mx-0">
+            <div className="pub-fade-in pub-fade-in-d2 relative -mx-6 mb-10 aspect-[16/9] overflow-hidden rounded-2xl sm:-mx-0">
               <Image
                 src={article.cover_image}
                 alt={article.title}
@@ -236,37 +223,31 @@ export default async function PublicArticlePage({
           )}
 
           {/* Article Body */}
-          <div className="editorial-fade-in editorial-fade-in-delay-3">
+          <div className="pub-fade-in pub-fade-in-d3">
             {html ? (
-              <ArticleBody
-                html={html}
-                className="editorial-drop-cap [&_p:first-child]:mt-0"
-              />
+              <ArticleBody html={html} className="[&_p:first-child]:mt-0" />
             ) : (
-              <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-8 text-sm leading-6 text-stone-500">
+              <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-sm leading-6 text-neutral-500">
                 This article does not have renderable body HTML yet.
               </div>
             )}
           </div>
 
           {/* Divider */}
-          <div className="editorial-divider my-14">
-            <span className="text-xs font-display italic text-stone-400">
-              &#8226; &#8226; &#8226;
+          <div className="my-14 flex items-center justify-center">
+            <span className="text-xs text-neutral-300">
+              &#9679; &#9679; &#9679;
             </span>
           </div>
 
           {/* CTA Banner */}
-          <section className="editorial-fade-in editorial-fade-in-delay-4 rounded-2xl bg-stone-900 p-8 text-stone-100 sm:p-10">
+          <section className="rounded-2xl bg-neutral-900 p-8 text-neutral-100 sm:p-10">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-stone-400">
-                  Continue browsing
-                </p>
-                <h2 className="mt-2 font-display text-2xl tracking-tight sm:text-3xl">
-                  More from the archive
+                <h2 className="font-display text-2xl tracking-tight sm:text-3xl">
+                  Keep reading
                 </h2>
-                <p className="mt-2 max-w-lg text-sm leading-relaxed text-stone-400">
+                <p className="mt-2 max-w-lg text-sm leading-relaxed text-neutral-400">
                   Explore more essays, technical notes, and long-form articles.
                 </p>
               </div>
@@ -274,7 +255,7 @@ export default async function PublicArticlePage({
                 href="/articles"
                 className={cn(
                   buttonVariants(),
-                  "inline-flex shrink-0 rounded-lg bg-[#faf8f5] text-stone-900 hover:bg-white",
+                  "inline-flex shrink-0 rounded-lg bg-white text-neutral-900 hover:bg-neutral-100",
                 )}
               >
                 All articles
@@ -284,29 +265,24 @@ export default async function PublicArticlePage({
 
           {/* Related Articles */}
           {relatedArticles.length > 0 && (
-            <section className="mt-14 space-y-6">
-              <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-stone-400">
-                  Related
-                </p>
-                <h2 className="mt-1 font-display text-2xl tracking-tight text-stone-900">
-                  Continue reading
-                </h2>
-              </div>
-              <div className="grid gap-5 md:grid-cols-3">
+            <section className="mt-14 space-y-5">
+              <h2 className="text-sm font-medium text-neutral-900">
+                Related articles
+              </h2>
+              <div className="grid gap-4 md:grid-cols-3">
                 {relatedArticles.map((related) => (
                   <Link
                     key={related.id}
                     href={`/articles/${related.slug}`}
-                    className="group rounded-2xl border border-stone-200/80 bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-12px_rgba(120,80,40,0.1)]"
+                    className="group rounded-xl border border-neutral-200/60 bg-white p-5 transition-shadow hover:shadow-md hover:shadow-neutral-200/40"
                   >
-                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-stone-400">
+                    <p className="text-[11px] text-neutral-400">
                       {related.category_name || "Article"}
                     </p>
-                    <h3 className="mt-2.5 font-display text-lg leading-snug tracking-tight text-stone-900 group-hover:text-amber-900 transition-colors">
+                    <h3 className="mt-2 font-display text-lg leading-snug tracking-tight text-neutral-900 group-hover:text-emerald-800 transition-colors">
                       {related.title}
                     </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-stone-500">
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-neutral-500">
                       {deriveArticleSummary(related.content_text, 120)}
                     </p>
                   </Link>
