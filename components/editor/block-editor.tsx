@@ -22,10 +22,48 @@ import { TableHeader } from "@tiptap/extension-table-header";
 import { Markdown } from "tiptap-markdown";
 import { common, createLowlight } from "lowlight";
 import { NodeSelection } from "@tiptap/pm/state";
-import { useCallback, useRef } from "react";
-import { AlignLeft, AlignCenter, AlignRight, Trash2 } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  FileCode2,
+  FileUp,
+  PenBox,
+  Trash2,
+} from "lucide-react";
 import { EditorToolbar } from "./editor-toolbar";
+import { MarkdownPreview } from "./markdown-preview";
 import { uploadImage, UploadError } from "@/lib/upload";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  createMarkdownArticleContent,
+  isMarkdownArticleContent,
+  type MarkdownArticleContent,
+} from "@/lib/editor-content";
+import {
+  detectMarkdownBaseUrl,
+  extractPlainTextFromHtml,
+  renderMarkdownToHtmlWithBase,
+} from "@/lib/markdown";
 import { toast } from "sonner";
 
 const lowlight = createLowlight(common);
@@ -106,13 +144,86 @@ const ImageResizable = Image.extend({
 // ────────────────────────────────────────────────────────────────────────────
 
 interface BlockEditorProps {
-  initialContent?: Record<string, unknown> | string;
+  initialContent?: Record<string, unknown> | string | MarkdownArticleContent;
   onChange?: (data: { json: unknown; html: string; text: string }) => void;
+}
+
+function hasRichContent(editor: Editor) {
+  return !(editor.isEmpty && editor.getText().trim().length === 0);
+}
+
+function buildMarkdownPayloadWithBase(
+  markdown: string,
+  baseUrl?: string | null,
+) {
+  const html = renderMarkdownToHtmlWithBase(markdown, baseUrl);
+
+  return {
+    json: createMarkdownArticleContent(markdown, baseUrl),
+    html,
+    text: extractPlainTextFromHtml(html),
+  };
+}
+
+function getInitialEditorMode(
+  initialContent?: Record<string, unknown> | string | MarkdownArticleContent,
+) {
+  return isMarkdownArticleContent(initialContent) ? "markdown" : "rich";
+}
+
+function getInitialMarkdown(
+  initialContent?: Record<string, unknown> | string | MarkdownArticleContent,
+) {
+  return isMarkdownArticleContent(initialContent) ? initialContent.markdown : "";
+}
+
+function getInitialMarkdownBaseUrl(
+  initialContent?: Record<string, unknown> | string | MarkdownArticleContent,
+) {
+  return isMarkdownArticleContent(initialContent)
+    ? initialContent.baseUrl || detectMarkdownBaseUrl(initialContent.markdown)
+    : null;
+}
+
+function getRichInitialContent(
+  initialContent?: Record<string, unknown> | string | MarkdownArticleContent,
+) {
+  if (isMarkdownArticleContent(initialContent)) {
+    return initialContent.markdown;
+  }
+
+  return (
+    initialContent || {
+      type: "doc",
+      content: [{ type: "paragraph" }],
+    }
+  );
 }
 
 export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editorMode, setEditorMode] = useState<"rich" | "markdown">(
+    getInitialEditorMode(initialContent),
+  );
+  const [markdownView, setMarkdownView] = useState<"write" | "preview">(
+    getInitialEditorMode(initialContent) === "markdown" ? "preview" : "write",
+  );
+  const [markdownSource, setMarkdownSource] = useState(
+    getInitialMarkdown(initialContent),
+  );
+  const [markdownBaseUrl, setMarkdownBaseUrl] = useState<string>(
+    getInitialMarkdownBaseUrl(initialContent) || "",
+  );
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [pendingModeSwitch, setPendingModeSwitch] = useState<
+    "rich" | "markdown" | null
+  >(null);
+  const [modeSwitchDialogOpen, setModeSwitchDialogOpen] = useState(false);
+  const modeRef = useRef(editorMode);
+  modeRef.current = editorMode;
 
   function emitEditorState(editor: Editor) {
     onChangeRef.current?.({
@@ -181,14 +292,11 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
         transformCopiedText: true,
       }),
     ],
-    content: initialContent || {
-      type: "doc",
-      content: [{ type: "paragraph" }],
-    },
+    content: getRichInitialContent(initialContent),
     editorProps: {
       attributes: {
         class:
-          "prose prose-slate max-w-none px-6 py-4 min-h-[460px] focus:outline-none",
+          "prose prose-slate max-w-none px-6 py-4 min-h-[460px] focus:outline-none prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-h1:mb-4 prose-h1:text-4xl prose-h2:mb-3 prose-h2:text-3xl prose-h3:mb-3 prose-h3:text-2xl prose-h4:mb-2 prose-h4:text-xl prose-p:text-[1rem] prose-p:leading-7 prose-li:leading-7 prose-strong:text-slate-950 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:text-blue-700 prose-blockquote:border-l-slate-300 prose-blockquote:text-slate-700 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.92em] prose-code:before:hidden prose-code:after:hidden prose-pre:bg-transparent prose-pre:p-0 prose-img:rounded-xl prose-table:table prose-table:w-full prose-th:border prose-th:border-slate-200 prose-th:bg-slate-50 prose-th:px-3 prose-th:py-2 prose-td:border prose-td:border-slate-200 prose-td:px-3 prose-td:py-2 [&_h1]:mt-0 [&_h1]:mb-4 [&_h1]:text-4xl [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:text-slate-950 [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-slate-950 [&_h3]:mt-6 [&_h3]:mb-3 [&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:tracking-tight [&_h3]:text-slate-950 [&_h4]:mt-5 [&_h4]:mb-2 [&_h4]:text-xl [&_h4]:font-semibold [&_h4]:text-slate-950 [&_p]:my-4 [&_p]:text-base [&_p]:leading-7 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 [&_li]:leading-7 [&_blockquote]:my-5 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-slate-700 [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[0.92em] [&_pre]:my-6 [&_pre]:overflow-x-auto [&_table]:my-6 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_td]:border [&_td]:border-slate-200 [&_td]:px-3 [&_td]:py-2",
       },
       handleClickOn(view, _pos, node, nodePos, event, direct) {
         if (!direct || node.type.name !== "image") {
@@ -326,31 +434,169 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
         return false;
       },
     },
-    onCreate: ({ editor }) => emitEditorState(editor),
-    onUpdate: ({ editor }) => emitEditorState(editor),
+    onCreate: ({ editor }) => {
+      if (modeRef.current === "rich") {
+        emitEditorState(editor);
+      }
+    },
+    onUpdate: ({ editor }) => {
+      if (modeRef.current === "rich") {
+        emitEditorState(editor);
+      }
+    },
     immediatelyRender: false,
   });
 
-  // Handle .md file upload
-  const handleFileUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file || !editor) return;
-
+  const importMarkdownFile = useCallback(
+    (file: File) => {
       const reader = new FileReader();
+      reader.onerror = () => {
+        toast.error("Could not read the Markdown file");
+      };
       reader.onload = (ev) => {
-        const text = ev.target?.result as string;
-        if (text) {
-          // Clear editor and insert markdown content
-          editor.commands.setContent("");
-          editor.commands.insertContent(text);
+        const text = (ev.target?.result as string | null) ?? "";
+        const markdown = text.replace(/\r\n/g, "\n");
+
+        if (!markdown.trim()) {
+          toast.error("The selected Markdown file is empty");
+          return;
         }
+
+        setMarkdownSource(markdown);
+        setMarkdownView("preview");
+        setMarkdownBaseUrl(detectMarkdownBaseUrl(markdown) || "");
+        setEditorMode("markdown");
+        toast.success(`Imported ${file.name}`);
       };
       reader.readAsText(file);
-      e.target.value = ""; // reset
     },
-    [editor],
+    [],
   );
+
+  const handleFileUpload = useCallback(
+    (file: File | null) => {
+      if (!file || !editor) {
+        return;
+      }
+
+      const isEmptyDocument =
+        editorMode === "markdown"
+          ? markdownSource.trim().length === 0
+          : editor.isEmpty && editor.getText().trim().length === 0;
+
+      if (isEmptyDocument) {
+        importMarkdownFile(file);
+        return;
+      }
+
+      setPendingImportFile(file);
+      setImportDialogOpen(true);
+    },
+    [editor, editorMode, importMarkdownFile, markdownSource],
+  );
+
+  function confirmImport() {
+    if (!pendingImportFile) {
+      return;
+    }
+
+    importMarkdownFile(pendingImportFile);
+    setImportDialogOpen(false);
+    setPendingImportFile(null);
+  }
+
+  function openMarkdownPicker() {
+    fileInputRef.current?.click();
+  }
+
+  function handleMarkdownFileSelection(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    handleFileUpload(event.target.files?.[0] ?? null);
+    event.target.value = "";
+  }
+
+  function switchToMarkdownMode() {
+    if (!editor || editorMode === "markdown") {
+      return;
+    }
+
+    const markdownStorage = editor.storage as {
+      markdown?: { getMarkdown?: () => string };
+    };
+    const markdown =
+      markdownStorage.markdown?.getMarkdown?.() ?? "";
+
+    setMarkdownSource(markdown);
+    setMarkdownBaseUrl(
+      detectMarkdownBaseUrl(markdown) || markdownBaseUrl || "",
+    );
+    setMarkdownView("preview");
+    setEditorMode("markdown");
+  }
+
+  function switchToRichMode() {
+    if (!editor || editorMode === "rich") {
+      return;
+    }
+
+    if (markdownSource.trim()) {
+      editor.commands.setContent(markdownSource);
+    } else {
+      editor.commands.clearContent();
+    }
+
+    setEditorMode("rich");
+    toast.info("Switched to rich mode. Advanced Markdown may be simplified.");
+  }
+
+  function requestModeSwitch(targetMode: "rich" | "markdown") {
+    if (targetMode === editorMode || !editor) {
+      return;
+    }
+
+    const hasContent =
+      editorMode === "markdown"
+        ? markdownSource.trim().length > 0
+        : hasRichContent(editor);
+
+    if (!hasContent) {
+      if (targetMode === "markdown") {
+        switchToMarkdownMode();
+      } else {
+        switchToRichMode();
+      }
+      return;
+    }
+
+    setPendingModeSwitch(targetMode);
+    setModeSwitchDialogOpen(true);
+  }
+
+  function confirmModeSwitch() {
+    if (!pendingModeSwitch) {
+      return;
+    }
+
+    if (pendingModeSwitch === "markdown") {
+      switchToMarkdownMode();
+    } else {
+      switchToRichMode();
+    }
+
+    setPendingModeSwitch(null);
+    setModeSwitchDialogOpen(false);
+  }
+
+  useEffect(() => {
+    if (editorMode !== "markdown") {
+      return;
+    }
+
+    onChangeRef.current?.(
+      buildMarkdownPayloadWithBase(markdownSource, markdownBaseUrl),
+    );
+  }, [editorMode, markdownBaseUrl, markdownSource]);
 
   if (!editor) {
     return (
@@ -362,120 +608,276 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
 
   return (
     <div className="flex flex-col">
-      <EditorToolbar editor={editor} onFileUpload={handleFileUpload} />
-
-      {/* Floating toolbar that appears when an image node is selected */}
-      <BubbleMenu
-        editor={editor}
-        updateDelay={0}
-        shouldShow={({ state }) =>
-          state.selection instanceof NodeSelection &&
-          state.selection.node.type.name === "image"
-        }
-        options={{ placement: "top" }}
-      >
-        <div className="flex items-center gap-px rounded-xl border bg-background shadow-lg ring-1 ring-black/5 p-1">
-          {/* ── Alignment group ── */}
-          <div className="flex items-center gap-px">
-            {(
-              [
-                ["left", AlignLeft, "Left"],
-                ["center", AlignCenter, "Center"],
-                ["right", AlignRight, "Right"],
-              ] as const
-            ).map(([a, Icon, label]) => {
-              const active = editor.getAttributes("image").align === a;
-              return (
-                <button
-                  key={a}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    editor
-                      .chain()
-                      .focus()
-                      .updateAttributes("image", { align: a })
-                      .run();
-                  }}
-                  title={`Align ${label}`}
-                  className={`flex flex-col items-center justify-center gap-0.5 rounded-lg w-9 h-9 transition-colors ${
-                    active
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span className="text-[9px] font-medium leading-none">
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* separator */}
-          <div className="mx-1 h-6 w-px bg-border shrink-0" />
-
-          {/* ── Width group ── */}
-          <div className="flex items-center gap-px">
-            {(
-              [
-                [null, "Full", "100%"],
-                ["75%", "¾", "75%"],
-                ["50%", "½", "50%"],
-                ["25%", "¼", "25%"],
-              ] as Array<[string | null, string, string]>
-            ).map(([w, glyph, label]) => {
-              const active = editor.getAttributes("image").width === w;
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    editor
-                      .chain()
-                      .focus()
-                      .updateAttributes("image", { width: w })
-                      .run();
-                  }}
-                  title={`Width: ${label}`}
-                  className={`flex flex-col items-center justify-center gap-0.5 rounded-lg w-9 h-9 transition-colors ${
-                    active
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  }`}
-                >
-                  <span className="text-sm font-semibold leading-none">
-                    {glyph}
-                  </span>
-                  <span className="text-[9px] font-medium leading-none">
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* separator */}
-          <div className="mx-1 h-6 w-px bg-border shrink-0" />
-
-          {/* ── Delete ── */}
-          <button
-            type="button"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              editor.chain().focus().deleteSelection().run();
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-slate-50/80 px-3 py-2">
+        <div className="flex items-center gap-2">
+          <Tabs
+            value={editorMode}
+            onValueChange={(value) => {
+              if (value === "markdown" || value === "rich") {
+                requestModeSwitch(value);
+              }
             }}
-            title="Delete image"
-            className="flex items-center justify-center rounded-lg w-9 h-9 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+            <TabsList>
+              <TabsTrigger value="rich">
+                <PenBox />
+                Rich editor
+              </TabsTrigger>
+              <TabsTrigger value="markdown">
+                <FileCode2 />
+                Markdown
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <span className="hidden text-xs text-slate-500 lg:inline">
+            Markdown mode preserves raw source, HTML blocks, mermaid fences, and images.
+          </span>
         </div>
-      </BubbleMenu>
 
-      <EditorContent editor={editor} />
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-full"
+            onClick={openMarkdownPicker}
+          >
+            <FileUp data-icon="inline-start" />
+            Import Markdown
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".md,.markdown"
+            className="hidden"
+            onChange={handleMarkdownFileSelection}
+          />
+        </div>
+      </div>
+      <AlertDialog
+        open={importDialogOpen}
+        onOpenChange={(open) => {
+          setImportDialogOpen(open);
+          if (!open) {
+            setPendingImportFile(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace article body?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Importing
+              {pendingImportFile ? ` "${pendingImportFile.name}"` : " this file"}
+              {" "}will replace the current editor content.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmImport}>
+              Import Markdown
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={modeSwitchDialogOpen}
+        onOpenChange={(open) => {
+          setModeSwitchDialogOpen(open);
+          if (!open) {
+            setPendingModeSwitch(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Switch editor mode?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingModeSwitch === "markdown"
+                ? "This will convert the current rich content into Markdown source. Complex rich formatting may be rewritten."
+                : "This will convert the current Markdown source into the rich editor. Advanced Markdown, raw HTML, or Mermaid content may be simplified."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep current mode</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmModeSwitch}>
+              Switch mode
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {editorMode === "rich" ? (
+        <>
+          <EditorToolbar editor={editor} />
+
+          {/* Floating toolbar that appears when an image node is selected */}
+          <BubbleMenu
+            editor={editor}
+            updateDelay={0}
+            shouldShow={({ state }) =>
+              state.selection instanceof NodeSelection &&
+              state.selection.node.type.name === "image"
+            }
+            options={{ placement: "top" }}
+          >
+            <div className="flex items-center gap-px rounded-xl border bg-background shadow-lg ring-1 ring-black/5 p-1">
+              <div className="flex items-center gap-px">
+                {(
+                  [
+                    ["left", AlignLeft, "Left"],
+                    ["center", AlignCenter, "Center"],
+                    ["right", AlignRight, "Right"],
+                  ] as const
+                ).map(([a, Icon, label]) => {
+                  const active = editor.getAttributes("image").align === a;
+                  return (
+                    <button
+                      key={a}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        editor
+                          .chain()
+                          .focus()
+                          .updateAttributes("image", { align: a })
+                          .run();
+                      }}
+                      title={`Align ${label}`}
+                      className={`flex h-9 w-9 flex-col items-center justify-center gap-0.5 rounded-lg transition-colors ${
+                        active
+                          ? "bg-foreground text-background"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span className="text-[9px] font-medium leading-none">
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mx-1 h-6 w-px shrink-0 bg-border" />
+
+              <div className="flex items-center gap-px">
+                {(
+                  [
+                    [null, "Full", "100%"],
+                    ["75%", "¾", "75%"],
+                    ["50%", "½", "50%"],
+                    ["25%", "¼", "25%"],
+                  ] as Array<[string | null, string, string]>
+                ).map(([w, glyph, label]) => {
+                  const active = editor.getAttributes("image").width === w;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        editor
+                          .chain()
+                          .focus()
+                          .updateAttributes("image", { width: w })
+                          .run();
+                      }}
+                      title={`Width: ${label}`}
+                      className={`flex h-9 w-9 flex-col items-center justify-center gap-0.5 rounded-lg transition-colors ${
+                        active
+                          ? "bg-foreground text-background"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      <span className="text-sm font-semibold leading-none">
+                        {glyph}
+                      </span>
+                      <span className="text-[9px] font-medium leading-none">
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mx-1 h-6 w-px shrink-0 bg-border" />
+
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  editor.chain().focus().deleteSelection().run();
+                }}
+                title="Delete image"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </BubbleMenu>
+
+          <EditorContent editor={editor} />
+        </>
+      ) : (
+        <div className="p-4">
+          <Tabs value={markdownView} onValueChange={(value) => {
+            if (value === "preview" || value === "write") {
+              setMarkdownView(value);
+            }
+          }}>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Markdown source mode
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Source is preserved exactly. Use preview to inspect HTML, images, and mermaid blocks.
+                </p>
+              </div>
+              <TabsList>
+                <TabsTrigger value="write">Write</TabsTrigger>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="write">
+              <div className="space-y-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Preview Base URL
+                  </p>
+                  <Input
+                    type="url"
+                    value={markdownBaseUrl}
+                    onChange={(event) => setMarkdownBaseUrl(event.target.value)}
+                    placeholder="https://docs.github.com"
+                    className="bg-white"
+                  />
+                  <p className="mt-2 text-xs text-slate-500">
+                    Used to resolve root-relative and relative Markdown links or images during preview and save.
+                  </p>
+                </div>
+                <Textarea
+                  value={markdownSource}
+                  onChange={(event) => setMarkdownSource(event.target.value)}
+                  placeholder="# Write Markdown here"
+                  className="min-h-[520px] resize-y border-slate-200 bg-slate-950 px-4 py-4 font-mono text-sm leading-7 text-slate-100 placeholder:text-slate-500"
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="preview">
+              <div className="min-h-[520px] rounded-xl border border-slate-200 bg-white p-6">
+                <MarkdownPreview
+                  markdown={markdownSource}
+                  baseUrl={markdownBaseUrl}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
     </div>
   );
 }

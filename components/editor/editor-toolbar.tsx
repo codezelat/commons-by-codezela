@@ -1,14 +1,17 @@
 "use client";
 
 import type { Editor } from "@tiptap/react";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -32,38 +35,52 @@ import {
   AlignRight,
   Undo2,
   Redo2,
-  Upload,
   Highlighter,
   Superscript,
   Subscript,
   type LucideIcon,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { ImageUploadDialog } from "./image-upload-dialog";
 
 interface EditorToolbarProps {
   editor: Editor;
-  onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
+export function EditorToolbar({ editor }: EditorToolbarProps) {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkValue, setLinkValue] = useState("");
+  const hasActiveLink = editor.isActive("link");
 
-  function addLink() {
+  function openLinkDialog() {
     const previousUrl = editor.getAttributes("link").href;
-    const url = window.prompt("URL", previousUrl || "https://");
-    if (url === null) return;
-    if (url === "") {
+    setLinkValue(previousUrl || "https://");
+    setLinkDialogOpen(true);
+  }
+
+  function applyLink() {
+    const url = linkValue.trim();
+
+    if (!url) {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
-    } else {
-      editor
-        .chain()
-        .focus()
-        .extendMarkRange("link")
-        .setLink({ href: url })
-        .run();
+      setLinkDialogOpen(false);
+      return;
     }
+
+    try {
+      new URL(url);
+    } catch {
+      return;
+    }
+
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    setLinkDialogOpen(false);
+  }
+
+  function clearLink() {
+    editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    setLinkDialogOpen(false);
   }
 
   function insertImage(url: string, alt?: string) {
@@ -94,40 +111,59 @@ export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
           : "paragraph";
 
   function setBlock(value: string) {
+    const chain = editor.chain().focus().clearNodes();
+
     switch (value) {
       case "paragraph":
-        editor.chain().focus().setParagraph().run();
+        chain.setParagraph().run();
         break;
       case "h1":
-        editor.chain().focus().toggleHeading({ level: 1 }).run();
+        chain.setHeading({ level: 1 }).run();
         break;
       case "h2":
-        editor.chain().focus().toggleHeading({ level: 2 }).run();
+        chain.setHeading({ level: 2 }).run();
         break;
       case "h3":
-        editor.chain().focus().toggleHeading({ level: 3 }).run();
+        chain.setHeading({ level: 3 }).run();
         break;
       case "h4":
-        editor.chain().focus().toggleHeading({ level: 4 }).run();
+        chain.setHeading({ level: 4 }).run();
         break;
     }
   }
 
   return (
     <div className="flex flex-wrap items-center gap-0.5 border-b bg-slate-50/80 px-2 py-1.5 rounded-t-lg">
-      {/* Block type selector */}
-      <Select value={currentHeading} onValueChange={(v) => v && setBlock(v)}>
-        <SelectTrigger className="h-7 w-[120px] border-0 bg-transparent text-xs shadow-none hover:bg-slate-100">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="paragraph">Paragraph</SelectItem>
-          <SelectItem value="h1">Heading 1</SelectItem>
-          <SelectItem value="h2">Heading 2</SelectItem>
-          <SelectItem value="h3">Heading 3</SelectItem>
-          <SelectItem value="h4">Heading 4</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5 shadow-xs">
+        {[
+          ["paragraph", "P"],
+          ["h1", "H1"],
+          ["h2", "H2"],
+          ["h3", "H3"],
+          ["h4", "H4"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={`flex h-7 min-w-9 items-center justify-center rounded-md px-2 text-[11px] font-semibold tracking-[0.08em] transition-colors ${
+              currentHeading === value
+                ? "bg-slate-900 text-white"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            }`}
+            aria-pressed={currentHeading === value}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              setBlock(value);
+            }}
+            onClick={(event) => {
+              event.preventDefault();
+              setBlock(value);
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       <ToolbarSep />
 
@@ -241,7 +277,7 @@ export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
       <ToolbarButton
         icon={Link}
         active={editor.isActive("link")}
-        onClick={addLink}
+        onClick={openLinkDialog}
         tooltip="Insert Link"
       />
       <ToolbarButton
@@ -263,25 +299,6 @@ export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
       />
 
       <ToolbarSep />
-
-      {/* Upload .md file */}
-      <Tooltip>
-        <TooltipTrigger
-          className="inline-flex items-center justify-center h-7 w-7 rounded-md border-0 bg-transparent cursor-pointer text-slate-500 hover:bg-slate-100"
-          onClick={() => fileRef.current?.click()}
-        >
-          <Upload className="h-3.5 w-3.5" />
-        </TooltipTrigger>
-        <TooltipContent side="bottom">Upload .md file</TooltipContent>
-      </Tooltip>
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".md,.markdown,.txt"
-        className="hidden"
-        onChange={onFileUpload}
-      />
-
       <div className="ml-auto flex items-center gap-0.5">
         <ToolbarButton
           icon={Undo2}
@@ -298,6 +315,41 @@ export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
           disabled={!editor.can().redo()}
         />
       </div>
+
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>{hasActiveLink ? "Edit link" : "Insert link"}</DialogTitle>
+            <DialogDescription>
+              Add a full URL for the selected text.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            type="url"
+            value={linkValue}
+            onChange={(e) => setLinkValue(e.target.value)}
+            placeholder="https://example.com"
+            autoFocus
+          />
+          <DialogFooter>
+            {hasActiveLink && (
+              <Button type="button" variant="ghost" onClick={clearLink}>
+                Remove link
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setLinkDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={applyLink}>
+              Save link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

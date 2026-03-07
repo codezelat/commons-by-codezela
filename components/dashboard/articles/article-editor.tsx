@@ -24,6 +24,10 @@ import { toast } from "sonner";
 import { ArrowLeft, Save, Send, Loader2, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { CoverImageUploader } from "./cover-image-uploader";
+import {
+  isMarkdownArticleContent,
+  type MarkdownArticleContent,
+} from "@/lib/editor-content";
 
 const BlockEditor = dynamic(
   () =>
@@ -67,9 +71,15 @@ function hasBrokenImageNodes(node: unknown): boolean {
     : false;
 }
 
-function getInitialEditorContent(article?: Article): EditorDocument | string | undefined {
+function getInitialEditorContent(
+  article?: Article,
+): EditorDocument | MarkdownArticleContent | string | undefined {
   if (!article) {
     return undefined;
+  }
+
+  if (isMarkdownArticleContent(article.content)) {
+    return article.content;
   }
 
   if (article.content && !hasBrokenImageNodes(article.content)) {
