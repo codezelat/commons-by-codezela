@@ -2,7 +2,6 @@
 
 import type { Editor } from "@tiptap/react";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -39,7 +38,8 @@ import {
   Subscript,
   type LucideIcon,
 } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { ImageUploadDialog } from "./image-upload-dialog";
 
 interface EditorToolbarProps {
   editor: Editor;
@@ -48,6 +48,7 @@ interface EditorToolbarProps {
 
 export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
 
   function addLink() {
     const previousUrl = editor.getAttributes("link").href;
@@ -65,11 +66,8 @@ export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
     }
   }
 
-  function addImage() {
-    const url = window.prompt("Image URL");
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
-    }
+  function insertImage(url: string) {
+    editor.chain().focus().setImage({ src: url }).run();
   }
 
   function insertTable() {
@@ -244,8 +242,13 @@ export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
       <ToolbarButton
         icon={Image}
         active={false}
-        onClick={addImage}
+        onClick={() => setImageDialogOpen(true)}
         tooltip="Insert Image"
+      />
+      <ImageUploadDialog
+        open={imageDialogOpen}
+        onOpenChange={setImageDialogOpen}
+        onInsert={insertImage}
       />
       <ToolbarButton
         icon={Table}

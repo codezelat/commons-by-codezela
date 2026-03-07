@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ArrowLeft, Save, Send, Loader2, X } from "lucide-react";
 import { BlockEditor } from "@/components/editor/block-editor";
+import { CoverImageUploader } from "./cover-image-uploader";
 
 interface ArticleEditorProps {
   mode: "create" | "edit";
@@ -236,29 +237,7 @@ export function ArticleEditor({
           </div>
 
           {/* Cover Image */}
-          <div className="rounded-lg border bg-white p-4 space-y-3">
-            <Label className="text-sm font-medium text-slate-700">
-              Cover Image URL
-            </Label>
-            <Input
-              placeholder="https://..."
-              value={coverImage}
-              onChange={(e) => setCoverImage(e.target.value)}
-              className="h-9 text-sm"
-            />
-            {coverImage && (
-              <div className="relative aspect-video overflow-hidden rounded-md border">
-                <img
-                  src={coverImage}
-                  alt="Cover preview"
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
-            )}
-          </div>
+          <CoverImageUploader value={coverImage} onChange={setCoverImage} />
 
           {/* Status (edit mode) */}
           {mode === "edit" && article && (

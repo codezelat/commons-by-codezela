@@ -22,6 +22,8 @@ import { Markdown } from "tiptap-markdown";
 import { common, createLowlight } from "lowlight";
 import { useCallback, useRef } from "react";
 import { EditorToolbar } from "./editor-toolbar";
+import { uploadImage, UploadError } from "@/lib/upload";
+import { toast } from "sonner";
 
 const lowlight = createLowlight(common);
 
@@ -105,32 +107,61 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
         class:
           "prose prose-slate max-w-none px-6 py-4 min-h-[460px] focus:outline-none",
       },
-      handleDrop(view, event, slice, moved) {
-        // Handle image file drop
+      handleDrop(view, event, _slice, moved) {
         if (!moved && event.dataTransfer?.files?.length) {
           const files = Array.from(event.dataTransfer.files).filter((f) =>
             f.type.startsWith("image/"),
           );
           if (files.length > 0) {
             event.preventDefault();
-            files.forEach((file) => {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                const src = e.target?.result as string;
-                if (src) {
-                  const { tr } = view.state;
-                  const pos = view.posAtCoords({
-                    left: event.clientX,
-                    top: event.clientY,
-                  });
-                  if (pos) {
-                    const node = view.state.schema.nodes.image.create({ src });
-                    const transaction = tr.insert(pos.pos, node);
-                    view.dispatch(transaction);
+            const dropPos = view.posAtCoords({
+              left: event.clientX,
+              top: event.clientY,
+            });
+            files.forEach(async (file) => {
+              // Insert a placeholder while uploading
+              const placeholderSrc =
+                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23f1f5f9' width='400' height='200' rx='8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2394a3b8' font-family='system-ui' font-size='14'%3EUploading…%3C/text%3E%3C/svg%3E";
+              const pos = dropPos?.pos ?? view.state.selection.head;
+              const placeholderNode = view.state.schema.nodes.image.create({
+                src: placeholderSrc,
+              });
+              view.dispatch(view.state.tr.insert(pos, placeholderNode));
+
+              try {
+                const result = await uploadImage(file);
+                // Find the placeholder and replace it
+                const { doc, tr } = view.state;
+                doc.descendants((node, nodePos) => {
+                  if (
+                    node.type.name === "image" &&
+                    node.attrs.src === placeholderSrc
+                  ) {
+                    tr.setNodeMarkup(nodePos, undefined, {
+                      ...node.attrs,
+                      src: result.url,
+                    });
+                    return false;
                   }
-                }
-              };
-              reader.readAsDataURL(file);
+                });
+                view.dispatch(tr);
+              } catch (err) {
+                toast.error(
+                  err instanceof UploadError ? err.message : "Upload failed",
+                );
+                // Remove the placeholder
+                const { doc, tr } = view.state;
+                doc.descendants((node, nodePos) => {
+                  if (
+                    node.type.name === "image" &&
+                    node.attrs.src === placeholderSrc
+                  ) {
+                    tr.delete(nodePos, nodePos + node.nodeSize);
+                    return false;
+                  }
+                });
+                view.dispatch(tr);
+              }
             });
             return true;
           }
@@ -138,26 +169,55 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
         return false;
       },
       handlePaste(view, event) {
-        // Handle image paste
         const items = event.clipboardData?.items;
         if (items) {
           for (const item of Array.from(items)) {
             if (item.type.startsWith("image/")) {
               event.preventDefault();
               const file = item.getAsFile();
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  const src = e.target?.result as string;
-                  if (src) {
-                    const node = view.state.schema.nodes.image.create({ src });
-                    const transaction =
-                      view.state.tr.replaceSelectionWith(node);
-                    view.dispatch(transaction);
-                  }
-                };
-                reader.readAsDataURL(file);
-              }
+              if (!file) continue;
+
+              const placeholderSrc =
+                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23f1f5f9' width='400' height='200' rx='8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2394a3b8' font-family='system-ui' font-size='14'%3EUploading…%3C/text%3E%3C/svg%3E";
+              const node = view.state.schema.nodes.image.create({
+                src: placeholderSrc,
+              });
+              view.dispatch(view.state.tr.replaceSelectionWith(node));
+
+              (async () => {
+                try {
+                  const result = await uploadImage(file);
+                  const { doc, tr } = view.state;
+                  doc.descendants((n, nPos) => {
+                    if (
+                      n.type.name === "image" &&
+                      n.attrs.src === placeholderSrc
+                    ) {
+                      tr.setNodeMarkup(nPos, undefined, {
+                        ...n.attrs,
+                        src: result.url,
+                      });
+                      return false;
+                    }
+                  });
+                  view.dispatch(tr);
+                } catch (err) {
+                  toast.error(
+                    err instanceof UploadError ? err.message : "Upload failed",
+                  );
+                  const { doc, tr } = view.state;
+                  doc.descendants((n, nPos) => {
+                    if (
+                      n.type.name === "image" &&
+                      n.attrs.src === placeholderSrc
+                    ) {
+                      tr.delete(nPos, nPos + n.nodeSize);
+                      return false;
+                    }
+                  });
+                  view.dispatch(tr);
+                }
+              })();
               return true;
             }
           }

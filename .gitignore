@@ -38,5 +38,8 @@ yarn-error.log*
 .vercel
 
 # typescript
+
+# local uploads (dev fallback when R2 not configured)
+/public/uploads
 *.tsbuildinfo
 next-env.d.ts

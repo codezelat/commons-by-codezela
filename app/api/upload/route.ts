@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { uploadFile } from "@/lib/r2";
+import { randomUUID } from "crypto";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = [
@@ -11,6 +13,16 @@ const ALLOWED_TYPES = [
   "image/gif",
   "image/svg+xml",
 ];
+
+/** Check whether R2 env vars are configured */
+function isR2Configured(): boolean {
+  return !!(
+    process.env.R2_ACCOUNT_ID &&
+    process.env.R2_ACCESS_KEY_ID &&
+    process.env.R2_SECRET_ACCESS_KEY &&
+    process.env.R2_BUCKET_NAME
+  );
+}
 
 export async function POST(request: NextRequest) {
   // Auth check
@@ -42,9 +54,25 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const result = await uploadFile(buffer, file.type, "images");
 
-    return NextResponse.json({ url: result.url, key: result.key });
+    if (isR2Configured()) {
+      // Production: upload to Cloudflare R2
+      const { uploadFile } = await import("@/lib/r2");
+      const result = await uploadFile(buffer, file.type, "images");
+      return NextResponse.json({ url: result.url, key: result.key });
+    }
+
+    // Local dev fallback: save to public/uploads
+    const ext = file.type.split("/")[1]?.replace("svg+xml", "svg") || "bin";
+    const filename = `${randomUUID()}.${ext}`;
+    const uploadDir = join(process.cwd(), "public", "uploads");
+    await mkdir(uploadDir, { recursive: true });
+    await writeFile(join(uploadDir, filename), buffer);
+
+    return NextResponse.json({
+      url: `/uploads/${filename}`,
+      key: `uploads/${filename}`,
+    });
   } catch (e) {
     console.error("[Upload]", e);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
