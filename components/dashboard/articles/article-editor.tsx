@@ -186,7 +186,11 @@ export function ArticleEditor({
               onValueChange={(v) => setCategoryId(v ?? "")}
             >
               <SelectTrigger className="h-9">
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder="Select category">
+                  {categoryId
+                    ? (categories.find((c) => c.id === categoryId)?.name ?? "")
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
@@ -236,7 +240,17 @@ export function ArticleEditor({
                 onValueChange={(v) => v && handleSave(v)}
               >
                 <SelectTrigger className="h-9">
-                  <SelectValue />
+                  <SelectValue>
+                    {(
+                      {
+                        draft: "Draft",
+                        pending: "Pending Review",
+                        published: "Published",
+                        rejected: "Rejected",
+                        archived: "Archived",
+                      } as Record<string, string>
+                    )[article.status] ?? article.status}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Draft</SelectItem>

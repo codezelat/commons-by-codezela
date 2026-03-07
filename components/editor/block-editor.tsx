@@ -344,14 +344,13 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
         options={{ placement: "top" }}
       >
         <div className="flex items-center gap-px rounded-xl border bg-background shadow-lg ring-1 ring-black/5 p-1">
-
           {/* ── Alignment group ── */}
           <div className="flex items-center gap-px">
             {(
               [
-                ["left",   AlignLeft,   "Left"],
+                ["left", AlignLeft, "Left"],
                 ["center", AlignCenter, "Center"],
-                ["right",  AlignRight,  "Right"],
+                ["right", AlignRight, "Right"],
               ] as const
             ).map(([a, Icon, label]) => {
               const active = editor.getAttributes("image").align === a;
@@ -361,7 +360,11 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    editor.chain().focus().updateAttributes("image", { align: a }).run();
+                    editor
+                      .chain()
+                      .focus()
+                      .updateAttributes("image", { align: a })
+                      .run();
                   }}
                   title={`Align ${label}`}
                   className={`flex flex-col items-center justify-center gap-0.5 rounded-lg w-9 h-9 transition-colors ${
@@ -371,7 +374,9 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
-                  <span className="text-[9px] font-medium leading-none">{label}</span>
+                  <span className="text-[9px] font-medium leading-none">
+                    {label}
+                  </span>
                 </button>
               );
             })}
@@ -384,10 +389,10 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
           <div className="flex items-center gap-px">
             {(
               [
-                [null,  "Full", "100%"],
-                ["75%", "¾",    "75%"],
-                ["50%", "½",    "50%"],
-                ["25%", "¼",    "25%"],
+                [null, "Full", "100%"],
+                ["75%", "¾", "75%"],
+                ["50%", "½", "50%"],
+                ["25%", "¼", "25%"],
               ] as Array<[string | null, string, string]>
             ).map(([w, glyph, label]) => {
               const active = editor.getAttributes("image").width === w;
@@ -397,7 +402,11 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    editor.chain().focus().updateAttributes("image", { width: w }).run();
+                    editor
+                      .chain()
+                      .focus()
+                      .updateAttributes("image", { width: w })
+                      .run();
                   }}
                   title={`Width: ${label}`}
                   className={`flex flex-col items-center justify-center gap-0.5 rounded-lg w-9 h-9 transition-colors ${
@@ -406,8 +415,12 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
-                  <span className="text-sm font-semibold leading-none">{glyph}</span>
-                  <span className="text-[9px] font-medium leading-none">{label}</span>
+                  <span className="text-sm font-semibold leading-none">
+                    {glyph}
+                  </span>
+                  <span className="text-[9px] font-medium leading-none">
+                    {label}
+                  </span>
                 </button>
               );
             })}
@@ -428,7 +441,6 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
-
         </div>
       </BubbleMenu>
 
