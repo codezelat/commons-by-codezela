@@ -88,6 +88,11 @@ CREATE TABLE IF NOT EXISTS article (
   title TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
   excerpt TEXT,
+  seo_title TEXT,
+  seo_description TEXT,
+  seo_image TEXT,
+  canonical_url TEXT,
+  robots_noindex BOOLEAN NOT NULL DEFAULT FALSE,
   content JSONB, -- TipTap JSON (ProseMirror AST)
   content_html TEXT, -- Pre-rendered HTML for public display
   content_text TEXT, -- Plain text for full-text search
@@ -107,6 +112,12 @@ CREATE TABLE IF NOT EXISTS article (
     setweight(to_tsvector('english', COALESCE(content_text, '')), 'B')
   ) STORED
 );
+
+ALTER TABLE article ADD COLUMN IF NOT EXISTS seo_title TEXT;
+ALTER TABLE article ADD COLUMN IF NOT EXISTS seo_description TEXT;
+ALTER TABLE article ADD COLUMN IF NOT EXISTS seo_image TEXT;
+ALTER TABLE article ADD COLUMN IF NOT EXISTS canonical_url TEXT;
+ALTER TABLE article ADD COLUMN IF NOT EXISTS robots_noindex BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- GIN index for full-text search
 CREATE INDEX IF NOT EXISTS idx_article_search ON article USING GIN (search_vector);

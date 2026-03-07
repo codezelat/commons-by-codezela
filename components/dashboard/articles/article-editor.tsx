@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -21,7 +23,18 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Send, Loader2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Send,
+  Loader2,
+  X,
+  ExternalLink,
+  Link2,
+  Search,
+  Globe,
+  ShieldAlert,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { CoverImageUploader } from "./cover-image-uploader";
 import {
@@ -50,6 +63,34 @@ interface ArticleEditorProps {
 }
 
 type EditorDocument = Record<string, unknown>;
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 200);
+}
+
+function summarizeText(value: string, maxLength: number) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return "";
+  }
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  const candidate = normalized.slice(0, maxLength + 1);
+  const boundary = candidate.lastIndexOf(" ");
+  const safe = boundary > Math.floor(maxLength * 0.6)
+    ? candidate.slice(0, boundary)
+    : candidate.slice(0, maxLength);
+
+  return `${safe.trimEnd()}…`;
+}
 
 function hasBrokenImageNodes(node: unknown): boolean {
   if (!node || typeof node !== "object") {
@@ -110,7 +151,18 @@ export function ArticleEditor({
   const initialEditorContent = getInitialEditorContent(article);
 
   const [title, setTitle] = useState(article?.title || "");
+  const [slug, setSlug] = useState(article?.slug || "");
+  const [slugTouched, setSlugTouched] = useState(Boolean(article));
   const [excerpt, setExcerpt] = useState(article?.excerpt || "");
+  const [seoTitle, setSeoTitle] = useState(article?.seo_title || "");
+  const [seoDescription, setSeoDescription] = useState(
+    article?.seo_description || "",
+  );
+  const [seoImage, setSeoImage] = useState(article?.seo_image || "");
+  const [canonicalUrl, setCanonicalUrl] = useState(article?.canonical_url || "");
+  const [robotsNoindex, setRobotsNoindex] = useState(
+    article?.robots_noindex || false,
+  );
   const [categoryId, setCategoryId] = useState(article?.category_id || "");
   const [selectedTags, setSelectedTags] = useState<string[]>(
     article?.tags?.map((t) => t.id) || [],
@@ -121,6 +173,20 @@ export function ArticleEditor({
     html: string;
     text: string;
   } | null>(null);
+
+  const publicBaseUrl = useMemo(
+    () => (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, ""),
+    [],
+  );
+  const effectiveDescription = useMemo(
+    () =>
+      seoDescription.trim() ||
+      excerpt.trim() ||
+      summarizeText(editorContent?.text || article?.content_text || "", 160),
+    [article?.content_text, editorContent?.text, excerpt, seoDescription],
+  );
+  const effectiveSeoTitle = seoTitle.trim() || title.trim();
+  const publicUrl = `${publicBaseUrl}/articles/${slug || article?.slug || ""}`;
 
   function toggleTag(tagId: string) {
     setSelectedTags((prev) =>
@@ -135,12 +201,22 @@ export function ArticleEditor({
       toast.error("Title is required");
       return;
     }
+    if (!slug.trim()) {
+      toast.error("Slug is required");
+      return;
+    }
 
     startTransition(async () => {
       try {
         const payload = {
           title: title.trim(),
+          slug: slug.trim(),
           excerpt: excerpt.trim() || undefined,
+          seo_title: seoTitle.trim() || undefined,
+          seo_description: seoDescription.trim() || undefined,
+          seo_image: seoImage.trim() || undefined,
+          canonical_url: canonicalUrl.trim() || undefined,
+          robots_noindex: robotsNoindex,
           content: editorContent?.json || article?.content || undefined,
           content_html:
             editorContent?.html || article?.content_html || undefined,
@@ -212,13 +288,87 @@ export function ArticleEditor({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr,320px]">
         {/* Main Content */}
         <div className="space-y-4">
-          {/* Title */}
-          <Input
-            placeholder="Article title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="h-12 text-lg font-semibold border-0 shadow-none focus-visible:ring-0 px-0 placeholder:text-muted-foreground/40"
-          />
+          <Card className="overflow-hidden border-slate-200 shadow-sm">
+            <CardHeader className="gap-4 bg-linear-to-br from-slate-50 via-white to-slate-100/70">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <CardTitle className="font-display text-2xl tracking-tight text-slate-950">
+                    Article setup
+                  </CardTitle>
+                  <CardDescription className="max-w-2xl text-sm leading-6 text-slate-600">
+                    Control the public URL, search metadata, and article positioning before
+                    you publish.
+                  </CardDescription>
+                </div>
+                {mode === "edit" && article?.status === "published" && (
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-8 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-[0.8rem] font-medium text-slate-900 transition-colors hover:bg-slate-50"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open article
+                  </a>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5 p-5">
+              <div className="space-y-2">
+                <Label htmlFor="article-title">Title</Label>
+                <Input
+                  id="article-title"
+                  placeholder="Article title"
+                  value={title}
+                  onChange={(e) => {
+                    const nextTitle = e.target.value;
+                    setTitle(nextTitle);
+                    if (!slugTouched) {
+                      setSlug(slugify(nextTitle));
+                    }
+                  }}
+                  className="h-12 border-slate-200 text-lg font-semibold shadow-none"
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr),240px]">
+                <div className="space-y-2">
+                  <Label htmlFor="article-slug">Slug</Label>
+                  <div className="relative">
+                    <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      id="article-slug"
+                      value={slug}
+                      onChange={(e) => {
+                        setSlugTouched(true);
+                        setSlug(slugify(e.target.value));
+                      }}
+                      placeholder="article-slug"
+                      className="border-slate-200 pl-9"
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Public URL: <span className="font-medium text-slate-700">{publicUrl}</span>
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Search preview
+                  </p>
+                  <div className="mt-3 space-y-1.5">
+                    <p className="line-clamp-2 text-base font-semibold leading-6 text-blue-700">
+                      {effectiveSeoTitle || "Untitled article"}
+                    </p>
+                    <p className="truncate text-xs text-emerald-700">{publicUrl}</p>
+                    <p className="line-clamp-3 text-sm leading-6 text-slate-600">
+                      {effectiveDescription || "Add a meta description or excerpt for a cleaner search preview."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Editor */}
           <div className="min-h-[500px] rounded-lg border bg-background">
@@ -242,6 +392,84 @@ export function ArticleEditor({
               className="resize-none text-sm"
             />
           </div>
+
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2 text-slate-900">
+                <Search className="h-4 w-4" />
+                <CardTitle className="text-base">SEO</CardTitle>
+              </div>
+              <CardDescription>
+                Fine-tune how the article appears in search engines and social cards.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="seo-title">Meta title</Label>
+                <Input
+                  id="seo-title"
+                  value={seoTitle}
+                  onChange={(e) => setSeoTitle(e.target.value)}
+                  placeholder="Defaults to the article title"
+                />
+                <p className="text-xs text-slate-500">
+                  {`${effectiveSeoTitle.length}/60 characters`}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="seo-description">Meta description</Label>
+                <Textarea
+                  id="seo-description"
+                  value={seoDescription}
+                  onChange={(e) => setSeoDescription(e.target.value)}
+                  placeholder="Defaults to the excerpt or article summary"
+                  rows={4}
+                  className="resize-none"
+                />
+                <p className="text-xs text-slate-500">
+                  {`${effectiveDescription.length}/160 characters`}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="seo-image">Social image URL</Label>
+                <Input
+                  id="seo-image"
+                  value={seoImage}
+                  onChange={(e) => setSeoImage(e.target.value)}
+                  placeholder="Defaults to the cover image"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="canonical-url">Canonical URL</Label>
+                <div className="relative">
+                  <Globe className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    id="canonical-url"
+                    value={canonicalUrl}
+                    onChange={(e) => setCanonicalUrl(e.target.value)}
+                    placeholder="https://example.com/original-article"
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-start justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/70 p-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm font-medium text-amber-900">
+                    <ShieldAlert className="h-4 w-4" />
+                    Hide from search
+                  </div>
+                  <p className="text-xs leading-5 text-amber-800">
+                    Use `noindex` for staging, syndicated content, or pages that should not appear in search.
+                  </p>
+                </div>
+                <Switch checked={robotsNoindex} onCheckedChange={setRobotsNoindex} />
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Category */}
           <div className="rounded-lg border bg-background p-4 space-y-3">

@@ -26,6 +26,12 @@ export default async function Home() {
           </div>
           <nav className="flex items-center gap-1">
             <Link
+              href="/articles"
+              className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-accent"
+            >
+              Explore Articles
+            </Link>
+            <Link
               href="/login"
               className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-accent"
             >
@@ -59,6 +65,12 @@ export default async function Home() {
             </p>
             <div className="flex items-center gap-3">
               <Link
+                href="/articles"
+                className="inline-flex h-11 items-center px-6 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors"
+              >
+                Explore Articles
+              </Link>
+              <Link
                 href="/signup"
                 className="inline-flex h-11 items-center px-6 rounded-lg bg-foreground text-background text-sm font-medium hover:bg-foreground/85 transition-colors"
               >
@@ -66,7 +78,7 @@ export default async function Home() {
               </Link>
               <Link
                 href="/login"
-                className="inline-flex h-11 items-center px-6 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors"
+                className="inline-flex h-11 items-center px-6 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Sign In
               </Link>
