@@ -11,6 +11,7 @@ export async function proxy(request: NextRequest) {
     "/signup",
     "/forgot-password",
     "/reset-password",
+    "/articles",
   ];
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route),

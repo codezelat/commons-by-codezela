@@ -10,9 +10,9 @@ export default async function Home() {
   if (session) redirect("/dashboard");
 
   return (
-    <div className="min-h-screen bg-[#f7f8f6]">
+    <div className="min-h-screen bg-[#fafbfc]">
       {/* Subtle gradient */}
-      <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(ellipse_60%_45%_at_50%_-8%,_rgba(16,185,129,0.06),_transparent)]" />
+      <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(ellipse_60%_45%_at_50%_-8%,_rgba(16,185,129,0.04),_transparent)]" />
 
       {/* Nav */}
       <header className="border-b border-neutral-200/60">

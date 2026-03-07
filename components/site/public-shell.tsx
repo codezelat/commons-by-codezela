@@ -9,8 +9,8 @@ interface PublicShellProps {
 
 export function PublicShell({ children }: PublicShellProps) {
   return (
-    <div className="min-h-screen bg-[#f7f8f6] text-neutral-900">
-      <header className="sticky top-0 z-40 border-b border-neutral-200/70 bg-[#f7f8f6]/90 backdrop-blur-lg">
+    <div className="min-h-screen bg-[#fafbfc] text-neutral-900">
+      <header className="sticky top-0 z-40 border-b border-neutral-200/70 bg-[#fafbfc]/90 backdrop-blur-lg">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-700">
