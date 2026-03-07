@@ -114,7 +114,7 @@ export function ImageUploadDialog({
     }
   }
 
-  function handleUrlInsert() {
+  async function handleUrlInsert() {
     const url = urlValue.trim();
     if (!url) {
       setError("Please enter a URL");
@@ -126,8 +126,26 @@ export function ImageUploadDialog({
       setError("Please enter a valid URL");
       return;
     }
-    onInsert(url);
-    handleOpenChange(false);
+    setUploading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/upload/url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to save image");
+        return;
+      }
+      onInsert(data.url);
+      handleOpenChange(false);
+    } catch {
+      setError("Network error — could not save image");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function clearFile() {
@@ -315,12 +333,12 @@ export function ImageUploadDialog({
             >
               {uploading ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="animate-spin" />
                   Uploading…
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                  <CheckCircle2 />
                   Insert Image
                 </>
               )}
@@ -328,11 +346,20 @@ export function ImageUploadDialog({
           ) : (
             <Button
               size="sm"
-              disabled={!urlValue.trim()}
+              disabled={!urlValue.trim() || uploading}
               onClick={handleUrlInsert}
             >
-              <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-              Insert Image
+              {uploading ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 />
+                  Insert Image
+                </>
+              )}
             </Button>
           )}
         </DialogFooter>
