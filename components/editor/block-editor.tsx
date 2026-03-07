@@ -190,6 +190,21 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
         class:
           "prose prose-slate max-w-none px-6 py-4 min-h-[460px] focus:outline-none",
       },
+      handleClickOn(view, _pos, node, nodePos, event, direct) {
+        if (!direct || node.type.name !== "image") {
+          return false;
+        }
+
+        event.preventDefault();
+        const selection = NodeSelection.create(view.state.doc, nodePos);
+        view.dispatch(
+          view.state.tr
+            .setSelection(selection)
+            .setMeta("bubbleMenu", "updatePosition"),
+        );
+        view.focus();
+        return true;
+      },
       handleDrop(view, event, _slice, moved) {
         if (!moved && event.dataTransfer?.files?.length) {
           const files = Array.from(event.dataTransfer.files).filter((f) =>
@@ -352,6 +367,7 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
       {/* Floating toolbar that appears when an image node is selected */}
       <BubbleMenu
         editor={editor}
+        updateDelay={0}
         shouldShow={({ state }) =>
           state.selection instanceof NodeSelection &&
           state.selection.node.type.name === "image"
