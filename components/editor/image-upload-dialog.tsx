@@ -33,8 +33,8 @@ import {
 type Tab = "upload" | "url";
 
 interface ImageUploadDialogProps {
-  /** Called with the final image URL on success */
-  onInsert: (url: string) => void;
+  /** Called with the final image URL (and optional alt text) on success */
+  onInsert: (url: string, alt?: string) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -50,6 +50,7 @@ export function ImageUploadDialog({
   const [preview, setPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [urlValue, setUrlValue] = useState("");
+  const [alt, setAlt] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,6 +61,7 @@ export function ImageUploadDialog({
     setPreview(null);
     setSelectedFile(null);
     setUrlValue("");
+    setAlt("");
     setDragOver(false);
   }
 
@@ -105,7 +107,7 @@ export function ImageUploadDialog({
     setError(null);
     try {
       const result = await uploadImage(selectedFile);
-      onInsert(result.url);
+      onInsert(result.url, alt.trim() || undefined);
       handleOpenChange(false);
     } catch (e) {
       setError(e instanceof UploadError ? e.message : "Upload failed");
@@ -139,7 +141,7 @@ export function ImageUploadDialog({
         setError(data.error || "Failed to save image");
         return;
       }
-      onInsert(data.url);
+      onInsert(data.url, alt.trim() || undefined);
       handleOpenChange(false);
     } catch {
       setError("Network error — could not save image");
@@ -165,7 +167,7 @@ export function ImageUploadDialog({
         </DialogHeader>
 
         {/* Tabs */}
-        <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+        <div className="flex gap-1 rounded-lg bg-muted p-1">
           <button
             type="button"
             onClick={() => {
@@ -174,8 +176,8 @@ export function ImageUploadDialog({
             }}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               tab === "upload"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Upload className="h-3.5 w-3.5" />
@@ -189,8 +191,8 @@ export function ImageUploadDialog({
             }}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               tab === "url"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Link2 className="h-3.5 w-3.5" />
@@ -213,7 +215,7 @@ export function ImageUploadDialog({
                 className={`flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-8 cursor-pointer transition-colors ${
                   dragOver
                     ? "border-blue-400 bg-blue-50"
-                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                    : "border-border hover:border-border/80 hover:bg-muted/40"
                 }`}
               >
                 <div
@@ -224,12 +226,12 @@ export function ImageUploadDialog({
                   />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-slate-700">
+                  <p className="text-sm font-medium text-foreground">
                     {dragOver
                       ? "Drop image here"
                       : "Drag & drop an image, or click to browse"}
                   </p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     JPEG, PNG, WebP, GIF, SVG — Max 5 MB
                   </p>
                 </div>
@@ -244,7 +246,7 @@ export function ImageUploadDialog({
             ) : (
               <div className="rounded-lg border overflow-hidden">
                 {/* Preview */}
-                <div className="relative bg-slate-50">
+                <div className="relative bg-muted/40">
                   {preview && (
                     <img
                       src={preview}
@@ -261,12 +263,12 @@ export function ImageUploadDialog({
                   </button>
                 </div>
                 {/* File info */}
-                <div className="flex items-center gap-2 px-3 py-2 border-t bg-white">
-                  <FileImage className="h-4 w-4 text-slate-400 shrink-0" />
-                  <span className="text-sm text-slate-700 truncate flex-1">
+                <div className="flex items-center gap-2 px-3 py-2 border-t bg-background">
+                  <FileImage className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-foreground truncate flex-1">
                     {selectedFile.name}
                   </span>
-                  <span className="text-xs text-slate-400 shrink-0">
+                  <span className="text-xs text-muted-foreground shrink-0">
                     {formatFileSize(selectedFile.size)}
                   </span>
                 </div>
@@ -295,7 +297,7 @@ export function ImageUploadDialog({
               />
             </div>
             {urlValue.trim() && (
-              <div className="rounded-lg border overflow-hidden bg-slate-50">
+              <div className="rounded-lg border overflow-hidden bg-muted/40">
                 <img
                   src={urlValue.trim()}
                   alt="Preview"
@@ -311,6 +313,23 @@ export function ImageUploadDialog({
             )}
           </div>
         )}
+
+        {/* Alt text — shared across both tabs */}
+        <div className="space-y-1.5">
+          <Label htmlFor="image-alt" className="text-sm">
+            Alt text
+            <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+              (accessibility &amp; SEO)
+            </span>
+          </Label>
+          <Input
+            id="image-alt"
+            placeholder="Describe the image for screen readers"
+            value={alt}
+            onChange={(e) => setAlt(e.target.value)}
+            className="h-9 text-sm"
+          />
+        </div>
 
         {/* Error */}
         {error && (

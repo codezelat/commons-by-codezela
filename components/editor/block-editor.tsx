@@ -1,6 +1,7 @@
 "use client";
 
-import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import { Underline } from "@tiptap/extension-underline";
@@ -22,7 +23,7 @@ import { Markdown } from "tiptap-markdown";
 import { common, createLowlight } from "lowlight";
 import { NodeSelection } from "@tiptap/pm/state";
 import { useCallback, useRef } from "react";
-import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight, Trash2 } from "lucide-react";
 import { EditorToolbar } from "./editor-toolbar";
 import { uploadImage, UploadError } from "@/lib/upload";
 import { toast } from "sonner";
@@ -340,71 +341,94 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
           state.selection instanceof NodeSelection &&
           state.selection.node.type.name === "image"
         }
-        tippyOptions={{ duration: 100, placement: "top" }}
+        options={{ placement: "top" }}
       >
-        <div className="flex items-center gap-0.5 rounded-lg border bg-background shadow-md px-1.5 py-1">
-          {/* Alignment */}
-          {(
-            [
-              ["left", AlignLeft],
-              ["center", AlignCenter],
-              ["right", AlignRight],
-            ] as const
-          ).map(([a, Icon]) => (
-            <button
-              key={a}
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                editor
-                  .chain()
-                  .focus()
-                  .updateAttributes("image", { align: a })
-                  .run();
-              }}
-              title={`Align ${a}`}
-              className={`rounded p-1 transition-colors ${
-                editor.getAttributes("image").align === a
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-            </button>
-          ))}
+        <div className="flex items-center gap-px rounded-xl border bg-background shadow-lg ring-1 ring-black/5 p-1">
 
-          <div className="mx-0.5 h-4 w-px bg-border" />
+          {/* ── Alignment group ── */}
+          <div className="flex items-center gap-px">
+            {(
+              [
+                ["left",   AlignLeft,   "Left"],
+                ["center", AlignCenter, "Center"],
+                ["right",  AlignRight,  "Right"],
+              ] as const
+            ).map(([a, Icon, label]) => {
+              const active = editor.getAttributes("image").align === a;
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    editor.chain().focus().updateAttributes("image", { align: a }).run();
+                  }}
+                  title={`Align ${label}`}
+                  className={`flex flex-col items-center justify-center gap-0.5 rounded-lg w-9 h-9 transition-colors ${
+                    active
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="text-[9px] font-medium leading-none">{label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-          {/* Size presets */}
-          {(
-            [
-              ["25%", "\u00bc"],
-              ["50%", "\u00bd"],
-              ["75%", "\u00be"],
-              [null, "Full"],
-            ] as Array<[string | null, string]>
-          ).map(([w, label]) => (
-            <button
-              key={label}
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                editor
-                  .chain()
-                  .focus()
-                  .updateAttributes("image", { width: w })
-                  .run();
-              }}
-              title={`${label} width`}
-              className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
-                editor.getAttributes("image").width === w
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+          {/* separator */}
+          <div className="mx-1 h-6 w-px bg-border shrink-0" />
+
+          {/* ── Width group ── */}
+          <div className="flex items-center gap-px">
+            {(
+              [
+                [null,  "Full", "100%"],
+                ["75%", "¾",    "75%"],
+                ["50%", "½",    "50%"],
+                ["25%", "¼",    "25%"],
+              ] as Array<[string | null, string, string]>
+            ).map(([w, glyph, label]) => {
+              const active = editor.getAttributes("image").width === w;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    editor.chain().focus().updateAttributes("image", { width: w }).run();
+                  }}
+                  title={`Width: ${label}`}
+                  className={`flex flex-col items-center justify-center gap-0.5 rounded-lg w-9 h-9 transition-colors ${
+                    active
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <span className="text-sm font-semibold leading-none">{glyph}</span>
+                  <span className="text-[9px] font-medium leading-none">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* separator */}
+          <div className="mx-1 h-6 w-px bg-border shrink-0" />
+
+          {/* ── Delete ── */}
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              editor.chain().focus().deleteSelection().run();
+            }}
+            title="Delete image"
+            className="flex items-center justify-center rounded-lg w-9 h-9 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+
         </div>
       </BubbleMenu>
 

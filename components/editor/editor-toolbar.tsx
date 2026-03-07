@@ -66,8 +66,13 @@ export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
     }
   }
 
-  function insertImage(url: string) {
-    editor.chain().focus().setImage({ src: url }).run();
+  function insertImage(url: string, alt?: string) {
+    editor
+      .chain()
+      .focus()
+      .setImage({ src: url, alt: alt ?? "" })
+      .createParagraphNear()
+      .run();
   }
 
   function insertTable() {
