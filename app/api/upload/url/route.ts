@@ -51,8 +51,7 @@ function isSafeUrl(raw: string): { safe: boolean; reason?: string } {
   }
 
   // Block private IPv4 ranges
-  const ipv4 =
-    /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hostname);
+  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hostname);
   if (ipv4) {
     const [a, b] = ipv4.slice(1).map(Number);
     const isPrivate =
@@ -92,7 +91,10 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 },
+    );
   }
 
   const rawUrl = (body.url ?? "").trim();
@@ -171,8 +173,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ url: result.url, key: result.key });
     }
 
-    const ext =
-      contentType.split("/")[1]?.replace("svg+xml", "svg") || "jpg";
+    const ext = contentType.split("/")[1]?.replace("svg+xml", "svg") || "jpg";
     const filename = `${randomUUID()}.${ext}`;
     const uploadDir = join(process.cwd(), "public", "uploads");
     await mkdir(uploadDir, { recursive: true });

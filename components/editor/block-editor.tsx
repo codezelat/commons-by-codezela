@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import { Underline } from "@tiptap/extension-underline";
@@ -20,12 +20,71 @@ import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { Markdown } from "tiptap-markdown";
 import { common, createLowlight } from "lowlight";
+import { NodeSelection } from "@tiptap/pm/state";
 import { useCallback, useRef } from "react";
+import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { EditorToolbar } from "./editor-toolbar";
 import { uploadImage, UploadError } from "@/lib/upload";
 import { toast } from "sonner";
 
 const lowlight = createLowlight(common);
+
+// ── Extended Image node with per-image alignment and width ──────────────────
+
+const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"><rect fill="#f1f5f9" width="400" height="200" rx="8"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="14">Uploading\u2026</text></svg>`;
+
+function makePlaceholderSrc() {
+  return URL.createObjectURL(
+    new Blob([PLACEHOLDER_SVG], { type: "image/svg+xml" }),
+  );
+}
+
+function buildImgStyle(align: string, width: string | null) {
+  const w = width ? `width: ${width}` : "max-width: 100%";
+  const pos =
+    align === "left"
+      ? "float: left; margin: 0 1.5rem 1rem 0"
+      : align === "right"
+        ? "float: right; margin: 0 0 1rem 1.5rem"
+        : "display: block; margin-left: auto; margin-right: auto";
+  return `${w}; ${pos}`;
+}
+
+const ImageResizable = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      align: {
+        default: "center",
+        parseHTML: (el) => {
+          if (el.style.float === "left") return "left";
+          if (el.style.float === "right") return "right";
+          return el.getAttribute("data-align") ?? "center";
+        },
+        renderHTML: (attrs) => ({ "data-align": attrs.align }),
+      },
+      width: {
+        default: null,
+        parseHTML: (el) => el.style.width || el.getAttribute("data-width") || null,
+        renderHTML: (attrs) => (attrs.width ? { "data-width": attrs.width } : {}),
+      },
+    };
+  },
+  renderHTML({ node, HTMLAttributes }) {
+    const { align = "center", width = null } = node.attrs as {
+      align: string;
+      width: string | null;
+    };
+    const { "data-align": _a, "data-width": _w, class: _c, style: _s, ...rest } =
+      HTMLAttributes;
+    return [
+      "img",
+      { ...rest, class: "rounded-lg my-4", style: buildImgStyle(align, width) },
+    ];
+  },
+});
+
+// ────────────────────────────────────────────────────────────────────────────
 
 interface BlockEditorProps {
   initialContent?: Record<string, unknown>;
@@ -57,11 +116,8 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
         openOnClick: false,
         HTMLAttributes: { class: "text-blue-600 underline cursor-pointer" },
       }),
-      Image.configure({
-        HTMLAttributes: {
-          class: "rounded-lg max-w-full mx-auto block my-4",
-        },
-        allowBase64: true,
+      ImageResizable.configure({
+        allowBase64: false,
       }),
       TextAlign.configure({
         types: ["heading", "paragraph"],
@@ -119,9 +175,9 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
               top: event.clientY,
             });
             files.forEach(async (file) => {
-              // Insert a placeholder while uploading
-              const placeholderSrc =
-                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23f1f5f9' width='400' height='200' rx='8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2394a3b8' font-family='system-ui' font-size='14'%3EUploading…%3C/text%3E%3C/svg%3E";
+              // Each file gets its own unique blob URL — prevents placeholder
+              // collisions when multiple files are dropped simultaneously.
+              const placeholderSrc = makePlaceholderSrc();
               const pos = dropPos?.pos ?? view.state.selection.head;
               const placeholderNode = view.state.schema.nodes.image.create({
                 src: placeholderSrc,
@@ -161,6 +217,8 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
                   }
                 });
                 view.dispatch(tr);
+              } finally {
+                URL.revokeObjectURL(placeholderSrc);
               }
             });
             return true;
@@ -177,8 +235,7 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
               const file = item.getAsFile();
               if (!file) continue;
 
-              const placeholderSrc =
-                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23f1f5f9' width='400' height='200' rx='8'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2394a3b8' font-family='system-ui' font-size='14'%3EUploading…%3C/text%3E%3C/svg%3E";
+              const placeholderSrc = makePlaceholderSrc();
               const node = view.state.schema.nodes.image.create({
                 src: placeholderSrc,
               });
@@ -215,8 +272,8 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
                       return false;
                     }
                   });
-                  view.dispatch(tr);
-                }
+                  view.dispatch(tr);                } finally {
+                  URL.revokeObjectURL(placeholderSrc);                }
               })();
               return true;
             }
@@ -266,6 +323,82 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
   return (
     <div className="flex flex-col">
       <EditorToolbar editor={editor} onFileUpload={handleFileUpload} />
+
+      {/* Floating toolbar that appears when an image node is selected */}
+      <BubbleMenu
+        editor={editor}
+        shouldShow={({ state }) =>
+          state.selection instanceof NodeSelection &&
+          state.selection.node.type.name === "image"
+        }
+        tippyOptions={{ duration: 100, placement: "top" }}
+      >
+        <div className="flex items-center gap-0.5 rounded-lg border bg-background shadow-md px-1.5 py-1">
+          {/* Alignment */}
+          {(
+            [
+              ["left", AlignLeft],
+              ["center", AlignCenter],
+              ["right", AlignRight],
+            ] as const
+          ).map(([a, Icon]) => (
+            <button
+              key={a}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                editor
+                  .chain()
+                  .focus()
+                  .updateAttributes("image", { align: a })
+                  .run();
+              }}
+              title={`Align ${a}`}
+              className={`rounded p-1 transition-colors ${
+                editor.getAttributes("image").align === a
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          ))}
+
+          <div className="mx-0.5 h-4 w-px bg-border" />
+
+          {/* Size presets */}
+          {(
+            [
+              ["25%", "\u00bc"],
+              ["50%", "\u00bd"],
+              ["75%", "\u00be"],
+              [null, "Full"],
+            ] as Array<[string | null, string]>
+          ).map(([w, label]) => (
+            <button
+              key={label}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                editor
+                  .chain()
+                  .focus()
+                  .updateAttributes("image", { width: w })
+                  .run();
+              }}
+              title={`${label} width`}
+              className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                editor.getAttributes("image").width === w
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </BubbleMenu>
+
       <EditorContent editor={editor} />
     </div>
   );
