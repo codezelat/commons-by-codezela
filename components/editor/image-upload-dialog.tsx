@@ -304,10 +304,8 @@ export function ImageUploadDialog({
 
         {/* Footer */}
         <DialogFooter className="gap-2 sm:gap-0">
-          <DialogClose>
-            <Button variant="outline" size="sm">
-              Cancel
-            </Button>
+          <DialogClose render={<Button variant="outline" size="sm" />}>
+            Cancel
           </DialogClose>
           {tab === "upload" ? (
             <Button
