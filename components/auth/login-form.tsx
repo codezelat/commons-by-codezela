@@ -57,15 +57,15 @@ export function LoginForm() {
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col items-center gap-2 text-center">
-        <Link href="/" className="mb-2 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600">
-            <span className="text-base font-bold text-white">C</span>
+        <Link href="/" className="mb-2 flex items-center gap-2 lg:hidden">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground">
+            <span className="font-display italic text-sm font-semibold text-background">
+              C
+            </span>
           </div>
         </Link>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">
-          Welcome back
-        </h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="text-xl font-semibold tracking-tight">Welcome back</h1>
+        <p className="text-sm text-muted-foreground">
           Sign in to your Commons account
         </p>
       </div>
@@ -74,12 +74,12 @@ export function LoginForm() {
       <div className="grid grid-cols-2 gap-3">
         <Button
           variant="outline"
-          className="h-10"
+          className="w-full"
           onClick={() => handleSocial("google")}
           disabled={!!socialLoading || loading}
         >
           {socialLoading === "google" ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="animate-spin" />
           ) : (
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -104,12 +104,12 @@ export function LoginForm() {
         </Button>
         <Button
           variant="outline"
-          className="h-10"
+          className="w-full"
           onClick={() => handleSocial("github")}
           disabled={!!socialLoading || loading}
         >
           {socialLoading === "github" ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="animate-spin" />
           ) : (
             <svg
               className="mr-2 h-4 w-4"
@@ -125,7 +125,7 @@ export function LoginForm() {
 
       <div className="relative">
         <Separator />
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/20 px-3 text-xs text-slate-400">
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
           or continue with email
         </span>
       </div>
@@ -133,9 +133,7 @@ export function LoginForm() {
       {/* Email Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-            Email
-          </Label>
+          <Label htmlFor="email">Email</Label>
           <Input
             id="email"
             type="email"
@@ -149,15 +147,10 @@ export function LoginForm() {
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label
-              htmlFor="password"
-              className="text-sm font-medium text-slate-700"
-            >
-              Password
-            </Label>
+            <Label htmlFor="password">Password</Label>
             <Link
               href="/forgot-password"
-              className="text-xs font-medium text-blue-600 hover:text-blue-700"
+              className="text-xs font-medium text-foreground/60 underline underline-offset-4 hover:text-foreground transition-colors"
             >
               Forgot password?
             </Link>
@@ -173,17 +166,17 @@ export function LoginForm() {
             className="h-10"
           />
         </div>
-        <Button type="submit" className="h-10 w-full" disabled={loading}>
-          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button type="submit" size="lg" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="animate-spin" />}
           Sign In
         </Button>
       </form>
 
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
         <Link
           href="/signup"
-          className="font-medium text-blue-600 hover:text-blue-700"
+          className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/70 transition-colors"
         >
           Sign up
         </Link>

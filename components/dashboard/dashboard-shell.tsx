@@ -91,11 +91,13 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
         )}
       >
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600">
-            <span className="text-sm font-bold text-white">C</span>
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-foreground">
+            <span className="font-display italic text-xs font-semibold text-background">
+              C
+            </span>
           </div>
           {!collapsed && (
-            <span className="text-sm font-semibold text-slate-900">
+            <span className="text-sm font-semibold text-foreground">
               Commons
             </span>
           )}
@@ -115,8 +117,8 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-slate-100 text-slate-900"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   collapsed && "justify-center px-2",
                 )}
               >
@@ -152,7 +154,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
         <DropdownMenu>
           <DropdownMenuTrigger
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50 border-0 bg-transparent cursor-pointer",
+              "flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-accent border-0 bg-transparent cursor-pointer",
               collapsed && "justify-center",
             )}
           >
@@ -165,14 +167,14 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
             {!collapsed && (
               <>
                 <div className="flex-1 overflow-hidden">
-                  <p className="truncate text-sm font-medium text-slate-900">
+                  <p className="truncate text-sm font-medium text-foreground">
                     {session.user.name}
                   </p>
-                  <p className="truncate text-xs text-slate-500">
+                  <p className="truncate text-xs text-muted-foreground">
                     {session.user.email}
                   </p>
                 </div>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </>
             )}
           </DropdownMenuTrigger>
@@ -198,11 +200,11 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50/50">
+    <div className="flex h-screen bg-muted/20">
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          "hidden flex-shrink-0 border-r bg-white transition-all duration-200 lg:block",
+          "hidden flex-shrink-0 border-r bg-background transition-all duration-200 lg:block",
           collapsed ? "w-[68px]" : "w-60",
         )}
       >
@@ -219,17 +221,19 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
       {/* Main */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top bar (mobile) */}
-        <header className="flex h-14 items-center border-b bg-white px-4 lg:hidden">
+        <header className="flex h-14 items-center border-b bg-background px-4 lg:hidden">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger className="inline-flex items-center justify-center h-9 w-9 rounded-md border-0 bg-transparent cursor-pointer mr-3 hover:bg-slate-100">
               <Menu className="h-5 w-5" />
             </SheetTrigger>
           </Sheet>
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-violet-600">
-              <span className="text-xs font-bold text-white">C</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground">
+              <span className="font-display italic text-xs font-semibold text-background">
+                C
+              </span>
             </div>
-            <span className="text-sm font-semibold text-slate-900">
+            <span className="text-sm font-semibold text-foreground">
               Commons
             </span>
           </Link>

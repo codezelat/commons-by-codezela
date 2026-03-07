@@ -218,8 +218,8 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Articles</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-xl font-semibold">Articles</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             {data
               ? `${data.total} article${data.total !== 1 ? "s" : ""}`
               : "Loading..."}
@@ -236,7 +236,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <form onSubmit={handleSearch} className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search articles..."
             value={searchInput}
@@ -329,7 +329,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
       )}
 
       {/* Table */}
-      <div className="rounded-lg border bg-white">
+      <div className="rounded-lg border bg-background">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -395,12 +395,12 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                     <div className="flex flex-col gap-0.5">
                       <Link
                         href={`/dashboard/articles/${article.id}`}
-                        className="text-sm font-medium text-slate-900 hover:text-blue-600 line-clamp-1 transition-colors"
+                        className="text-sm font-medium text-foreground hover:text-foreground/70 line-clamp-1 transition-colors"
                       >
                         {article.title}
                       </Link>
                       {article.excerpt && (
-                        <p className="text-xs text-slate-400 line-clamp-1">
+                        <p className="text-xs text-muted-foreground line-clamp-1">
                           {article.excerpt}
                         </p>
                       )}
@@ -415,18 +415,18 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    <span className="text-sm text-slate-500">
+                    <span className="text-sm text-muted-foreground">
                       {article.category_name || "—"}
                     </span>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    <span className="text-sm text-slate-500 truncate max-w-[120px] block">
+                    <span className="text-sm text-muted-foreground truncate max-w-[120px] block">
                       {article.author_name || "—"}
                     </span>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <span
-                      className="text-xs text-slate-400"
+                      className="text-xs text-muted-foreground"
                       title={format(new Date(article.updated_at), "PPp")}
                     >
                       {formatDistanceToNow(new Date(article.updated_at), {
@@ -436,7 +436,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-md border-0 bg-transparent cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-100">
+                      <DropdownMenuTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-md border-0 bg-transparent cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent">
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">

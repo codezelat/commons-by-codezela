@@ -61,7 +61,7 @@ export function ForgotPasswordForm() {
         </Button>
         <Link
           href="/login"
-          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          className="text-sm font-medium text-foreground underline underline-offset-4 hover:text-foreground/70 transition-colors"
         >
           Back to sign in
         </Link>
@@ -72,24 +72,24 @@ export function ForgotPasswordForm() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-2 text-center">
-        <Link href="/" className="mb-2 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600">
-            <span className="text-base font-bold text-white">C</span>
+        <Link href="/" className="mb-2 flex items-center gap-2 lg:hidden">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground">
+            <span className="font-display italic text-sm font-semibold text-background">
+              C
+            </span>
           </div>
         </Link>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+        <h1 className="text-xl font-semibold tracking-tight">
           Forgot your password?
         </h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground">
           Enter your email and we&apos;ll send you a reset link
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-            Email
-          </Label>
+          <Label htmlFor="email">Email</Label>
           <Input
             id="email"
             type="email"
@@ -101,15 +101,15 @@ export function ForgotPasswordForm() {
             className="h-10"
           />
         </div>
-        <Button type="submit" className="h-10 w-full" disabled={loading}>
-          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button type="submit" size="lg" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="animate-spin" />}
           Send Reset Link
         </Button>
       </form>
 
       <Link
         href="/login"
-        className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-700"
+        className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to sign in

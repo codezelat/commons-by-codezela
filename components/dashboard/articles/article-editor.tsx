@@ -111,11 +111,11 @@ export function ArticleEditor({
             </Button>
           </Link>
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">
+            <h1 className="text-lg font-semibold">
               {mode === "create" ? "New Article" : "Edit Article"}
             </h1>
             {article && (
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Last saved {new Date(article.updated_at).toLocaleString()}
               </p>
             )}
@@ -128,11 +128,7 @@ export function ArticleEditor({
             onClick={() => handleSave("draft")}
             disabled={isPending}
           >
-            {isPending ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Save className="mr-1.5 h-3.5 w-3.5" />
-            )}
+            {isPending ? <Loader2 className="animate-spin" /> : <Save />}
             Save Draft
           </Button>
           <Button
@@ -140,11 +136,7 @@ export function ArticleEditor({
             onClick={() => handleSave("published")}
             disabled={isPending}
           >
-            {isPending ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Send className="mr-1.5 h-3.5 w-3.5" />
-            )}
+            {isPending ? <Loader2 className="animate-spin" /> : <Send />}
             Publish
           </Button>
         </div>
@@ -158,11 +150,11 @@ export function ArticleEditor({
             placeholder="Article title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="h-12 text-lg font-semibold border-0 shadow-none focus-visible:ring-0 px-0 placeholder:text-slate-300"
+            className="h-12 text-lg font-semibold border-0 shadow-none focus-visible:ring-0 px-0 placeholder:text-muted-foreground/40"
           />
 
           {/* Editor */}
-          <div className="min-h-[500px] rounded-lg border bg-white">
+          <div className="min-h-[500px] rounded-lg border bg-background">
             <BlockEditor
               initialContent={
                 article?.content as Record<string, unknown> | undefined
@@ -175,10 +167,8 @@ export function ArticleEditor({
         {/* Sidebar */}
         <div className="space-y-5">
           {/* Excerpt */}
-          <div className="rounded-lg border bg-white p-4 space-y-3">
-            <Label className="text-sm font-medium text-slate-700">
-              Excerpt
-            </Label>
+          <div className="rounded-lg border bg-background p-4 space-y-3">
+            <Label className="text-sm font-medium">Excerpt</Label>
             <Textarea
               placeholder="A brief summary of the article..."
               value={excerpt}
@@ -189,10 +179,8 @@ export function ArticleEditor({
           </div>
 
           {/* Category */}
-          <div className="rounded-lg border bg-white p-4 space-y-3">
-            <Label className="text-sm font-medium text-slate-700">
-              Category
-            </Label>
+          <div className="rounded-lg border bg-background p-4 space-y-3">
+            <Label className="text-sm font-medium">Category</Label>
             <Select
               value={categoryId}
               onValueChange={(v) => setCategoryId(v ?? "")}
@@ -211,8 +199,8 @@ export function ArticleEditor({
           </div>
 
           {/* Tags */}
-          <div className="rounded-lg border bg-white p-4 space-y-3">
-            <Label className="text-sm font-medium text-slate-700">Tags</Label>
+          <div className="rounded-lg border bg-background p-4 space-y-3">
+            <Label className="text-sm font-medium">Tags</Label>
             <div className="flex flex-wrap gap-1.5">
               {tags.map((tag) => {
                 const isSelected = selectedTags.includes(tag.id);
@@ -229,7 +217,7 @@ export function ArticleEditor({
                 );
               })}
               {tags.length === 0 && (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   No tags yet. Create some in Tags management.
                 </p>
               )}
@@ -241,10 +229,8 @@ export function ArticleEditor({
 
           {/* Status (edit mode) */}
           {mode === "edit" && article && (
-            <div className="rounded-lg border bg-white p-4 space-y-3">
-              <Label className="text-sm font-medium text-slate-700">
-                Status
-              </Label>
+            <div className="rounded-lg border bg-background p-4 space-y-3">
+              <Label className="text-sm font-medium">Status</Label>
               <Select
                 value={article.status}
                 onValueChange={(v) => v && handleSave(v)}

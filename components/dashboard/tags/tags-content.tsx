@@ -255,7 +255,7 @@ export function TagsContent() {
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-md border-0 bg-transparent cursor-pointer hover:bg-slate-100">
+                      <DropdownMenuTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-md border-0 bg-transparent cursor-pointer hover:bg-accent">
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
