@@ -9,33 +9,32 @@ interface PublicShellProps {
 
 export function PublicShell({ children }: PublicShellProps) {
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_30%,#f8fafc_100%)] text-slate-950">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[26rem] bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_42%),radial-gradient(circle_at_18%_18%,_rgba(15,23,42,0.06),_transparent_28%)]" />
+    <div className="editorial-grain min-h-screen bg-[#faf8f5] text-stone-900">
+      <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,_rgba(180,140,100,0.08),_transparent),radial-gradient(circle_at_20%_60%,_rgba(120,80,40,0.03),_transparent_50%)]" />
 
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 sm:px-8 lg:px-10">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-sm">
-              <span className="font-display text-sm font-semibold italic">C</span>
+      <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-[#faf8f5]/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 sm:px-8">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-900">
+              <span className="font-display text-[13px] font-semibold italic text-[#faf8f5]">
+                C
+              </span>
             </div>
-            <div>
-              <p className="font-display text-lg leading-none tracking-tight">Commons</p>
-              <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
-                Editorial
-              </p>
-            </div>
+            <span className="font-display text-[15px] font-semibold tracking-tight text-stone-900">
+              Commons
+            </span>
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-0.5 md:flex">
             <Link
               href="/articles"
-              className="rounded-full px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950"
+              className="px-3.5 py-1.5 text-[13px] font-medium text-stone-600 transition-colors hover:text-stone-900"
             >
               Articles
             </Link>
             <Link
               href="/"
-              className="rounded-full px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950"
+              className="px-3.5 py-1.5 text-[13px] font-medium text-stone-600 transition-colors hover:text-stone-900"
             >
               Home
             </Link>
@@ -44,13 +43,16 @@ export function PublicShell({ children }: PublicShellProps) {
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="hidden rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 sm:inline-flex"
+              className="hidden px-3.5 py-1.5 text-[13px] font-medium text-stone-500 transition-colors hover:text-stone-900 sm:inline-flex"
             >
               Sign in
             </Link>
             <Link
               href="/dashboard/articles/new"
-              className={cn(buttonVariants({ size: "sm" }), "rounded-full")}
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                "rounded-lg bg-stone-900 text-[#faf8f5] hover:bg-stone-800",
+              )}
             >
               Publish
             </Link>
@@ -60,24 +62,53 @@ export function PublicShell({ children }: PublicShellProps) {
 
       {children}
 
-      <footer className="border-t border-slate-200 bg-white/80">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-10 sm:px-8 lg:px-10 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
-            <p className="font-display text-2xl tracking-tight text-slate-950">Commons</p>
-            <p className="max-w-md text-sm leading-6 text-slate-600">
-              A clean publishing surface for long-form technical writing, research notes, and editorial articles.
-            </p>
+      <footer className="border-t border-stone-200/60 bg-stone-900 text-stone-300">
+        <div className="mx-auto max-w-6xl px-6 py-14 sm:px-8">
+          <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-stone-800">
+                  <span className="font-display text-xs font-semibold italic text-stone-300">
+                    C
+                  </span>
+                </div>
+                <span className="font-display text-lg tracking-tight text-stone-100">
+                  Commons
+                </span>
+              </div>
+              <p className="max-w-sm text-sm leading-relaxed text-stone-400">
+                A publishing surface for long-form technical writing, research
+                notes, and editorial articles.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 text-sm">
+              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-stone-500">
+                Navigate
+              </p>
+              <Link
+                href="/articles"
+                className="text-stone-400 transition-colors hover:text-stone-100"
+              >
+                Articles
+              </Link>
+              <Link
+                href="/"
+                className="text-stone-400 transition-colors hover:text-stone-100"
+              >
+                Home
+              </Link>
+              <Link
+                href="/login"
+                className="text-stone-400 transition-colors hover:text-stone-100"
+              >
+                Sign in
+              </Link>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500">
-            <Link href="/articles" className="hover:text-slate-950">
-              Articles
-            </Link>
-            <Link href="/" className="hover:text-slate-950">
-              Home
-            </Link>
-            <Link href="/login" className="hover:text-slate-950">
-              Sign in
-            </Link>
+          <div className="mt-10 border-t border-stone-800 pt-6">
+            <p className="text-xs text-stone-500">
+              &copy; Commons by Codezela &middot; Open Source
+            </p>
           </div>
         </div>
       </footer>

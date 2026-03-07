@@ -21,7 +21,8 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Articles",
-  description: "Browse published articles, essays, and research pieces on Commons by Codezela.",
+  description:
+    "Browse published articles, essays, and research pieces on Commons by Codezela.",
 };
 
 interface ArticlesPageProps {
@@ -33,7 +34,9 @@ interface ArticlesPageProps {
   }>;
 }
 
-export default async function ArticlesPage({ searchParams }: ArticlesPageProps) {
+export default async function ArticlesPage({
+  searchParams,
+}: ArticlesPageProps) {
   const params = (await searchParams) || {};
   const page = Math.max(1, Number(params.page) || 1);
   const [featured, articlesResult, categories, tags] = await Promise.all([
@@ -61,33 +64,35 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
 
   return (
     <PublicShell>
-      <main className="mx-auto max-w-7xl px-6 py-12 sm:px-8 lg:px-10">
-        <section className="grid gap-8 lg:grid-cols-[minmax(0,1.7fr),320px]">
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+      <main className="mx-auto max-w-6xl px-6 py-12 sm:px-8">
+        <section className="grid gap-10 lg:grid-cols-[minmax(0,1fr),280px]">
+          <div className="space-y-10">
+            {/* Header */}
+            <div className="editorial-fade-in space-y-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-stone-400">
                 Editorial archive
               </p>
-              <h1 className="max-w-4xl font-display text-5xl leading-none tracking-tight sm:text-6xl">
+              <h1 className="max-w-3xl font-display text-4xl leading-[1.12] tracking-tight text-stone-900 sm:text-5xl">
                 Published articles built for reading, citation, and discovery.
               </h1>
-              <p className="max-w-2xl text-base leading-7 text-slate-600">
-                Browse essays, research notes, and long-form technical writing with clean metadata,
-                structured taxonomy, and production-ready article pages.
+              <p className="max-w-xl text-base leading-relaxed text-stone-500">
+                Browse essays, research notes, and long-form technical writing
+                with clean metadata and structured taxonomy.
               </p>
             </div>
 
-            <form className="grid gap-3 rounded-[2rem] border border-slate-200 bg-white/85 p-4 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.4)] backdrop-blur md:grid-cols-[minmax(0,1fr),180px,180px,auto]">
+            {/* Search/Filter */}
+            <form className="editorial-fade-in editorial-fade-in-delay-1 grid gap-3 rounded-xl border border-stone-200/70 bg-white p-3 md:grid-cols-[minmax(0,1fr),160px,160px,auto]">
               <Input
                 name="q"
                 defaultValue={params.q || ""}
                 placeholder="Search titles and content"
-                className="h-11 rounded-xl border-slate-200 bg-white"
+                className="h-10 rounded-lg border-stone-200 bg-[#faf8f5]"
               />
               <select
                 name="category"
                 defaultValue={params.category || ""}
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                className="h-10 rounded-lg border border-stone-200 bg-[#faf8f5] px-3 text-sm text-stone-600"
               >
                 <option value="">All categories</option>
                 {categories.map((category) => (
@@ -99,7 +104,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
               <select
                 name="tag"
                 defaultValue={params.tag || ""}
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                className="h-10 rounded-lg border border-stone-200 bg-[#faf8f5] px-3 text-sm text-stone-600"
               >
                 <option value="">All tags</option>
                 {tags.map((tag) => (
@@ -108,71 +113,88 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
                   </option>
                 ))}
               </select>
-              <Button type="submit" className="h-11 rounded-xl px-5">
+              <Button
+                type="submit"
+                className="h-10 rounded-lg bg-stone-900 px-5 text-[#faf8f5] hover:bg-stone-800"
+              >
                 Search
               </Button>
             </form>
 
+            {/* Spotlight */}
             {spotlight && (
-              <article className="overflow-hidden rounded-[2.2rem] border border-slate-200 bg-slate-950 text-white shadow-[0_36px_120px_-56px_rgba(15,23,42,0.85)]">
-                <div className="grid gap-0 lg:grid-cols-[1.15fr,0.85fr]">
+              <article className="editorial-fade-in editorial-fade-in-delay-2 overflow-hidden rounded-2xl bg-stone-900 text-stone-100">
+                <div className="grid gap-0 lg:grid-cols-[1.2fr,0.8fr]">
                   <div className="space-y-5 p-8 sm:p-10">
-                    <Badge className="rounded-full bg-white/10 text-white shadow-none">
+                    <Badge className="rounded-md border-none bg-amber-800/20 px-2.5 py-0.5 text-xs font-medium text-amber-300 shadow-none">
                       Spotlight
                     </Badge>
-                    <div className="space-y-4">
-                      <h2 className="font-display text-4xl leading-tight tracking-tight sm:text-5xl">
+                    <div className="space-y-3">
+                      <h2 className="font-display text-3xl leading-snug tracking-tight sm:text-4xl">
                         {spotlight.title}
                       </h2>
-                      <p className="max-w-2xl text-base leading-7 text-slate-300">
+                      <p className="max-w-xl text-sm leading-relaxed text-stone-400">
                         {deriveArticleSummary(spotlight.content_text, 240)}
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-300">
-                      {spotlight.author_name && <span>{spotlight.author_name}</span>}
-                      <span>{getArticleReadingTimeMinutes(spotlight.content_text)} min read</span>
-                      {formatArticleDate(spotlight.published_at || spotlight.updated_at, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      }) && (
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] uppercase tracking-[0.1em] text-stone-400">
+                      {spotlight.author_name && (
+                        <span>{spotlight.author_name}</span>
+                      )}
+                      <span>
+                        {getArticleReadingTimeMinutes(spotlight.content_text)}{" "}
+                        min read
+                      </span>
+                      {formatArticleDate(
+                        spotlight.published_at || spotlight.updated_at,
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        },
+                      ) && (
                         <span>
-                          {formatArticleDate(spotlight.published_at || spotlight.updated_at, {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                          {formatArticleDate(
+                            spotlight.published_at || spotlight.updated_at,
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            },
+                          )}
                         </span>
                       )}
-                      {spotlight.category_name && <span>{spotlight.category_name}</span>}
+                      {spotlight.category_name && (
+                        <span>{spotlight.category_name}</span>
+                      )}
                     </div>
                     <Link
                       href={`/articles/${spotlight.slug}`}
                       className={cn(
                         buttonVariants({ size: "lg" }),
-                        "rounded-full bg-white text-slate-950 hover:bg-slate-100",
+                        "rounded-lg bg-[#faf8f5] text-stone-900 hover:bg-white",
                       )}
                     >
                       Read article
                     </Link>
                   </div>
 
-                  <div className="border-t border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.16),_transparent_32%),linear-gradient(160deg,_rgba(30,41,59,0.3),_rgba(15,23,42,0.96))] p-8 lg:border-l lg:border-t-0">
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                  <div className="border-t border-stone-800 bg-stone-900/80 p-7 lg:border-l lg:border-t-0">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                       {featured.slice(0, 3).map((item, index) => (
                         <Link
                           key={item.id}
                           href={`/articles/${item.slug}`}
-                          className="rounded-[1.6rem] border border-white/10 bg-white/5 p-5 transition-colors hover:bg-white/8"
+                          className="rounded-xl border border-stone-800 bg-stone-800/40 p-4 transition-colors hover:bg-stone-800/80"
                         >
-                          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-stone-500">
                             0{index + 1}
                           </p>
-                          <h3 className="mt-3 font-display text-2xl leading-tight tracking-tight">
+                          <h3 className="mt-2 font-display text-lg leading-snug tracking-tight text-stone-200">
                             {item.title}
                           </h3>
-                          <p className="mt-3 text-sm leading-6 text-slate-300">
-                            {deriveArticleSummary(item.content_text, 120)}
+                          <p className="mt-2 text-[13px] leading-relaxed text-stone-400">
+                            {deriveArticleSummary(item.content_text, 100)}
                           </p>
                         </Link>
                       ))}
@@ -182,23 +204,25 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
               </article>
             )}
 
+            {/* All Articles */}
             <section className="space-y-5">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-stone-400">
                     Latest
                   </p>
-                  <h2 className="mt-2 font-display text-3xl tracking-tight text-slate-950">
+                  <h2 className="mt-1 font-display text-2xl tracking-tight text-stone-900">
                     All published articles
                   </h2>
                 </div>
-                <p className="text-sm text-slate-500">
-                  {articlesResult.total} result{articlesResult.total === 1 ? "" : "s"}
+                <p className="text-sm text-stone-400">
+                  {articlesResult.total} result
+                  {articlesResult.total === 1 ? "" : "s"}
                 </p>
               </div>
 
               {visibleArticles.length > 0 ? (
-                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {visibleArticles.map((article, index) => (
                     <ArticleCard
                       key={article.id}
@@ -208,19 +232,20 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
                   ))}
                 </div>
               ) : (
-                <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/70 px-8 py-16 text-center">
-                  <h3 className="font-display text-3xl tracking-tight text-slate-950">
+                <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-8 py-16 text-center">
+                  <h3 className="font-display text-2xl tracking-tight text-stone-900">
                     No matching articles
                   </h3>
-                  <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
-                    Try broadening the search, clearing a filter, or publishing more content from the dashboard.
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-stone-500">
+                    Try broadening the search, clearing a filter, or publishing
+                    more content from the dashboard.
                   </p>
                 </div>
               )}
 
               {articlesResult.totalPages > 1 && (
-                <div className="flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4">
-                  <p className="text-sm text-slate-500">
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-stone-200/70 bg-white px-5 py-3.5">
+                  <p className="text-sm text-stone-400">
                     Page {articlesResult.page} of {articlesResult.totalPages}
                   </p>
                   <div className="flex gap-2">
@@ -230,12 +255,17 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
                           pathname: "/articles",
                           query: {
                             ...(params.q ? { q: params.q } : {}),
-                            ...(params.category ? { category: params.category } : {}),
+                            ...(params.category
+                              ? { category: params.category }
+                              : {}),
                             ...(params.tag ? { tag: params.tag } : {}),
                             page: String(articlesResult.page - 1),
                           },
                         }}
-                        className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}
+                        className={cn(
+                          buttonVariants({ variant: "outline" }),
+                          "rounded-lg",
+                        )}
                       >
                         Previous
                       </Link>
@@ -246,12 +276,17 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
                           pathname: "/articles",
                           query: {
                             ...(params.q ? { q: params.q } : {}),
-                            ...(params.category ? { category: params.category } : {}),
+                            ...(params.category
+                              ? { category: params.category }
+                              : {}),
                             ...(params.tag ? { tag: params.tag } : {}),
                             page: String(articlesResult.page + 1),
                           },
                         }}
-                        className={cn(buttonVariants(), "rounded-full")}
+                        className={cn(
+                          buttonVariants(),
+                          "rounded-lg bg-stone-900 hover:bg-stone-800",
+                        )}
                       >
                         Next page
                       </Link>
@@ -263,36 +298,38 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
           </div>
 
           <aside className="space-y-5">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.35)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <div className="rounded-xl border border-stone-200/70 bg-white p-5">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-stone-400">
                 Categories
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {categories.map((category) => (
                   <Link
                     key={category.id}
                     href={`/articles?category=${category.slug}`}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-700 transition-colors hover:border-slate-900 hover:text-slate-950"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200/80 px-2.5 py-1.5 text-[13px] text-stone-600 transition-colors hover:border-stone-400 hover:text-stone-900"
                   >
                     <span>{category.name}</span>
-                    <span className="text-xs text-slate-400">{category.article_count}</span>
+                    <span className="text-[11px] text-stone-300">
+                      {category.article_count}
+                    </span>
                   </Link>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.35)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <div className="rounded-xl border border-stone-200/70 bg-white p-5">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-stone-400">
                 Popular tags
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {tags.map((tag) => (
                   <Link
                     key={tag.id}
                     href={`/articles?tag=${tag.slug}`}
-                    className="rounded-full bg-slate-100 px-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-900 hover:text-white"
+                    className="rounded-lg bg-stone-100 px-2.5 py-1.5 text-[13px] text-stone-500 transition-colors hover:bg-stone-900 hover:text-stone-100"
                   >
-                    #{tag.name}
+                    {tag.name}
                   </Link>
                 ))}
               </div>

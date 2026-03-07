@@ -156,24 +156,30 @@ export default async function PublicArticlePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <main className="mx-auto max-w-6xl px-6 py-10 sm:px-8 lg:px-10">
-        <article className="mx-auto max-w-4xl space-y-10">
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              <Link href="/articles" className="hover:text-slate-950">
-                Articles
-              </Link>
-              {article.category_name && (
-                <>
-                  <span>/</span>
-                  <span className="text-slate-700">{article.category_name}</span>
-                </>
-              )}
-            </div>
+      <main className="mx-auto max-w-6xl px-6 py-12 sm:px-8">
+        <article className="mx-auto max-w-3xl">
+          {/* Breadcrumb */}
+          <div className="editorial-fade-in mb-8 flex flex-wrap items-center gap-2 text-[12px] font-medium uppercase tracking-[0.14em] text-stone-400">
+            <Link
+              href="/articles"
+              className="transition-colors hover:text-stone-900"
+            >
+              Articles
+            </Link>
+            {article.category_name && (
+              <>
+                <span className="text-stone-300">/</span>
+                <span className="text-stone-600">{article.category_name}</span>
+              </>
+            )}
+          </div>
 
+          {/* Article Header */}
+          <header className="editorial-fade-in-delay-1 editorial-fade-in mb-10 space-y-6">
+            {/* Tags */}
             <div className="flex flex-wrap items-center gap-2">
               {article.category_name && (
-                <Badge className="rounded-full bg-slate-950 text-white">
+                <Badge className="rounded-md border-none bg-stone-900 px-2.5 py-0.5 text-xs font-medium text-[#faf8f5]">
                   {article.category_name}
                 </Badge>
               )}
@@ -181,92 +187,110 @@ export default async function PublicArticlePage({
                 <Link
                   key={tag.id}
                   href={`/articles?tag=${tag.slug}`}
-                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:border-slate-900 hover:text-slate-950"
+                  className="rounded-md bg-stone-100 px-2.5 py-1 text-[11px] font-medium text-stone-500 transition-colors hover:bg-stone-200 hover:text-stone-700"
                 >
-                  #{tag.name}
+                  {tag.name}
                 </Link>
               ))}
             </div>
 
-            <div className="space-y-5">
-              <h1 className="max-w-4xl font-display text-4xl leading-tight tracking-tight text-slate-950 sm:text-6xl">
-                {article.title}
-              </h1>
-              {description && (
-                <p className="max-w-3xl text-lg leading-8 text-slate-600">
-                  {description}
-                </p>
-              )}
-            </div>
+            {/* Title */}
+            <h1 className="font-display text-4xl leading-[1.15] tracking-tight text-stone-900 sm:text-[3.25rem] sm:leading-[1.12]">
+              {article.title}
+            </h1>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500">
-              {article.author_name && <span>{article.author_name}</span>}
-              <span>{readingTime} min read estimate</span>
-              {publishedLabel && <span>Published {publishedLabel}</span>}
-              {shouldShowUpdated && updatedLabel && (
-                <span>Updated {updatedLabel}</span>
-              )}
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-[2.4rem] border border-slate-200 bg-white shadow-[0_30px_120px_-54px_rgba(15,23,42,0.42)]">
-            {article.cover_image && (
-              <div className="relative aspect-[16/8] w-full overflow-hidden border-b border-slate-200 bg-slate-100">
-                <Image
-                  src={article.cover_image}
-                  alt={article.title}
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 1100px"
-                />
-              </div>
+            {/* Description */}
+            {description && (
+              <p className="max-w-2xl text-lg leading-relaxed text-stone-500">
+                {description}
+              </p>
             )}
 
-            <div className="px-6 py-8 sm:px-10 sm:py-12">
-              {html ? (
-                <ArticleBody html={html} className="[&_p:first-child]:mt-0" />
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-sm leading-6 text-slate-600">
-                  This article does not have renderable body HTML yet.
-                </div>
+            {/* Meta line */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-stone-200/60 pb-6 text-sm text-stone-400">
+              {article.author_name && (
+                <span className="font-medium text-stone-700">
+                  {article.author_name}
+                </span>
+              )}
+              <span>{readingTime} min read</span>
+              {publishedLabel && <span>{publishedLabel}</span>}
+              {shouldShowUpdated && updatedLabel && (
+                <span className="italic">Updated {updatedLabel}</span>
               )}
             </div>
+          </header>
+
+          {/* Cover Image */}
+          {article.cover_image && (
+            <div className="editorial-fade-in editorial-fade-in-delay-2 relative -mx-6 mb-10 aspect-[16/9] overflow-hidden rounded-2xl sm:-mx-0">
+              <Image
+                src={article.cover_image}
+                alt={article.title}
+                fill
+                priority
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 768px"
+              />
+            </div>
+          )}
+
+          {/* Article Body */}
+          <div className="editorial-fade-in editorial-fade-in-delay-3">
+            {html ? (
+              <ArticleBody
+                html={html}
+                className="editorial-drop-cap [&_p:first-child]:mt-0"
+              />
+            ) : (
+              <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-8 text-sm leading-6 text-stone-500">
+                This article does not have renderable body HTML yet.
+              </div>
+            )}
           </div>
 
-          <section className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.7)] sm:p-8">
+          {/* Divider */}
+          <div className="editorial-divider my-14">
+            <span className="text-xs font-display italic text-stone-400">
+              &#8226; &#8226; &#8226;
+            </span>
+          </div>
+
+          {/* CTA Banner */}
+          <section className="editorial-fade-in editorial-fade-in-delay-4 rounded-2xl bg-stone-900 p-8 text-stone-100 sm:p-10">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-stone-400">
                   Continue browsing
                 </p>
-                <h2 className="mt-2 font-display text-3xl tracking-tight">
-                  More published work from the archive.
+                <h2 className="mt-2 font-display text-2xl tracking-tight sm:text-3xl">
+                  More from the archive
                 </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-                  Explore more essays, technical notes, and long-form articles without dropping back into the dashboard.
+                <p className="mt-2 max-w-lg text-sm leading-relaxed text-stone-400">
+                  Explore more essays, technical notes, and long-form articles.
                 </p>
               </div>
               <Link
                 href="/articles"
                 className={cn(
                   buttonVariants(),
-                  "inline-flex rounded-full bg-white text-slate-950 hover:bg-slate-100",
+                  "inline-flex shrink-0 rounded-lg bg-[#faf8f5] text-stone-900 hover:bg-white",
                 )}
               >
-                Back to all articles
+                All articles
               </Link>
             </div>
           </section>
 
+          {/* Related Articles */}
           {relatedArticles.length > 0 && (
-            <section className="space-y-5">
+            <section className="mt-14 space-y-6">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  Continue reading
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-stone-400">
+                  Related
                 </p>
-                <h2 className="mt-2 font-display text-3xl tracking-tight text-slate-950">
-                  Related articles
+                <h2 className="mt-1 font-display text-2xl tracking-tight text-stone-900">
+                  Continue reading
                 </h2>
               </div>
               <div className="grid gap-5 md:grid-cols-3">
@@ -274,15 +298,15 @@ export default async function PublicArticlePage({
                   <Link
                     key={related.id}
                     href={`/articles/${related.slug}`}
-                    className="rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-[0_20px_80px_-48px_rgba(15,23,42,0.35)] transition-transform hover:-translate-y-1"
+                    className="group rounded-2xl border border-stone-200/80 bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-12px_rgba(120,80,40,0.1)]"
                   >
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-stone-400">
                       {related.category_name || "Article"}
                     </p>
-                    <h3 className="mt-3 font-display text-2xl leading-tight tracking-tight text-slate-950">
+                    <h3 className="mt-2.5 font-display text-lg leading-snug tracking-tight text-stone-900 group-hover:text-amber-900 transition-colors">
                       {related.title}
                     </h3>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                    <p className="mt-2 text-sm leading-relaxed text-stone-500">
                       {deriveArticleSummary(related.content_text, 120)}
                     </p>
                   </Link>
