@@ -220,6 +220,73 @@
   }
 
   /* Public page utilities */
+
+  /* ── Public theme variables ── */
+  :root,
+  [data-pub-theme="lavender"] {
+    --pub-bg: #f3f0ff;
+    --pub-bg-alpha: rgba(243, 240, 255, 0.9);
+    --pub-surface: #ffffff;
+    --pub-border: rgba(167, 139, 250, 0.18);
+    --pub-accent: #7c3aed;
+    --pub-accent-hover: #6d28d9;
+    --pub-accent-subtle: #ede9fe;
+    --pub-accent-text: #5b21b6;
+    --pub-brand-bg: #7c3aed;
+    --pub-brand-fg: #ffffff;
+    --pub-brand-muted-bg: #6d28d9;
+    --pub-brand-muted-fg: #ddd6fe;
+    --pub-text: #1e1b4b;
+    --pub-text-secondary: #6b7280;
+    --pub-text-muted: #9ca3af;
+    --pub-tag-bg: #f3f0ff;
+    --pub-tag-hover-bg: #ede9fe;
+    --pub-tag-hover-text: #5b21b6;
+    --pub-card-hover-shadow: rgba(124, 58, 237, 0.08);
+    --pub-gradient: radial-gradient(
+      ellipse 60% 45% at 50% -8%,
+      rgba(124, 58, 237, 0.06),
+      transparent
+    );
+    --pub-pill-bg: #ede9fe;
+    --pub-pill-text: #7c3aed;
+    --pub-footer-bg: #1e1b4b;
+    --pub-footer-brand-bg: #6d28d9;
+    --pub-footer-brand-fg: #c4b5fd;
+  }
+
+  [data-pub-theme="cream"] {
+    --pub-bg: #faf8f3;
+    --pub-bg-alpha: rgba(250, 248, 243, 0.9);
+    --pub-surface: #ffffff;
+    --pub-border: rgba(217, 191, 140, 0.22);
+    --pub-accent: #b45309;
+    --pub-accent-hover: #92400e;
+    --pub-accent-subtle: #fef3c7;
+    --pub-accent-text: #92400e;
+    --pub-brand-bg: #b45309;
+    --pub-brand-fg: #ffffff;
+    --pub-brand-muted-bg: #92400e;
+    --pub-brand-muted-fg: #fde68a;
+    --pub-text: #1c1917;
+    --pub-text-secondary: #78716c;
+    --pub-text-muted: #a8a29e;
+    --pub-tag-bg: #fef3c7;
+    --pub-tag-hover-bg: #fde68a;
+    --pub-tag-hover-text: #92400e;
+    --pub-card-hover-shadow: rgba(180, 83, 9, 0.08);
+    --pub-gradient: radial-gradient(
+      ellipse 60% 45% at 50% -8%,
+      rgba(180, 83, 9, 0.05),
+      transparent
+    );
+    --pub-pill-bg: #fef3c7;
+    --pub-pill-text: #b45309;
+    --pub-footer-bg: #1c1917;
+    --pub-footer-brand-bg: #92400e;
+    --pub-footer-brand-fg: #fde68a;
+  }
+
   .pub-fade-in {
     animation: pubFadeUp 0.5s ease-out both;
   }

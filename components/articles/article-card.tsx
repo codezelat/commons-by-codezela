@@ -26,7 +26,7 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
   );
 
   return (
-    <article className="group overflow-hidden rounded-xl border border-neutral-200/70 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-neutral-200/50">
+    <article className="group overflow-hidden rounded-xl border border-[var(--pub-border)] bg-[var(--pub-surface)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[var(--pub-card-hover-shadow)]">
       <Link href={`/articles/${article.slug}`} className="block">
         <div className="relative aspect-[16/10] overflow-hidden bg-neutral-100">
           {article.cover_image ? (
@@ -39,7 +39,7 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-neutral-50 to-violet-50" />
+            <div className="absolute inset-0 bg-[var(--pub-accent-subtle)]" />
           )}
           <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
             {article.category_name && (
@@ -51,7 +51,7 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
         </div>
 
         <div className="space-y-2.5 p-4">
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-neutral-400">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-[var(--pub-text-muted)]">
             {article.author_name && <span>{article.author_name}</span>}
             {article.author_name && <span>&middot;</span>}
             <span>{readingTime} min</span>
@@ -63,11 +63,11 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
             )}
           </div>
 
-          <h2 className="font-display text-lg leading-snug tracking-tight text-neutral-900 transition-colors group-hover:text-emerald-800">
+          <h2 className="font-display text-lg leading-snug tracking-tight text-[var(--pub-text)] transition-colors group-hover:text-[var(--pub-accent)]">
             {article.title}
           </h2>
           {summary && (
-            <p className="line-clamp-2 text-[13px] leading-relaxed text-neutral-500">
+            <p className="line-clamp-2 text-[13px] leading-relaxed text-[var(--pub-text-secondary)]">
               {summary}
             </p>
           )}
@@ -77,7 +77,7 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
               {article.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag.id}
-                  className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-500"
+                  className="rounded-full bg-[var(--pub-tag-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--pub-text-secondary)]"
                 >
                   {tag.name}
                 </span>
