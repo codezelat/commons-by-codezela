@@ -15,7 +15,6 @@ export interface FeaturedArticle {
   id: string;
   title: string;
   slug: string;
-  excerpt: string | null;
   cover_image: string | null;
   featured_order: number;
   status: string;
@@ -27,7 +26,7 @@ export interface FeaturedArticle {
 export async function getFeaturedArticles(): Promise<FeaturedArticle[]> {
   await requireSession();
   return query<FeaturedArticle>(
-    `SELECT a.id, a.title, a.slug, a.excerpt, a.cover_image, a.featured_order, a.status,
+    `SELECT a.id, a.title, a.slug, a.cover_image, a.featured_order, a.status,
             u.name as author_name, c.name as category_name, a.published_at
      FROM article a
      JOIN "user" u ON a.author_id = u.id

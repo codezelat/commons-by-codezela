@@ -3,7 +3,6 @@ const DEFAULT_DESCRIPTION_LIMIT = 160;
 interface ArticleMetadataLike {
   title: string;
   slug: string;
-  excerpt?: string | null;
   content_text?: string | null;
   cover_image?: string | null;
   seo_title?: string | null;
@@ -22,7 +21,7 @@ function normalizeOptionalString(value?: string | null) {
 }
 
 function collapseWhitespace(value: string) {
-  return value.replace(/\s+/g, " ").trim();
+  return value.replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, " ").trim();
 }
 
 function truncateAtWordBoundary(value: string, maxLength: number) {
@@ -52,11 +51,10 @@ export function sanitizeArticleText(value?: string | null) {
 }
 
 export function deriveArticleSummary(
-  excerpt?: string | null,
   contentText?: string | null,
   maxLength: number = DEFAULT_DESCRIPTION_LIMIT,
 ) {
-  const source = sanitizeArticleText(excerpt) || sanitizeArticleText(contentText);
+  const source = sanitizeArticleText(contentText);
   if (!source) {
     return null;
   }
@@ -71,7 +69,7 @@ export function getArticleMetaTitle(article: ArticleMetadataLike) {
 export function getArticleMetaDescription(article: ArticleMetadataLike) {
   return (
     sanitizeArticleText(article.seo_description) ||
-    deriveArticleSummary(article.excerpt, article.content_text)
+    deriveArticleSummary(article.content_text)
   );
 }
 

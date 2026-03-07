@@ -2,8 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import {
-  getArticleReadingTimeMinutes,
   deriveArticleSummary,
+  getArticleReadingTimeMinutes,
   formatArticleDate,
 } from "@/lib/article-metadata";
 import type { Article } from "@/lib/actions/articles";
@@ -14,7 +14,7 @@ interface ArticleCardProps {
 }
 
 export function ArticleCard({ article, priority = false }: ArticleCardProps) {
-  const summary = deriveArticleSummary(article.excerpt, article.content_text, 170);
+  const summary = deriveArticleSummary(article.content_text, 170);
   const readingTime = getArticleReadingTimeMinutes(article.content_text);
   const publishedLabel = formatArticleDate(article.published_at || article.updated_at, {
     month: "short",

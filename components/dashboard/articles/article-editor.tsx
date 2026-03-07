@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -36,11 +37,15 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { CoverImageUploader } from "./cover-image-uploader";
+import {
+  ArticleImageUploader,
+  CoverImageUploader,
+} from "./cover-image-uploader";
 import {
   isMarkdownArticleContent,
   type MarkdownArticleContent,
 } from "@/lib/editor-content";
+import { deriveArticleSummary } from "@/lib/article-metadata";
 
 const BlockEditor = dynamic(
   () =>
@@ -71,25 +76,6 @@ function slugify(value: string) {
     .replace(/[\s_]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 200);
-}
-
-function summarizeText(value: string, maxLength: number) {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  if (!normalized) {
-    return "";
-  }
-
-  if (normalized.length <= maxLength) {
-    return normalized;
-  }
-
-  const candidate = normalized.slice(0, maxLength + 1);
-  const boundary = candidate.lastIndexOf(" ");
-  const safe = boundary > Math.floor(maxLength * 0.6)
-    ? candidate.slice(0, boundary)
-    : candidate.slice(0, maxLength);
-
-  return `${safe.trimEnd()}…`;
 }
 
 function hasBrokenImageNodes(node: unknown): boolean {
@@ -153,7 +139,6 @@ export function ArticleEditor({
   const [title, setTitle] = useState(article?.title || "");
   const [slug, setSlug] = useState(article?.slug || "");
   const [slugTouched, setSlugTouched] = useState(Boolean(article));
-  const [excerpt, setExcerpt] = useState(article?.excerpt || "");
   const [seoTitle, setSeoTitle] = useState(article?.seo_title || "");
   const [seoDescription, setSeoDescription] = useState(
     article?.seo_description || "",
@@ -181,11 +166,12 @@ export function ArticleEditor({
   const effectiveDescription = useMemo(
     () =>
       seoDescription.trim() ||
-      excerpt.trim() ||
-      summarizeText(editorContent?.text || article?.content_text || "", 160),
-    [article?.content_text, editorContent?.text, excerpt, seoDescription],
+      deriveArticleSummary(editorContent?.text || article?.content_text || "", 160) ||
+      "",
+    [article?.content_text, editorContent?.text, seoDescription],
   );
   const effectiveSeoTitle = seoTitle.trim() || title.trim();
+  const effectiveSeoImage = seoImage.trim() || coverImage.trim();
   const publicUrl = `${publicBaseUrl}/articles/${slug || article?.slug || ""}`;
 
   function toggleTag(tagId: string) {
@@ -211,7 +197,6 @@ export function ArticleEditor({
         const payload = {
           title: title.trim(),
           slug: slug.trim(),
-          excerpt: excerpt.trim() || undefined,
           seo_title: seoTitle.trim() || undefined,
           seo_description: seoDescription.trim() || undefined,
           seo_image: seoImage.trim() || undefined,
@@ -265,6 +250,17 @@ export function ArticleEditor({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {mode === "edit" && article?.status === "published" && (
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
+            >
+              <ExternalLink className="h-4 w-4" />
+              View live
+            </a>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -289,30 +285,6 @@ export function ArticleEditor({
         {/* Main Content */}
         <div className="space-y-4">
           <Card className="overflow-hidden border-slate-200 shadow-sm">
-            <CardHeader className="gap-4 bg-linear-to-br from-slate-50 via-white to-slate-100/70">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <CardTitle className="font-display text-2xl tracking-tight text-slate-950">
-                    Article setup
-                  </CardTitle>
-                  <CardDescription className="max-w-2xl text-sm leading-6 text-slate-600">
-                    Control the public URL, search metadata, and article positioning before
-                    you publish.
-                  </CardDescription>
-                </div>
-                {mode === "edit" && article?.status === "published" && (
-                  <a
-                    href={publicUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-8 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-[0.8rem] font-medium text-slate-900 transition-colors hover:bg-slate-50"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Open article
-                  </a>
-                )}
-              </div>
-            </CardHeader>
             <CardContent className="space-y-5 p-5">
               <div className="space-y-2">
                 <Label htmlFor="article-title">Title</Label>
@@ -331,41 +303,24 @@ export function ArticleEditor({
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr),240px]">
-                <div className="space-y-2">
-                  <Label htmlFor="article-slug">Slug</Label>
-                  <div className="relative">
-                    <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      id="article-slug"
-                      value={slug}
-                      onChange={(e) => {
-                        setSlugTouched(true);
-                        setSlug(slugify(e.target.value));
-                      }}
-                      placeholder="article-slug"
-                      className="border-slate-200 pl-9"
-                    />
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    Public URL: <span className="font-medium text-slate-700">{publicUrl}</span>
-                  </p>
+              <div className="space-y-2">
+                <Label htmlFor="article-slug">Slug</Label>
+                <div className="relative">
+                  <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    id="article-slug"
+                    value={slug}
+                    onChange={(e) => {
+                      setSlugTouched(true);
+                      setSlug(slugify(e.target.value));
+                    }}
+                    placeholder="article-slug"
+                    className="border-slate-200 pl-9"
+                  />
                 </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Search preview
-                  </p>
-                  <div className="mt-3 space-y-1.5">
-                    <p className="line-clamp-2 text-base font-semibold leading-6 text-blue-700">
-                      {effectiveSeoTitle || "Untitled article"}
-                    </p>
-                    <p className="truncate text-xs text-emerald-700">{publicUrl}</p>
-                    <p className="line-clamp-3 text-sm leading-6 text-slate-600">
-                      {effectiveDescription || "Add a meta description or excerpt for a cleaner search preview."}
-                    </p>
-                  </div>
-                </div>
+                <p className="text-xs text-slate-500">
+                  Public URL: <span className="font-medium text-slate-700">{publicUrl}</span>
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -381,96 +336,6 @@ export function ArticleEditor({
 
         {/* Sidebar */}
         <div className="space-y-5">
-          {/* Excerpt */}
-          <div className="rounded-lg border bg-background p-4 space-y-3">
-            <Label className="text-sm font-medium">Excerpt</Label>
-            <Textarea
-              placeholder="A brief summary of the article..."
-              value={excerpt}
-              onChange={(e) => setExcerpt(e.target.value)}
-              rows={3}
-              className="resize-none text-sm"
-            />
-          </div>
-
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2 text-slate-900">
-                <Search className="h-4 w-4" />
-                <CardTitle className="text-base">SEO</CardTitle>
-              </div>
-              <CardDescription>
-                Fine-tune how the article appears in search engines and social cards.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="seo-title">Meta title</Label>
-                <Input
-                  id="seo-title"
-                  value={seoTitle}
-                  onChange={(e) => setSeoTitle(e.target.value)}
-                  placeholder="Defaults to the article title"
-                />
-                <p className="text-xs text-slate-500">
-                  {`${effectiveSeoTitle.length}/60 characters`}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="seo-description">Meta description</Label>
-                <Textarea
-                  id="seo-description"
-                  value={seoDescription}
-                  onChange={(e) => setSeoDescription(e.target.value)}
-                  placeholder="Defaults to the excerpt or article summary"
-                  rows={4}
-                  className="resize-none"
-                />
-                <p className="text-xs text-slate-500">
-                  {`${effectiveDescription.length}/160 characters`}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="seo-image">Social image URL</Label>
-                <Input
-                  id="seo-image"
-                  value={seoImage}
-                  onChange={(e) => setSeoImage(e.target.value)}
-                  placeholder="Defaults to the cover image"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="canonical-url">Canonical URL</Label>
-                <div className="relative">
-                  <Globe className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    id="canonical-url"
-                    value={canonicalUrl}
-                    onChange={(e) => setCanonicalUrl(e.target.value)}
-                    placeholder="https://example.com/original-article"
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-start justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/70 p-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm font-medium text-amber-900">
-                    <ShieldAlert className="h-4 w-4" />
-                    Hide from search
-                  </div>
-                  <p className="text-xs leading-5 text-amber-800">
-                    Use `noindex` for staging, syndicated content, or pages that should not appear in search.
-                  </p>
-                </div>
-                <Switch checked={robotsNoindex} onCheckedChange={setRobotsNoindex} />
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Category */}
           <div className="rounded-lg border bg-background p-4 space-y-3">
             <Label className="text-sm font-medium">Category</Label>
@@ -555,6 +420,135 @@ export function ArticleEditor({
               </Select>
             </div>
           )}
+
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2 text-slate-900">
+                <Search className="h-4 w-4" />
+                <CardTitle className="text-base">SEO</CardTitle>
+              </div>
+              <CardDescription>
+                Fine-tune how the article appears in search engines and social cards.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="seo-title">Meta title</Label>
+                <Input
+                  id="seo-title"
+                  value={seoTitle}
+                  onChange={(e) => setSeoTitle(e.target.value)}
+                  placeholder="Defaults to the article title"
+                />
+                <p className="text-xs text-slate-500">
+                  {`${effectiveSeoTitle.length}/60 characters`}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="seo-description">Meta description</Label>
+                <Textarea
+                  id="seo-description"
+                  value={seoDescription}
+                  onChange={(e) => setSeoDescription(e.target.value)}
+                  placeholder="Defaults to a summary generated from the article body"
+                  rows={4}
+                  className="resize-none"
+                />
+                <p className="text-xs text-slate-500">
+                  {`${effectiveDescription.length}/160 characters`}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Search preview
+                </p>
+                <div className="mt-3 space-y-1.5">
+                  <p className="line-clamp-2 text-base font-semibold leading-6 text-blue-700">
+                    {effectiveSeoTitle || "Untitled article"}
+                  </p>
+                  <p className="truncate text-xs text-emerald-700">{publicUrl}</p>
+                  <p className="line-clamp-3 text-sm leading-6 text-slate-600">
+                    {effectiveDescription || "Add a meta description for a cleaner search preview."}
+                  </p>
+                </div>
+              </div>
+
+              <ArticleImageUploader
+                label="Social image"
+                value={seoImage}
+                previewUrl={effectiveSeoImage}
+                onChange={setSeoImage}
+                description="Used for Open Graph and Twitter cards. Upload a dedicated social crop or fall back to the cover image."
+                emptyLabel="Upload a social image"
+                fallbackHint="No SEO image selected. The cover image is currently being used as the social preview fallback."
+                aspectClassName="aspect-[1.91/1]"
+              />
+
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.5)]">
+                <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Social preview
+                  </p>
+                </div>
+                <div className="p-4">
+                  <div className="overflow-hidden rounded-[1.2rem] border border-slate-200 bg-slate-50">
+                    <div className="relative aspect-[1.91/1] overflow-hidden border-b border-slate-200 bg-slate-100">
+                      {effectiveSeoImage ? (
+                        <Image
+                          src={effectiveSeoImage}
+                          alt=""
+                          fill
+                          unoptimized
+                          className="object-cover"
+                          sizes="(max-width: 1024px) 100vw, 320px"
+                        />
+                      ) : (
+                        <div className="h-full w-full bg-[radial-gradient(circle_at_top_left,_rgba(71,85,105,0.16),_transparent_45%),linear-gradient(135deg,_#f8fafc,_#e2e8f0)]" />
+                      )}
+                    </div>
+                    <div className="space-y-2 px-4 py-3">
+                      <p className="line-clamp-2 text-sm font-semibold leading-6 text-slate-950">
+                        {effectiveSeoTitle || "Untitled article"}
+                      </p>
+                      <p className="line-clamp-2 text-xs leading-5 text-slate-600">
+                        {effectiveDescription || "Add a meta description to control the card summary."}
+                      </p>
+                      <p className="truncate text-[11px] text-slate-400">{publicUrl}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="canonical-url">Canonical URL</Label>
+                <div className="relative">
+                  <Globe className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    id="canonical-url"
+                    value={canonicalUrl}
+                    onChange={(e) => setCanonicalUrl(e.target.value)}
+                    placeholder="https://example.com/original-article"
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-start justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/70 p-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm font-medium text-amber-900">
+                    <ShieldAlert className="h-4 w-4" />
+                    Hide from search
+                  </div>
+                  <p className="text-xs leading-5 text-amber-800">
+                    Use `noindex` for staging, syndicated content, or pages that should not appear in search.
+                  </p>
+                </div>
+                <Switch checked={robotsNoindex} onCheckedChange={setRobotsNoindex} />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

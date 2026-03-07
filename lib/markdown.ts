@@ -3,6 +3,7 @@ import type { Root } from "hast";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeStringify from "rehype-stringify";
+import { common, createLowlight } from "lowlight";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import { remarkAlert } from "remark-github-blockquote-alert";
@@ -10,6 +11,8 @@ import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
+
+const lowlight = createLowlight(common);
 
 function normalizeBaseUrl(baseUrl?: string | null) {
   const trimmed = baseUrl?.trim();
@@ -105,6 +108,77 @@ function rehypeResolveUrls(options?: { baseUrl?: string | null }) {
   };
 }
 
+function getClassNames(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+
+  if (typeof value === "string") {
+    return value.split(/\s+/).filter(Boolean);
+  }
+
+  return [];
+}
+
+function extractText(node: unknown): string {
+  if (!node || typeof node !== "object") {
+    return "";
+  }
+
+  const record = node as {
+    type?: unknown;
+    value?: unknown;
+    children?: unknown[];
+  };
+
+  if (record.type === "text" && typeof record.value === "string") {
+    return record.value;
+  }
+
+  if (!Array.isArray(record.children)) {
+    return "";
+  }
+
+  return record.children.map(extractText).join("");
+}
+
+function rehypeHighlightCodeBlocks() {
+  return function transformer(tree: Root) {
+    visit(tree, "element", (node, _index, parent) => {
+      const element = node as {
+        tagName?: string;
+        properties?: Record<string, unknown>;
+        children?: unknown[];
+      };
+
+      const container = parent as { tagName?: string } | undefined;
+      if (element.tagName !== "code" || container?.tagName !== "pre") {
+        return;
+      }
+
+      const classNames = getClassNames(element.properties?.className);
+      const languageClass = classNames.find((name) => name.startsWith("language-"));
+      const language = languageClass?.replace(/^language-/, "") || "";
+      const code = extractText(element);
+
+      if (!code) {
+        return;
+      }
+
+      const highlighted =
+        language && lowlight.registered(language)
+          ? lowlight.highlight(language, code).children
+          : [{ type: "text", value: code }];
+
+      element.properties = {
+        ...element.properties,
+        className: ["hljs", languageClass || "language-text"].filter(Boolean),
+      };
+      element.children = highlighted;
+    });
+  };
+}
+
 const sanitizeSchema: Schema = {
   ...defaultSchema,
   attributes: {
@@ -117,6 +191,7 @@ const sanitizeSchema: Schema = {
     code: [
       ...(defaultSchema.attributes?.code || []),
       ["className", /^language-./],
+      ["className", "hljs"],
     ],
     div: [
       ...(defaultSchema.attributes?.div || []),
@@ -148,6 +223,10 @@ const sanitizeSchema: Schema = {
       ...(defaultSchema.attributes?.p || []),
       ["className", "markdown-alert-title"],
       ["dir", "auto"],
+    ],
+    span: [
+      ...(defaultSchema.attributes?.span || []),
+      ["className", /^hljs.*/],
     ],
     path: [
       ...(defaultSchema.attributes?.path || []),
@@ -184,6 +263,7 @@ function createMarkdownProcessor(baseUrl?: string | null) {
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeResolveUrls, { baseUrl })
+    .use(rehypeHighlightCodeBlocks)
     .use(rehypeSanitize, sanitizeSchema)
     .use(rehypeStringify);
 }

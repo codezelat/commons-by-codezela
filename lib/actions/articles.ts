@@ -15,7 +15,6 @@ export interface Article {
   id: string;
   title: string;
   slug: string;
-  excerpt: string | null;
   seo_title: string | null;
   seo_description: string | null;
   seo_image: string | null;
@@ -105,7 +104,6 @@ function normalizeSlugInput(value: string | undefined, fallback: string) {
 
 function normalizeArticleDraftData(data: {
   title?: string;
-  excerpt?: string;
   content_text?: string;
   seo_title?: string;
   seo_description?: string;
@@ -113,16 +111,14 @@ function normalizeArticleDraftData(data: {
   canonical_url?: string;
 }) {
   const contentText = sanitizeArticleText(data.content_text);
-  const excerpt = sanitizeArticleText(data.excerpt) || deriveArticleSummary(undefined, contentText, 220);
 
   return {
     title: data.title?.trim() || "",
-    excerpt,
     contentText,
     seoTitle: sanitizeArticleText(data.seo_title),
     seoDescription:
       sanitizeArticleText(data.seo_description) ||
-      deriveArticleSummary(data.excerpt, contentText),
+      deriveArticleSummary(contentText),
     seoImage: sanitizeArticleText(data.seo_image),
     canonicalUrl: sanitizeArticleText(data.canonical_url),
   };
@@ -275,7 +271,6 @@ export async function getArticle(id: string): Promise<Article | null> {
 export async function createArticle(data: {
   title: string;
   slug?: string;
-  excerpt?: string;
   seo_title?: string;
   seo_description?: string;
   seo_image?: string;
@@ -296,13 +291,12 @@ export async function createArticle(data: {
   );
 
   const result = await queryOne<{ id: string; slug: string }>(
-    `INSERT INTO article (title, slug, excerpt, seo_title, seo_description, seo_image, canonical_url, robots_noindex, content, content_html, content_text, cover_image, status, author_id, category_id, published_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+    `INSERT INTO article (title, slug, seo_title, seo_description, seo_image, canonical_url, robots_noindex, content, content_html, content_text, cover_image, status, author_id, category_id, published_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
      RETURNING id, slug`,
     [
       normalized.title,
       slug,
-      normalized.excerpt,
       normalized.seoTitle,
       normalized.seoDescription,
       normalized.seoImage,
@@ -343,7 +337,6 @@ export async function updateArticle(
   data: {
     title?: string;
     slug?: string;
-    excerpt?: string;
     seo_title?: string;
     seo_description?: string;
     seo_image?: string;
@@ -388,11 +381,6 @@ export async function updateArticle(
     paramIdx++;
     fields.push(`slug = $${paramIdx}`);
     params.push(newSlug);
-  }
-  if (data.excerpt !== undefined) {
-    paramIdx++;
-    fields.push(`excerpt = $${paramIdx}`);
-    params.push(normalized.excerpt);
   }
   if (data.seo_title !== undefined) {
     paramIdx++;

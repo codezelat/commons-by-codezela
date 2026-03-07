@@ -38,15 +38,15 @@ async function getArticleOrThrow(slug: string) {
 }
 
 function resolveArticleHtml(article: Article) {
-  if (article.content_html?.trim()) {
-    return article.content_html;
-  }
-
   if (isMarkdownArticleContent(article.content)) {
     return renderMarkdownToHtmlWithBase(
       article.content.markdown,
       article.content.baseUrl,
     );
+  }
+
+  if (article.content_html?.trim()) {
+    return article.content_html;
   }
 
   return "";
@@ -283,7 +283,7 @@ export default async function PublicArticlePage({
                       {related.title}
                     </h3>
                     <p className="mt-3 text-sm leading-6 text-slate-600">
-                      {deriveArticleSummary(related.excerpt, related.content_text, 120)}
+                      {deriveArticleSummary(related.content_text, 120)}
                     </p>
                   </Link>
                 ))}

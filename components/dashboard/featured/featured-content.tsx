@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
 import {
   getFeaturedArticles,
@@ -231,10 +232,12 @@ export function FeaturedContent() {
                 {/* Cover preview */}
                 {article.cover_image && (
                   <div className="hidden sm:block shrink-0 w-20 h-14 rounded-md overflow-hidden bg-muted">
-                    <img
+                    <Image
                       src={article.cover_image}
                       alt=""
-                      className="w-full h-full object-cover"
+                      width={80}
+                      height={56}
+                      className="h-full w-full object-cover"
                     />
                   </div>
                 )}
@@ -262,11 +265,6 @@ export function FeaturedContent() {
                       </>
                     )}
                   </div>
-                  {article.excerpt && (
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-1 hidden md:block">
-                      {article.excerpt}
-                    </p>
-                  )}
                 </div>
 
                 {/* Badge + Remove */}

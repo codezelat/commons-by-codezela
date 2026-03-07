@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   getArticles,
   getCategories,
   deleteArticles,
   bulkUpdateStatus,
-  type Article,
   type ArticleListResult,
 } from "@/lib/actions/articles";
 import { Button } from "@/components/ui/button";
@@ -89,7 +88,6 @@ interface ArticlesContentProps {
 
 export function ArticlesContent({ searchParams }: ArticlesContentProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
 
   const currentPage = Number(searchParams.page) || 1;
   const currentStatus = (searchParams.status as string) || "all";
@@ -122,7 +120,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
       ]);
       setData(articles);
       setCategories(cats);
-    } catch (err) {
+    } catch {
       toast.error("Failed to load articles");
     } finally {
       setLoading(false);
@@ -399,11 +397,6 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                       >
                         {article.title}
                       </Link>
-                      {article.excerpt && (
-                        <p className="text-xs text-muted-foreground line-clamp-1">
-                          {article.excerpt}
-                        </p>
-                      )}
                     </div>
                   </TableCell>
                   <TableCell>

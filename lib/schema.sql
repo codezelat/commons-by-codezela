@@ -87,7 +87,6 @@ CREATE TABLE IF NOT EXISTS article (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   title TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
-  excerpt TEXT,
   seo_title TEXT,
   seo_description TEXT,
   seo_image TEXT,
@@ -118,6 +117,7 @@ ALTER TABLE article ADD COLUMN IF NOT EXISTS seo_description TEXT;
 ALTER TABLE article ADD COLUMN IF NOT EXISTS seo_image TEXT;
 ALTER TABLE article ADD COLUMN IF NOT EXISTS canonical_url TEXT;
 ALTER TABLE article ADD COLUMN IF NOT EXISTS robots_noindex BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE article DROP COLUMN IF EXISTS excerpt;
 
 -- GIN index for full-text search
 CREATE INDEX IF NOT EXISTS idx_article_search ON article USING GIN (search_vector);

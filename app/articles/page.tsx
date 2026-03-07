@@ -125,7 +125,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
                         {spotlight.title}
                       </h2>
                       <p className="max-w-2xl text-base leading-7 text-slate-300">
-                        {deriveArticleSummary(spotlight.excerpt, spotlight.content_text, 240)}
+                        {deriveArticleSummary(spotlight.content_text, 240)}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-300">
@@ -172,7 +172,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
                             {item.title}
                           </h3>
                           <p className="mt-3 text-sm leading-6 text-slate-300">
-                            {deriveArticleSummary(item.excerpt, item.content_text, 120)}
+                            {deriveArticleSummary(item.content_text, 120)}
                           </p>
                         </Link>
                       ))}
