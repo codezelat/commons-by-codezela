@@ -65,8 +65,10 @@ const ImageResizable = Image.extend({
       },
       width: {
         default: null,
-        parseHTML: (el) => el.style.width || el.getAttribute("data-width") || null,
-        renderHTML: (attrs) => (attrs.width ? { "data-width": attrs.width } : {}),
+        parseHTML: (el) =>
+          el.style.width || el.getAttribute("data-width") || null,
+        renderHTML: (attrs) =>
+          attrs.width ? { "data-width": attrs.width } : {},
       },
     };
   },
@@ -75,8 +77,13 @@ const ImageResizable = Image.extend({
       align: string;
       width: string | null;
     };
-    const { "data-align": _a, "data-width": _w, class: _c, style: _s, ...rest } =
-      HTMLAttributes;
+    const {
+      "data-align": _a,
+      "data-width": _w,
+      class: _c,
+      style: _s,
+      ...rest
+    } = HTMLAttributes;
     return [
       "img",
       { ...rest, class: "rounded-lg my-4", style: buildImgStyle(align, width) },
@@ -272,8 +279,10 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
                       return false;
                     }
                   });
-                  view.dispatch(tr);                } finally {
-                  URL.revokeObjectURL(placeholderSrc);                }
+                  view.dispatch(tr);
+                } finally {
+                  URL.revokeObjectURL(placeholderSrc);
+                }
               })();
               return true;
             }
