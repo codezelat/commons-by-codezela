@@ -14,50 +14,50 @@ CREATE TABLE IF NOT EXISTS "user" (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
-  email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  "emailVerified" BOOLEAN NOT NULL DEFAULT FALSE,
   image TEXT,
   role TEXT NOT NULL DEFAULT 'user',
   banned BOOLEAN DEFAULT FALSE,
-  ban_reason TEXT,
-  ban_expires BIGINT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  "banReason" TEXT,
+  "banExpires" BIGINT,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS "session" (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
   token TEXT NOT NULL UNIQUE,
-  expires_at TIMESTAMPTZ NOT NULL,
-  ip_address TEXT,
-  user_agent TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  "expiresAt" TIMESTAMPTZ NOT NULL,
+  "ipAddress" TEXT,
+  "userAgent" TEXT,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS "account" (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-  account_id TEXT NOT NULL,
-  provider_id TEXT NOT NULL,
-  access_token TEXT,
-  refresh_token TEXT,
-  access_token_expires_at TIMESTAMPTZ,
-  refresh_token_expires_at TIMESTAMPTZ,
+  "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  "accountId" TEXT NOT NULL,
+  "providerId" TEXT NOT NULL,
+  "accessToken" TEXT,
+  "refreshToken" TEXT,
+  "accessTokenExpiresAt" TIMESTAMPTZ,
+  "refreshTokenExpiresAt" TIMESTAMPTZ,
   scope TEXT,
-  id_token TEXT,
+  "idToken" TEXT,
   password TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS "verification" (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   identifier TEXT NOT NULL,
   value TEXT NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  "expiresAt" TIMESTAMPTZ NOT NULL,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
