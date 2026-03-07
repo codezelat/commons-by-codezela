@@ -75,7 +75,9 @@ export function CategoriesContent() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null,
+  );
 
   // Form states
   const [name, setName] = useState("");
@@ -108,13 +110,18 @@ export function CategoriesContent() {
     if (!name.trim()) return;
     startTransition(async () => {
       try {
-        await createCategory({ name: name.trim(), description: description.trim() || undefined });
+        await createCategory({
+          name: name.trim(),
+          description: description.trim() || undefined,
+        });
         toast.success("Category created");
         setCreateOpen(false);
         resetForm();
         loadCategories();
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Failed to create category");
+        toast.error(
+          e instanceof Error ? e.message : "Failed to create category",
+        );
       }
     });
   }
@@ -132,7 +139,9 @@ export function CategoriesContent() {
         resetForm();
         loadCategories();
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Failed to update category");
+        toast.error(
+          e instanceof Error ? e.message : "Failed to update category",
+        );
       }
     });
   }
@@ -237,9 +246,15 @@ export function CategoriesContent() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead className="hidden sm:table-cell">Description</TableHead>
-                <TableHead className="w-[100px] text-center">Articles</TableHead>
-                <TableHead className="hidden md:table-cell w-[140px]">Created</TableHead>
+                <TableHead className="hidden sm:table-cell">
+                  Description
+                </TableHead>
+                <TableHead className="w-[100px] text-center">
+                  Articles
+                </TableHead>
+                <TableHead className="hidden md:table-cell w-[140px]">
+                  Created
+                </TableHead>
                 <TableHead className="w-[50px]" />
               </TableRow>
             </TableHeader>
@@ -293,7 +308,9 @@ export function CategoriesContent() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>New Category</DialogTitle>
-            <DialogDescription>Create a new article category.</DialogDescription>
+            <DialogDescription>
+              Create a new article category.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -333,7 +350,9 @@ export function CategoriesContent() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription>Update the category name or description.</DialogDescription>
+            <DialogDescription>
+              Update the category name or description.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -372,14 +391,17 @@ export function CategoriesContent() {
           <DialogHeader>
             <DialogTitle>Merge Category</DialogTitle>
             <DialogDescription>
-              Move all articles from &ldquo;{selectedCategory?.name}&rdquo; into another category,
-              then delete it.
+              Move all articles from &ldquo;{selectedCategory?.name}&rdquo; into
+              another category, then delete it.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Merge into</Label>
-              <Select value={mergeTargetId} onValueChange={(v) => setMergeTargetId(v ?? "")}>
+              <Select
+                value={mergeTargetId}
+                onValueChange={(v) => setMergeTargetId(v ?? "")}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select target category" />
                 </SelectTrigger>
@@ -399,7 +421,10 @@ export function CategoriesContent() {
             <Button variant="outline" onClick={() => setMergeOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleMerge} disabled={!mergeTargetId || isPending}>
+            <Button
+              onClick={handleMerge}
+              disabled={!mergeTargetId || isPending}
+            >
               {isPending ? "Merging…" : "Merge"}
             </Button>
           </DialogFooter>
@@ -412,8 +437,9 @@ export function CategoriesContent() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete category?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will delete &ldquo;{selectedCategory?.name}&rdquo;. Articles in this category
-              will become uncategorized. This action cannot be undone.
+              This will delete &ldquo;{selectedCategory?.name}&rdquo;. Articles
+              in this category will become uncategorized. This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

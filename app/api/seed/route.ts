@@ -16,7 +16,7 @@ export async function POST() {
     if (!ctx || !ctx.user) {
       return NextResponse.json(
         { error: "Failed to create admin user" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -33,7 +33,11 @@ export async function POST() {
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     // If user already exists that's fine
-    if (message.includes("unique") || message.includes("duplicate") || message.includes("already")) {
+    if (
+      message.includes("unique") ||
+      message.includes("duplicate") ||
+      message.includes("already")
+    ) {
       return NextResponse.json({ message: "Admin user already exists" });
     }
     return NextResponse.json({ error: message }, { status: 500 });

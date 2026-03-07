@@ -4,7 +4,13 @@ import { headers } from "next/headers";
 import { uploadFile } from "@/lib/r2";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+];
 
 export async function POST(request: NextRequest) {
   // Auth check
@@ -24,14 +30,14 @@ export async function POST(request: NextRequest) {
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: "Invalid file type. Allowed: JPEG, PNG, WebP, GIF, SVG" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
         { error: "File too large. Max 5MB." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,9 +47,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: result.url, key: result.key });
   } catch (e) {
     console.error("[Upload]", e);
-    return NextResponse.json(
-      { error: "Upload failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }

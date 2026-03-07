@@ -27,7 +27,9 @@ function getDatabaseUrl(): string {
 async function main() {
   const url = getDatabaseUrl();
   if (!url) {
-    console.error("❌ No DATABASE_URL resolved. Check .env.local and DB_PROVIDER.");
+    console.error(
+      "❌ No DATABASE_URL resolved. Check .env.local and DB_PROVIDER.",
+    );
     process.exit(1);
   }
 
@@ -40,7 +42,7 @@ async function main() {
     // Check if admin already exists
     const existing = await pool.query(
       `SELECT id FROM "user" WHERE email = $1`,
-      ["info@codezela.com"]
+      ["info@codezela.com"],
     );
 
     if (existing.rows.length > 0) {

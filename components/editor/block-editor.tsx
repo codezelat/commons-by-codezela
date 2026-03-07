@@ -73,7 +73,8 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
       CodeBlockLowlight.configure({
         lowlight,
         HTMLAttributes: {
-          class: "rounded-lg bg-slate-900 text-slate-50 p-4 my-3 overflow-x-auto text-sm font-mono",
+          class:
+            "rounded-lg bg-slate-900 text-slate-50 p-4 my-3 overflow-x-auto text-sm font-mono",
         },
       }),
       TableExtension.configure({
@@ -85,7 +86,9 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
         HTMLAttributes: { class: "border border-slate-200 p-2 min-w-[80px]" },
       }),
       TableHeader.configure({
-        HTMLAttributes: { class: "border border-slate-200 p-2 bg-slate-50 font-semibold" },
+        HTMLAttributes: {
+          class: "border border-slate-200 p-2 bg-slate-50 font-semibold",
+        },
       }),
       Markdown.configure({
         html: true,
@@ -99,13 +102,14 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
     },
     editorProps: {
       attributes: {
-        class: "prose prose-slate max-w-none px-6 py-4 min-h-[460px] focus:outline-none",
+        class:
+          "prose prose-slate max-w-none px-6 py-4 min-h-[460px] focus:outline-none",
       },
       handleDrop(view, event, slice, moved) {
         // Handle image file drop
         if (!moved && event.dataTransfer?.files?.length) {
           const files = Array.from(event.dataTransfer.files).filter((f) =>
-            f.type.startsWith("image/")
+            f.type.startsWith("image/"),
           );
           if (files.length > 0) {
             event.preventDefault();
@@ -147,7 +151,8 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
                   const src = e.target?.result as string;
                   if (src) {
                     const node = view.state.schema.nodes.image.create({ src });
-                    const transaction = view.state.tr.replaceSelectionWith(node);
+                    const transaction =
+                      view.state.tr.replaceSelectionWith(node);
                     view.dispatch(transaction);
                   }
                 };
@@ -187,7 +192,7 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
       reader.readAsText(file);
       e.target.value = ""; // reset
     },
-    [editor]
+    [editor],
   );
 
   if (!editor) {
@@ -205,5 +210,3 @@ export function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
     </div>
   );
 }
-
-

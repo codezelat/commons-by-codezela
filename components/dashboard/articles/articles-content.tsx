@@ -97,7 +97,9 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
   const currentSearch = (searchParams.search as string) || "";
 
   const [data, setData] = useState<ArticleListResult | null>(null);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [searchInput, setSearchInput] = useState(currentSearch);
@@ -133,7 +135,13 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
 
   function updateParams(updates: Record<string, string>) {
     const params = new URLSearchParams();
-    const merged = { status: currentStatus, category: currentCategory, search: currentSearch, page: "1", ...updates };
+    const merged = {
+      status: currentStatus,
+      category: currentCategory,
+      search: currentSearch,
+      page: "1",
+      ...updates,
+    };
     for (const [key, value] of Object.entries(merged)) {
       if (value && value !== "all" && value !== "0") params.set(key, value);
     }
@@ -200,7 +208,9 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
     }
   }
 
-  const allSelected = data ? data.articles.length > 0 && selected.size === data.articles.length : false;
+  const allSelected = data
+    ? data.articles.length > 0 && selected.size === data.articles.length
+    : false;
   const someSelected = selected.size > 0;
 
   return (
@@ -210,7 +220,9 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Articles</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            {data ? `${data.total} article${data.total !== 1 ? "s" : ""}` : "Loading..."}
+            {data
+              ? `${data.total} article${data.total !== 1 ? "s" : ""}`
+              : "Loading..."}
           </p>
         </div>
         <Link href="/dashboard/articles/new">
@@ -233,7 +245,10 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
           />
         </form>
         <div className="flex gap-2">
-          <Select value={currentStatus} onValueChange={(v) => updateParams({ status: v ?? "", page: "1" })}>
+          <Select
+            value={currentStatus}
+            onValueChange={(v) => updateParams({ status: v ?? "", page: "1" })}
+          >
             <SelectTrigger className="h-9 w-[160px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -245,7 +260,15 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               ))}
             </SelectContent>
           </Select>
-          <Select value={currentCategory || "all"} onValueChange={(v) => updateParams({ category: v === "all" ? "" : (v ?? ""), page: "1" })}>
+          <Select
+            value={currentCategory || "all"}
+            onValueChange={(v) =>
+              updateParams({
+                category: v === "all" ? "" : (v ?? ""),
+                page: "1",
+              })
+            }
+          >
             <SelectTrigger className="h-9 w-[160px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
@@ -299,7 +322,9 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               Delete
             </Button>
           </div>
-          {actionLoading && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
+          {actionLoading && (
+            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+          )}
         </div>
       )}
 
@@ -317,9 +342,15 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               </TableHead>
               <TableHead className="min-w-[250px]">Title</TableHead>
               <TableHead className="w-[110px]">Status</TableHead>
-              <TableHead className="hidden w-[140px] md:table-cell">Category</TableHead>
-              <TableHead className="hidden w-[140px] lg:table-cell">Author</TableHead>
-              <TableHead className="hidden w-[120px] sm:table-cell">Updated</TableHead>
+              <TableHead className="hidden w-[140px] md:table-cell">
+                Category
+              </TableHead>
+              <TableHead className="hidden w-[140px] lg:table-cell">
+                Author
+              </TableHead>
+              <TableHead className="hidden w-[120px] sm:table-cell">
+                Updated
+              </TableHead>
               <TableHead className="w-[50px]" />
             </TableRow>
           </TableHeader>
@@ -327,13 +358,27 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-                  <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
-                  <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-4" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-48" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-4" />
+                  </TableCell>
                 </TableRow>
               ))
             ) : data && data.articles.length > 0 ? (
@@ -355,7 +400,9 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                         {article.title}
                       </Link>
                       {article.excerpt && (
-                        <p className="text-xs text-slate-400 line-clamp-1">{article.excerpt}</p>
+                        <p className="text-xs text-slate-400 line-clamp-1">
+                          {article.excerpt}
+                        </p>
                       )}
                     </div>
                   </TableCell>
@@ -378,8 +425,13 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                     </span>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    <span className="text-xs text-slate-400" title={format(new Date(article.updated_at), "PPp")}>
-                      {formatDistanceToNow(new Date(article.updated_at), { addSuffix: true })}
+                    <span
+                      className="text-xs text-slate-400"
+                      title={format(new Date(article.updated_at), "PPp")}
+                    >
+                      {formatDistanceToNow(new Date(article.updated_at), {
+                        addSuffix: true,
+                      })}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -389,13 +441,17 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuItem
-                          onClick={() => window.location.href = `/dashboard/articles/${article.id}`}
+                          onClick={() =>
+                            (window.location.href = `/dashboard/articles/${article.id}`)
+                          }
                         >
                           <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
                         {article.status === "published" && (
                           <DropdownMenuItem
-                            onClick={() => window.open(`/articles/${article.slug}`, '_blank')}
+                            onClick={() =>
+                              window.open(`/articles/${article.slug}`, "_blank")
+                            }
                           >
                             <Eye className="mr-2 h-4 w-4" /> View Public
                           </DropdownMenuItem>
@@ -459,7 +515,8 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
       {data && data.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-500">
-            Showing {(data.page - 1) * data.pageSize + 1}–{Math.min(data.page * data.pageSize, data.total)} of {data.total}
+            Showing {(data.page - 1) * data.pageSize + 1}–
+            {Math.min(data.page * data.pageSize, data.total)} of {data.total}
           </p>
           <div className="flex items-center gap-1">
             <Button
@@ -484,7 +541,12 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
             {/* Page numbers */}
             {generatePageNumbers(data.page, data.totalPages).map((p, i) =>
               p === "..." ? (
-                <span key={`ellipsis-${i}`} className="px-1 text-sm text-slate-400">…</span>
+                <span
+                  key={`ellipsis-${i}`}
+                  className="px-1 text-sm text-slate-400"
+                >
+                  …
+                </span>
               ) : (
                 <Button
                   key={p}
@@ -495,7 +557,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                 >
                   {p}
                 </Button>
-              )
+              ),
             )}
 
             <Button
@@ -524,20 +586,28 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete article{deleteTarget && deleteTarget.length > 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Delete article{deleteTarget && deleteTarget.length > 1 ? "s" : ""}
+              ?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete {deleteTarget?.length || 0} article{deleteTarget && deleteTarget.length > 1 ? "s" : ""}.
-              This action cannot be undone.
+              This will permanently delete {deleteTarget?.length || 0} article
+              {deleteTarget && deleteTarget.length > 1 ? "s" : ""}. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={actionLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={actionLoading}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               disabled={actionLoading}
               onClick={() => deleteTarget && handleDelete(deleteTarget)}
             >
-              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {actionLoading && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -547,7 +617,10 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
   );
 }
 
-function generatePageNumbers(current: number, total: number): (number | "...")[] {
+function generatePageNumbers(
+  current: number,
+  total: number,
+): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
 
   const pages: (number | "...")[] = [];

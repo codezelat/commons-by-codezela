@@ -10,11 +10,5 @@ export const metadata: Metadata = {
 export default async function NewArticlePage() {
   const [categories, tags] = await Promise.all([getCategories(), getTags()]);
 
-  return (
-    <ArticleEditor
-      mode="create"
-      categories={categories}
-      tags={tags}
-    />
-  );
+  return <ArticleEditor mode="create" categories={categories} tags={tags} />;
 }

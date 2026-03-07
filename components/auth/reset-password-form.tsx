@@ -27,9 +27,12 @@ export function ResetPasswordForm() {
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
           <XCircle className="h-6 w-6 text-red-600" />
         </div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">Invalid or expired link</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+          Invalid or expired link
+        </h1>
         <p className="text-sm text-slate-500">
-          This password reset link is invalid or has expired. Please request a new one.
+          This password reset link is invalid or has expired. Please request a
+          new one.
         </p>
         <Link href="/forgot-password">
           <Button>Request New Link</Button>
@@ -44,7 +47,9 @@ export function ResetPasswordForm() {
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
           <CheckCircle2 className="h-6 w-6 text-emerald-600" />
         </div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">Password reset!</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+          Password reset!
+        </h1>
         <p className="text-sm text-slate-500">
           Your password has been successfully reset. You can now sign in.
         </p>
@@ -91,13 +96,20 @@ export function ResetPasswordForm() {
             <span className="text-base font-bold text-white">C</span>
           </div>
         </Link>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">Set new password</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+          Set new password
+        </h1>
         <p className="text-sm text-slate-500">Enter your new password below</p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-slate-700">New password</Label>
+          <Label
+            htmlFor="password"
+            className="text-sm font-medium text-slate-700"
+          >
+            New password
+          </Label>
           <Input
             id="password"
             type="password"
@@ -111,7 +123,12 @@ export function ResetPasswordForm() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">Confirm password</Label>
+          <Label
+            htmlFor="confirmPassword"
+            className="text-sm font-medium text-slate-700"
+          >
+            Confirm password
+          </Label>
           <Input
             id="confirmPassword"
             type="password"

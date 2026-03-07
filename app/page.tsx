@@ -4,7 +4,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
-  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
+  const session = await auth.api
+    .getSession({ headers: await headers() })
+    .catch(() => null);
   if (session) redirect("/dashboard");
 
   return (
@@ -14,11 +16,13 @@ export default async function Home() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600">
             <span className="text-lg font-bold text-white">C</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Commons</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Commons
+          </h1>
         </div>
         <p className="max-w-md text-base text-slate-600 leading-relaxed">
-          An open-source platform for publishing and discovering research papers,
-          technical articles, and peer-reviewed content.
+          An open-source platform for publishing and discovering research
+          papers, technical articles, and peer-reviewed content.
         </p>
         <div className="flex gap-3">
           <Link
@@ -34,9 +38,7 @@ export default async function Home() {
             Create Account
           </Link>
         </div>
-        <p className="text-xs text-slate-400">
-          By Codezela · Open Source
-        </p>
+        <p className="text-xs text-slate-400">By Codezela · Open Source</p>
       </main>
     </div>
   );

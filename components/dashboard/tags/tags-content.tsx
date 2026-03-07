@@ -231,8 +231,12 @@ export function TagsContent() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead className="hidden sm:table-cell">Slug</TableHead>
-                <TableHead className="w-[100px] text-center">Articles</TableHead>
-                <TableHead className="hidden md:table-cell w-[140px]">Created</TableHead>
+                <TableHead className="w-[100px] text-center">
+                  Articles
+                </TableHead>
+                <TableHead className="hidden md:table-cell w-[140px]">
+                  Created
+                </TableHead>
                 <TableHead className="w-[50px]" />
               </TableRow>
             </TableHeader>
@@ -346,14 +350,17 @@ export function TagsContent() {
           <DialogHeader>
             <DialogTitle>Merge Tag</DialogTitle>
             <DialogDescription>
-              Move all article associations from &ldquo;{selectedTag?.name}&rdquo; into another tag,
-              then delete it.
+              Move all article associations from &ldquo;{selectedTag?.name}
+              &rdquo; into another tag, then delete it.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Merge into</Label>
-              <Select value={mergeTargetId} onValueChange={(v) => setMergeTargetId(v ?? "")}>
+              <Select
+                value={mergeTargetId}
+                onValueChange={(v) => setMergeTargetId(v ?? "")}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select target tag" />
                 </SelectTrigger>
@@ -373,7 +380,10 @@ export function TagsContent() {
             <Button variant="outline" onClick={() => setMergeOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleMerge} disabled={!mergeTargetId || isPending}>
+            <Button
+              onClick={handleMerge}
+              disabled={!mergeTargetId || isPending}
+            >
               {isPending ? "Merging…" : "Merge"}
             </Button>
           </DialogFooter>
@@ -386,8 +396,8 @@ export function TagsContent() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete tag?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will delete &ldquo;{selectedTag?.name}&rdquo; and remove it from all articles.
-              This action cannot be undone.
+              This will delete &ldquo;{selectedTag?.name}&rdquo; and remove it
+              from all articles. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

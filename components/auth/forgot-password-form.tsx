@@ -44,15 +44,25 @@ export function ForgotPasswordForm() {
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
           <CheckCircle2 className="h-6 w-6 text-emerald-600" />
         </div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">Check your email</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+          Check your email
+        </h1>
         <p className="text-sm text-slate-500 leading-relaxed">
-          We sent a password reset link to <strong className="text-slate-700">{email}</strong>.
-          Click the link in the email to reset your password.
+          We sent a password reset link to{" "}
+          <strong className="text-slate-700">{email}</strong>. Click the link in
+          the email to reset your password.
         </p>
-        <Button variant="outline" className="mt-2" onClick={() => setSent(false)}>
+        <Button
+          variant="outline"
+          className="mt-2"
+          onClick={() => setSent(false)}
+        >
           Try a different email
         </Button>
-        <Link href="/login" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+        <Link
+          href="/login"
+          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+        >
           Back to sign in
         </Link>
       </div>
@@ -67,7 +77,9 @@ export function ForgotPasswordForm() {
             <span className="text-base font-bold text-white">C</span>
           </div>
         </Link>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">Forgot your password?</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+          Forgot your password?
+        </h1>
         <p className="text-sm text-slate-500">
           Enter your email and we&apos;ll send you a reset link
         </p>
@@ -75,7 +87,9 @@ export function ForgotPasswordForm() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium text-slate-700">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"

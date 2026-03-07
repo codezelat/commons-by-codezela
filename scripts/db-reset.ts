@@ -35,7 +35,9 @@ async function main() {
   const provider = (process.env.DB_PROVIDER ?? "local").toLowerCase();
 
   if (provider === "supabase") {
-    console.error("🛑 Refusing to reset a Supabase database. Set DB_PROVIDER=local.");
+    console.error(
+      "🛑 Refusing to reset a Supabase database. Set DB_PROVIDER=local.",
+    );
     process.exit(1);
   }
 

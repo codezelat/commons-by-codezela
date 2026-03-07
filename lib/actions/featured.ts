@@ -33,7 +33,7 @@ export async function getFeaturedArticles(): Promise<FeaturedArticle[]> {
      JOIN "user" u ON a.author_id = u.id
      LEFT JOIN category c ON a.category_id = c.id
      WHERE a.is_featured = true
-     ORDER BY a.featured_order ASC, a.updated_at DESC`
+     ORDER BY a.featured_order ASC, a.updated_at DESC`,
   );
 }
 
@@ -52,7 +52,7 @@ export async function getPublishedArticles(): Promise<ArticleForPicker[]> {
      JOIN "user" u ON a.author_id = u.id
      WHERE a.status = 'published' AND a.is_featured = false
      ORDER BY a.published_at DESC
-     LIMIT 50`
+     LIMIT 50`,
   );
 }
 
@@ -61,7 +61,7 @@ export async function addFeaturedArticle(articleId: string): Promise<void> {
 
   // Check count — max 3
   const result = await queryOne<{ count: string }>(
-    `SELECT COUNT(*) as count FROM article WHERE is_featured = true`
+    `SELECT COUNT(*) as count FROM article WHERE is_featured = true`,
   );
   if (result && parseInt(result.count) >= 3) {
     throw new Error("Maximum of 3 featured articles allowed");
@@ -69,13 +69,13 @@ export async function addFeaturedArticle(articleId: string): Promise<void> {
 
   // Get next order
   const maxOrder = await queryOne<{ max_order: number | null }>(
-    `SELECT MAX(featured_order) as max_order FROM article WHERE is_featured = true`
+    `SELECT MAX(featured_order) as max_order FROM article WHERE is_featured = true`,
   );
   const nextOrder = (maxOrder?.max_order ?? 0) + 1;
 
   await execute(
     `UPDATE article SET is_featured = true, featured_order = $1 WHERE id = $2`,
-    [nextOrder, articleId]
+    [nextOrder, articleId],
   );
 
   revalidatePath("/dashboard/featured");
@@ -85,11 +85,11 @@ export async function removeFeaturedArticle(articleId: string): Promise<void> {
   await requireSession();
   await execute(
     `UPDATE article SET is_featured = false, featured_order = 0 WHERE id = $1`,
-    [articleId]
+    [articleId],
   );
   // Re-order remaining
   const remaining = await query<{ id: string }>(
-    `SELECT id FROM article WHERE is_featured = true ORDER BY featured_order ASC`
+    `SELECT id FROM article WHERE is_featured = true ORDER BY featured_order ASC`,
   );
   for (let i = 0; i < remaining.length; i++) {
     await execute(`UPDATE article SET featured_order = $1 WHERE id = $2`, [

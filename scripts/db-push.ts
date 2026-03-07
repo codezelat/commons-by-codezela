@@ -31,7 +31,9 @@ function getDatabaseUrl(): string {
 async function main() {
   const url = getDatabaseUrl();
   if (!url) {
-    console.error("❌ No DATABASE_URL resolved. Check .env.local and DB_PROVIDER.");
+    console.error(
+      "❌ No DATABASE_URL resolved. Check .env.local and DB_PROVIDER.",
+    );
     process.exit(1);
   }
 

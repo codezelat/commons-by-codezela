@@ -6,10 +6,18 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't require auth
-  const publicRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
-  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
+  const publicRoutes = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+  ];
+  const isPublicRoute = publicRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
   const isApiRoute = pathname.startsWith("/api");
-  const isStaticRoute = pathname.startsWith("/_next") || pathname.startsWith("/favicon");
+  const isStaticRoute =
+    pathname.startsWith("/_next") || pathname.startsWith("/favicon");
 
   // If on a public/static/api route, let through
   if (isPublicRoute || isApiRoute || isStaticRoute || pathname === "/") {
@@ -31,7 +39,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|public/).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public/).*)"],
 };

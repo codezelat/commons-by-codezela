@@ -42,7 +42,7 @@ export async function getCategoriesWithCount(): Promise<Category[]> {
      LEFT JOIN (
        SELECT category_id, COUNT(*) as cnt FROM article GROUP BY category_id
      ) counts ON c.id = counts.category_id
-     ORDER BY c.name`
+     ORDER BY c.name`,
   );
 }
 
@@ -55,13 +55,13 @@ export async function createCategory(data: {
 
   const existing = await queryOne<{ id: string }>(
     `SELECT id FROM category WHERE slug = $1`,
-    [slug]
+    [slug],
   );
   if (existing) throw new Error("A category with this name already exists");
 
   const result = await queryOne<{ id: string }>(
     `INSERT INTO category (name, slug, description) VALUES ($1, $2, $3) RETURNING id`,
-    [data.name.trim(), slug, data.description?.trim() || null]
+    [data.name.trim(), slug, data.description?.trim() || null],
   );
   if (!result) throw new Error("Failed to create category");
 
@@ -71,7 +71,7 @@ export async function createCategory(data: {
 
 export async function updateCategory(
   id: string,
-  data: { name?: string; description?: string }
+  data: { name?: string; description?: string },
 ): Promise<void> {
   await requireSession();
 
@@ -102,7 +102,7 @@ export async function updateCategory(
 
   await execute(
     `UPDATE category SET ${fields.join(", ")} WHERE id = $${idx}`,
-    params
+    params,
   );
 
   revalidatePath("/dashboard/categories");
@@ -111,18 +111,24 @@ export async function updateCategory(
 export async function deleteCategory(id: string): Promise<void> {
   await requireSession();
   // Nullify articles in this category first
-  await execute(`UPDATE article SET category_id = NULL WHERE category_id = $1`, [id]);
+  await execute(
+    `UPDATE article SET category_id = NULL WHERE category_id = $1`,
+    [id],
+  );
   await execute(`DELETE FROM category WHERE id = $1`, [id]);
   revalidatePath("/dashboard/categories");
 }
 
-export async function mergeCategories(sourceId: string, targetId: string): Promise<void> {
+export async function mergeCategories(
+  sourceId: string,
+  targetId: string,
+): Promise<void> {
   await requireSession();
   // Move all articles from source to target
-  await execute(
-    `UPDATE article SET category_id = $1 WHERE category_id = $2`,
-    [targetId, sourceId]
-  );
+  await execute(`UPDATE article SET category_id = $1 WHERE category_id = $2`, [
+    targetId,
+    sourceId,
+  ]);
   await execute(`DELETE FROM category WHERE id = $1`, [sourceId]);
   revalidatePath("/dashboard/categories");
 }
@@ -145,23 +151,25 @@ export async function getTagsWithCount(): Promise<Tag[]> {
      LEFT JOIN (
        SELECT tag_id, COUNT(*) as cnt FROM article_tag GROUP BY tag_id
      ) counts ON t.id = counts.tag_id
-     ORDER BY t.name`
+     ORDER BY t.name`,
   );
 }
 
-export async function createTag(data: { name: string }): Promise<{ id: string }> {
+export async function createTag(data: {
+  name: string;
+}): Promise<{ id: string }> {
   await requireSession();
   const slug = toSlug(data.name);
 
   const existing = await queryOne<{ id: string }>(
     `SELECT id FROM tag WHERE slug = $1`,
-    [slug]
+    [slug],
   );
   if (existing) throw new Error("A tag with this name already exists");
 
   const result = await queryOne<{ id: string }>(
     `INSERT INTO tag (name, slug) VALUES ($1, $2) RETURNING id`,
-    [data.name.trim(), slug]
+    [data.name.trim(), slug],
   );
   if (!result) throw new Error("Failed to create tag");
 
@@ -169,13 +177,17 @@ export async function createTag(data: { name: string }): Promise<{ id: string }>
   return result;
 }
 
-export async function updateTag(id: string, data: { name: string }): Promise<void> {
+export async function updateTag(
+  id: string,
+  data: { name: string },
+): Promise<void> {
   await requireSession();
   const slug = toSlug(data.name);
-  await execute(
-    `UPDATE tag SET name = $1, slug = $2 WHERE id = $3`,
-    [data.name.trim(), slug, id]
-  );
+  await execute(`UPDATE tag SET name = $1, slug = $2 WHERE id = $3`, [
+    data.name.trim(),
+    slug,
+    id,
+  ]);
   revalidatePath("/dashboard/tags");
 }
 
@@ -186,7 +198,10 @@ export async function deleteTag(id: string): Promise<void> {
   revalidatePath("/dashboard/tags");
 }
 
-export async function mergeTags(sourceId: string, targetId: string): Promise<void> {
+export async function mergeTags(
+  sourceId: string,
+  targetId: string,
+): Promise<void> {
   await requireSession();
   // Move article_tag entries, avoid duplicates
   await execute(
@@ -195,7 +210,7 @@ export async function mergeTags(sourceId: string, targetId: string): Promise<voi
      FROM article_tag
      WHERE tag_id = $2
      ON CONFLICT DO NOTHING`,
-    [targetId, sourceId]
+    [targetId, sourceId],
   );
   await execute(`DELETE FROM article_tag WHERE tag_id = $1`, [sourceId]);
   await execute(`DELETE FROM tag WHERE id = $1`, [sourceId]);

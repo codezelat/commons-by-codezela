@@ -8,7 +8,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
+  const session = await auth.api
+    .getSession({ headers: await headers() })
+    .catch(() => null);
   if (!session) redirect("/login");
 
   return <DashboardShell session={session}>{children}</DashboardShell>;

@@ -32,7 +32,12 @@ interface ArticleEditorProps {
   tags: { id: string; name: string; slug: string }[];
 }
 
-export function ArticleEditor({ mode, article, categories, tags }: ArticleEditorProps) {
+export function ArticleEditor({
+  mode,
+  article,
+  categories,
+  tags,
+}: ArticleEditorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -40,7 +45,7 @@ export function ArticleEditor({ mode, article, categories, tags }: ArticleEditor
   const [excerpt, setExcerpt] = useState(article?.excerpt || "");
   const [categoryId, setCategoryId] = useState(article?.category_id || "");
   const [selectedTags, setSelectedTags] = useState<string[]>(
-    article?.tags?.map((t) => t.id) || []
+    article?.tags?.map((t) => t.id) || [],
   );
   const [coverImage, setCoverImage] = useState(article?.cover_image || "");
   const [editorContent, setEditorContent] = useState<{
@@ -51,7 +56,9 @@ export function ArticleEditor({ mode, article, categories, tags }: ArticleEditor
 
   function toggleTag(tagId: string) {
     setSelectedTags((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+      prev.includes(tagId)
+        ? prev.filter((id) => id !== tagId)
+        : [...prev, tagId],
     );
   }
 
@@ -67,8 +74,10 @@ export function ArticleEditor({ mode, article, categories, tags }: ArticleEditor
           title: title.trim(),
           excerpt: excerpt.trim() || undefined,
           content: editorContent?.json || article?.content || undefined,
-          content_html: editorContent?.html || article?.content_html || undefined,
-          content_text: editorContent?.text || article?.content_text || undefined,
+          content_html:
+            editorContent?.html || article?.content_html || undefined,
+          content_text:
+            editorContent?.text || article?.content_text || undefined,
           cover_image: coverImage || undefined,
           status,
           category_id: categoryId || undefined,
@@ -118,7 +127,11 @@ export function ArticleEditor({ mode, article, categories, tags }: ArticleEditor
             onClick={() => handleSave("draft")}
             disabled={isPending}
           >
-            {isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
+            {isPending ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="mr-1.5 h-3.5 w-3.5" />
+            )}
             Save Draft
           </Button>
           <Button
@@ -126,7 +139,11 @@ export function ArticleEditor({ mode, article, categories, tags }: ArticleEditor
             onClick={() => handleSave("published")}
             disabled={isPending}
           >
-            {isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1.5 h-3.5 w-3.5" />}
+            {isPending ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="mr-1.5 h-3.5 w-3.5" />
+            )}
             Publish
           </Button>
         </div>
@@ -146,7 +163,9 @@ export function ArticleEditor({ mode, article, categories, tags }: ArticleEditor
           {/* Editor */}
           <div className="min-h-[500px] rounded-lg border bg-white">
             <BlockEditor
-              initialContent={article?.content as Record<string, unknown> | undefined}
+              initialContent={
+                article?.content as Record<string, unknown> | undefined
+              }
               onChange={setEditorContent}
             />
           </div>
@@ -156,7 +175,9 @@ export function ArticleEditor({ mode, article, categories, tags }: ArticleEditor
         <div className="space-y-5">
           {/* Excerpt */}
           <div className="rounded-lg border bg-white p-4 space-y-3">
-            <Label className="text-sm font-medium text-slate-700">Excerpt</Label>
+            <Label className="text-sm font-medium text-slate-700">
+              Excerpt
+            </Label>
             <Textarea
               placeholder="A brief summary of the article..."
               value={excerpt}
@@ -168,8 +189,13 @@ export function ArticleEditor({ mode, article, categories, tags }: ArticleEditor
 
           {/* Category */}
           <div className="rounded-lg border bg-white p-4 space-y-3">
-            <Label className="text-sm font-medium text-slate-700">Category</Label>
-            <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
+            <Label className="text-sm font-medium text-slate-700">
+              Category
+            </Label>
+            <Select
+              value={categoryId}
+              onValueChange={(v) => setCategoryId(v ?? "")}
+            >
               <SelectTrigger className="h-9">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
@@ -202,14 +228,18 @@ export function ArticleEditor({ mode, article, categories, tags }: ArticleEditor
                 );
               })}
               {tags.length === 0 && (
-                <p className="text-xs text-slate-400">No tags yet. Create some in Tags management.</p>
+                <p className="text-xs text-slate-400">
+                  No tags yet. Create some in Tags management.
+                </p>
               )}
             </div>
           </div>
 
           {/* Cover Image */}
           <div className="rounded-lg border bg-white p-4 space-y-3">
-            <Label className="text-sm font-medium text-slate-700">Cover Image URL</Label>
+            <Label className="text-sm font-medium text-slate-700">
+              Cover Image URL
+            </Label>
             <Input
               placeholder="https://..."
               value={coverImage}
@@ -233,7 +263,9 @@ export function ArticleEditor({ mode, article, categories, tags }: ArticleEditor
           {/* Status (edit mode) */}
           {mode === "edit" && article && (
             <div className="rounded-lg border bg-white p-4 space-y-3">
-              <Label className="text-sm font-medium text-slate-700">Status</Label>
+              <Label className="text-sm font-medium text-slate-700">
+                Status
+              </Label>
               <Select
                 value={article.status}
                 onValueChange={(v) => v && handleSave(v)}

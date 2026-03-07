@@ -84,13 +84,20 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className={cn("flex h-14 items-center border-b px-4", collapsed && "justify-center px-2")}>
+      <div
+        className={cn(
+          "flex h-14 items-center border-b px-4",
+          collapsed && "justify-center px-2",
+        )}
+      >
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600">
             <span className="text-sm font-bold text-white">C</span>
           </div>
           {!collapsed && (
-            <span className="text-sm font-semibold text-slate-900">Commons</span>
+            <span className="text-sm font-semibold text-slate-900">
+              Commons
+            </span>
           )}
         </Link>
       </div>
@@ -110,7 +117,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
                   isActive
                     ? "bg-slate-100 text-slate-900"
                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-700",
-                  collapsed && "justify-center px-2"
+                  collapsed && "justify-center px-2",
                 )}
               >
                 <item.icon className="h-4 w-4 flex-shrink-0" />
@@ -129,8 +136,14 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
           className="w-full justify-start gap-2"
           onClick={() => setCollapsed(!collapsed)}
         >
-          {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          {!collapsed && <span className="text-xs text-slate-500">Collapse</span>}
+          {collapsed ? (
+            <PanelLeft className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
+          {!collapsed && (
+            <span className="text-xs text-slate-500">Collapse</span>
+          )}
         </Button>
       </div>
 
@@ -140,7 +153,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
           <DropdownMenuTrigger
             className={cn(
               "flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50 border-0 bg-transparent cursor-pointer",
-              collapsed && "justify-center"
+              collapsed && "justify-center",
             )}
           >
             <Avatar className="h-8 w-8">
@@ -155,7 +168,9 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
                   <p className="truncate text-sm font-medium text-slate-900">
                     {session.user.name}
                   </p>
-                  <p className="truncate text-xs text-slate-500">{session.user.email}</p>
+                  <p className="truncate text-xs text-slate-500">
+                    {session.user.email}
+                  </p>
                 </div>
                 <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
               </>
@@ -164,10 +179,15 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
           <DropdownMenuContent align="end" className="w-56">
             <div className="px-2 py-1.5">
               <p className="text-sm font-medium">{session.user.name}</p>
-              <p className="text-xs text-muted-foreground">{session.user.email}</p>
+              <p className="text-xs text-muted-foreground">
+                {session.user.email}
+              </p>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="text-red-600 focus:text-red-600"
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </DropdownMenuItem>
@@ -183,7 +203,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
       <aside
         className={cn(
           "hidden flex-shrink-0 border-r bg-white transition-all duration-200 lg:block",
-          collapsed ? "w-[68px]" : "w-60"
+          collapsed ? "w-[68px]" : "w-60",
         )}
       >
         {sidebarContent}
@@ -209,7 +229,9 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-violet-600">
               <span className="text-xs font-bold text-white">C</span>
             </div>
-            <span className="text-sm font-semibold text-slate-900">Commons</span>
+            <span className="text-sm font-semibold text-slate-900">
+              Commons
+            </span>
           </Link>
         </header>
 

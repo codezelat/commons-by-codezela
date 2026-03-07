@@ -82,7 +82,9 @@ export function FeaturedContent() {
         setSearchQuery("");
         loadData();
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Failed to feature article");
+        toast.error(
+          e instanceof Error ? e.message : "Failed to feature article",
+        );
       }
     });
   }
@@ -107,7 +109,10 @@ export function FeaturedContent() {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= newOrder.length) return;
 
-    [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
+    [newOrder[index], newOrder[targetIndex]] = [
+      newOrder[targetIndex],
+      newOrder[index],
+    ];
     setFeatured(newOrder);
 
     startTransition(async () => {
@@ -121,7 +126,7 @@ export function FeaturedContent() {
   }
 
   const filteredAvailable = available.filter((a) =>
-    a.title.toLowerCase().includes(searchQuery.toLowerCase())
+    a.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (loading) {
@@ -133,7 +138,9 @@ export function FeaturedContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Featured Articles</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Featured Articles
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Pin up to 3 articles to the homepage spotlight
           </p>
@@ -163,7 +170,9 @@ export function FeaturedContent() {
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            <Star className={`h-3 w-3 ${slot <= featured.length ? "fill-current" : ""}`} />
+            <Star
+              className={`h-3 w-3 ${slot <= featured.length ? "fill-current" : ""}`}
+            />
             Slot {slot}
           </div>
         ))}
@@ -244,7 +253,12 @@ export function FeaturedContent() {
                     {article.published_at && (
                       <>
                         <span>·</span>
-                        <span>{format(new Date(article.published_at), "MMM d, yyyy")}</span>
+                        <span>
+                          {format(
+                            new Date(article.published_at),
+                            "MMM d, yyyy",
+                          )}
+                        </span>
                       </>
                     )}
                   </div>
@@ -332,7 +346,8 @@ export function FeaturedContent() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remove from featured?</AlertDialogTitle>
             <AlertDialogDescription>
-              This article will no longer appear in the homepage spotlight. You can re-add it later.
+              This article will no longer appear in the homepage spotlight. You
+              can re-add it later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -56,7 +56,12 @@ export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
     if (url === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
     } else {
-      editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange("link")
+        .setLink({ href: url })
+        .run();
     }
   }
 
@@ -68,18 +73,22 @@ export function EditorToolbar({ editor, onFileUpload }: EditorToolbarProps) {
   }
 
   function insertTable() {
-    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+    editor
+      .chain()
+      .focus()
+      .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+      .run();
   }
 
   const currentHeading = editor.isActive("heading", { level: 1 })
     ? "h1"
     : editor.isActive("heading", { level: 2 })
-    ? "h2"
-    : editor.isActive("heading", { level: 3 })
-    ? "h3"
-    : editor.isActive("heading", { level: 4 })
-    ? "h4"
-    : "paragraph";
+      ? "h2"
+      : editor.isActive("heading", { level: 3 })
+        ? "h3"
+        : editor.isActive("heading", { level: 4 })
+          ? "h4"
+          : "paragraph";
 
   function setBlock(value: string) {
     switch (value) {

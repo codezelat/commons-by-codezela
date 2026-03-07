@@ -65,13 +65,16 @@ function slugify(text: string): string {
     .slice(0, 200);
 }
 
-async function ensureUniqueSlug(slug: string, excludeId?: string): Promise<string> {
+async function ensureUniqueSlug(
+  slug: string,
+  excludeId?: string,
+): Promise<string> {
   let candidate = slug;
   let counter = 0;
   while (true) {
     const existing = await queryOne<{ id: string }>(
       `SELECT id FROM article WHERE slug = $1 ${excludeId ? "AND id != $2" : ""} LIMIT 1`,
-      excludeId ? [candidate, excludeId] : [candidate]
+      excludeId ? [candidate, excludeId] : [candidate],
     );
     if (!existing) return candidate;
     counter++;
@@ -81,7 +84,9 @@ async function ensureUniqueSlug(slug: string, excludeId?: string): Promise<strin
 
 // ---------- List Articles ----------
 
-export async function getArticles(filters: ArticleFilters = {}): Promise<ArticleListResult> {
+export async function getArticles(
+  filters: ArticleFilters = {},
+): Promise<ArticleListResult> {
   await requireSession();
 
   const page = Math.max(1, filters.page || 1);
@@ -112,16 +117,19 @@ export async function getArticles(filters: ArticleFilters = {}): Promise<Article
 
   if (filters.search) {
     paramIdx++;
-    conditions.push(`a.search_vector @@ plainto_tsquery('english', $${paramIdx})`);
+    conditions.push(
+      `a.search_vector @@ plainto_tsquery('english', $${paramIdx})`,
+    );
     params.push(filters.search);
   }
 
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const where =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   // Count
   const countResult = await queryOne<{ count: string }>(
     `SELECT COUNT(*) as count FROM article a ${where}`,
-    params
+    params,
   );
   const total = parseInt(countResult?.count || "0", 10);
 
@@ -142,7 +150,7 @@ export async function getArticles(filters: ArticleFilters = {}): Promise<Article
      ${where}
      ORDER BY a.updated_at DESC
      LIMIT $${limitParam} OFFSET $${offsetParam}`,
-    [...params, pageSize, offset]
+    [...params, pageSize, offset],
   );
 
   // Fetch tags for each article
@@ -158,10 +166,13 @@ export async function getArticles(filters: ArticleFilters = {}): Promise<Article
        FROM article_tag at
        JOIN tag t ON at.tag_id = t.id
        WHERE at.article_id = ANY($1)`,
-      [articleIds]
+      [articleIds],
     );
 
-    const tagsByArticle = new Map<string, { id: string; name: string; slug: string }[]>();
+    const tagsByArticle = new Map<
+      string,
+      { id: string; name: string; slug: string }[]
+    >();
     for (const row of tagsResult) {
       const list = tagsByArticle.get(row.article_id) || [];
       list.push({ id: row.id, name: row.name, slug: row.slug });
@@ -196,7 +207,7 @@ export async function getArticle(id: string): Promise<Article | null> {
      LEFT JOIN "user" u ON a.author_id = u.id
      LEFT JOIN category c ON a.category_id = c.id
      WHERE a.id = $1`,
-    [id]
+    [id],
   );
 
   if (!article) return null;
@@ -206,7 +217,7 @@ export async function getArticle(id: string): Promise<Article | null> {
      FROM article_tag at
      JOIN tag t ON at.tag_id = t.id
      WHERE at.article_id = $1`,
-    [id]
+    [id],
   );
   article.tags = tags;
 
@@ -246,7 +257,7 @@ export async function createArticle(data: {
       session.user.id,
       data.category_id || null,
       data.status === "published" ? new Date().toISOString() : null,
-    ]
+    ],
   );
 
   if (!result) throw new Error("Failed to create article");
@@ -256,7 +267,7 @@ export async function createArticle(data: {
     const values = data.tag_ids.map((_, i) => `($1, $${i + 2})`).join(", ");
     await execute(
       `INSERT INTO article_tag (article_id, tag_id) VALUES ${values} ON CONFLICT DO NOTHING`,
-      [result.id, ...data.tag_ids]
+      [result.id, ...data.tag_ids],
     );
   }
 
@@ -278,7 +289,7 @@ export async function updateArticle(
     status?: string;
     category_id?: string | null;
     tag_ids?: string[];
-  }
+  },
 ): Promise<void> {
   await requireSession();
 
@@ -348,7 +359,7 @@ export async function updateArticle(
   if (fields.length > 1) {
     await execute(
       `UPDATE article SET ${fields.join(", ")} WHERE id = $${paramIdx}`,
-      params
+      params,
     );
   }
 
@@ -359,7 +370,7 @@ export async function updateArticle(
       const values = data.tag_ids.map((_, i) => `($1, $${i + 2})`).join(", ");
       await execute(
         `INSERT INTO article_tag (article_id, tag_id) VALUES ${values} ON CONFLICT DO NOTHING`,
-        [id, ...data.tag_ids]
+        [id, ...data.tag_ids],
       );
     }
   }
@@ -378,12 +389,15 @@ export async function deleteArticles(ids: string[]): Promise<void> {
 
 // ---------- Bulk Actions ----------
 
-export async function bulkUpdateStatus(ids: string[], status: string): Promise<void> {
+export async function bulkUpdateStatus(
+  ids: string[],
+  status: string,
+): Promise<void> {
   await requireSession();
   if (ids.length === 0) return;
   await execute(
     `UPDATE article SET status = $1, updated_at = NOW() WHERE id = ANY($2)`,
-    [status, ids]
+    [status, ids],
   );
   revalidatePath("/dashboard/articles");
 }
@@ -391,13 +405,16 @@ export async function bulkUpdateStatus(ids: string[], status: string): Promise<v
 // ---------- Categories & Tags (read helpers) ----------
 
 export async function getCategories() {
-  return query<{ id: string; name: string; slug: string; description: string | null }>(
-    `SELECT id, name, slug, description FROM category ORDER BY name`
-  );
+  return query<{
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+  }>(`SELECT id, name, slug, description FROM category ORDER BY name`);
 }
 
 export async function getTags() {
   return query<{ id: string; name: string; slug: string }>(
-    `SELECT id, name, slug FROM tag ORDER BY name`
+    `SELECT id, name, slug FROM tag ORDER BY name`,
   );
 }
