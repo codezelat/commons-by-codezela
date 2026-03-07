@@ -1,0 +1,139 @@
+-- ============================================================
+-- Commons by Codezela — Full Database Schema
+-- Run this against your Supabase PostgreSQL database
+-- ============================================================
+
+-- Enable required extensions
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================================
+-- Better Auth tables (user, session, account, verification)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS "user" (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  image TEXT,
+  role TEXT NOT NULL DEFAULT 'user',
+  banned BOOLEAN DEFAULT FALSE,
+  ban_reason TEXT,
+  ban_expires BIGINT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS "session" (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS "account" (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  account_id TEXT NOT NULL,
+  provider_id TEXT NOT NULL,
+  access_token TEXT,
+  refresh_token TEXT,
+  access_token_expires_at TIMESTAMPTZ,
+  refresh_token_expires_at TIMESTAMPTZ,
+  scope TEXT,
+  id_token TEXT,
+  password TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS "verification" (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  identifier TEXT NOT NULL,
+  value TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- Application tables
+-- ============================================================
+
+-- Categories
+CREATE TABLE IF NOT EXISTS category (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  name TEXT NOT NULL UNIQUE,
+  slug TEXT NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Tags
+CREATE TABLE IF NOT EXISTS tag (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  name TEXT NOT NULL UNIQUE,
+  slug TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Articles
+CREATE TABLE IF NOT EXISTS article (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  excerpt TEXT,
+  content JSONB, -- TipTap JSON (ProseMirror AST)
+  content_html TEXT, -- Pre-rendered HTML for public display
+  content_text TEXT, -- Plain text for full-text search
+  cover_image TEXT,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','pending','published','rejected','archived')),
+  is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+  featured_order INTEGER,
+  author_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  category_id TEXT REFERENCES category(id) ON DELETE SET NULL,
+  published_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  -- Full-text search vector
+  search_vector tsvector GENERATED ALWAYS AS (
+    setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
+    setweight(to_tsvector('english', COALESCE(content_text, '')), 'B')
+  ) STORED
+);
+
+-- GIN index for full-text search
+CREATE INDEX IF NOT EXISTS idx_article_search ON article USING GIN (search_vector);
+CREATE INDEX IF NOT EXISTS idx_article_status ON article (status);
+CREATE INDEX IF NOT EXISTS idx_article_author ON article (author_id);
+CREATE INDEX IF NOT EXISTS idx_article_category ON article (category_id);
+CREATE INDEX IF NOT EXISTS idx_article_featured ON article (is_featured, featured_order) WHERE is_featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_article_published_at ON article (published_at DESC) WHERE status = 'published';
+CREATE INDEX IF NOT EXISTS idx_article_slug ON article (slug);
+
+-- Article ↔ Tag many-to-many
+CREATE TABLE IF NOT EXISTS article_tag (
+  article_id TEXT NOT NULL REFERENCES article(id) ON DELETE CASCADE,
+  tag_id TEXT NOT NULL REFERENCES tag(id) ON DELETE CASCADE,
+  PRIMARY KEY (article_id, tag_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_article_tag_tag ON article_tag (tag_id);
+
+-- ============================================================
+-- Seed default categories
+-- ============================================================
+INSERT INTO category (id, name, slug, description) VALUES
+  (gen_random_uuid()::text, 'Computer Science', 'computer-science', 'Research in CS, algorithms, and software engineering'),
+  (gen_random_uuid()::text, 'Mathematics', 'mathematics', 'Pure and applied mathematics research'),
+  (gen_random_uuid()::text, 'Physics', 'physics', 'Theoretical and experimental physics'),
+  (gen_random_uuid()::text, 'Biology', 'biology', 'Life sciences and biological research'),
+  (gen_random_uuid()::text, 'Engineering', 'engineering', 'Engineering disciplines and applied sciences'),
+  (gen_random_uuid()::text, 'Social Sciences', 'social-sciences', 'Psychology, sociology, economics, and related fields')
+ON CONFLICT DO NOTHING;
