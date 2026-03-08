@@ -13,14 +13,20 @@ import {
   REACTION_LABELS,
   REACTION_TYPES,
   type ReactionCounts,
-} from "@/lib/actions/reactions";
+} from "@/lib/actions/reaction-types";
 import { Button } from "@/components/ui/button";
 import { ManagedImage } from "@/components/ui/managed-image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -97,7 +103,9 @@ function hasBrokenImageNodes(node: unknown): boolean {
   };
 
   if (record.type === "image") {
-    return typeof record.attrs?.src !== "string" || record.attrs.src.length === 0;
+    return (
+      typeof record.attrs?.src !== "string" || record.attrs.src.length === 0
+    );
   }
 
   return Array.isArray(record.content)
@@ -120,7 +128,9 @@ function getInitialEditorContent(
     return article.content as EditorDocument;
   }
 
-  return article.content_html || (article.content as EditorDocument | undefined);
+  return (
+    article.content_html || (article.content as EditorDocument | undefined)
+  );
 }
 
 function formatSavedAt(timestamp: string): string {
@@ -152,7 +162,9 @@ export function ArticleEditor({
     article?.seo_description || "",
   );
   const [seoImage, setSeoImage] = useState(article?.seo_image || "");
-  const [canonicalUrl, setCanonicalUrl] = useState(article?.canonical_url || "");
+  const [canonicalUrl, setCanonicalUrl] = useState(
+    article?.canonical_url || "",
+  );
   const [robotsNoindex, setRobotsNoindex] = useState(
     article?.robots_noindex || false,
   );
@@ -168,13 +180,20 @@ export function ArticleEditor({
   } | null>(null);
 
   const publicBaseUrl = useMemo(
-    () => (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, ""),
+    () =>
+      (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
+        /\/$/,
+        "",
+      ),
     [],
   );
   const effectiveDescription = useMemo(
     () =>
       seoDescription.trim() ||
-      deriveArticleSummary(editorContent?.text || article?.content_text || "", 160) ||
+      deriveArticleSummary(
+        editorContent?.text || article?.content_text || "",
+        160,
+      ) ||
       "",
     [article?.content_text, editorContent?.text, seoDescription],
   );
@@ -327,7 +346,10 @@ export function ArticleEditor({
                   />
                 </div>
                 <p className="text-xs text-slate-500">
-                  Public URL: <span className="font-medium text-slate-700">{publicUrl}</span>
+                  Public URL:{" "}
+                  <span className="font-medium text-slate-700">
+                    {publicUrl}
+                  </span>
                 </p>
               </div>
             </CardContent>
@@ -455,10 +477,14 @@ export function ArticleEditor({
                         className="flex items-center justify-between text-sm"
                       >
                         <span className="flex items-center gap-1.5 text-muted-foreground">
-                          <span aria-hidden="true">{REACTION_EMOJIS[type]}</span>
+                          <span aria-hidden="true">
+                            {REACTION_EMOJIS[type]}
+                          </span>
                           {REACTION_LABELS[type]}
                         </span>
-                        <span className="font-medium tabular-nums">{count}</span>
+                        <span className="font-medium tabular-nums">
+                          {count}
+                        </span>
                       </div>
                     );
                   })}
@@ -474,7 +500,8 @@ export function ArticleEditor({
                 <CardTitle className="text-base">SEO</CardTitle>
               </div>
               <CardDescription>
-                Fine-tune how the article appears in search engines and social cards.
+                Fine-tune how the article appears in search engines and social
+                cards.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -514,9 +541,12 @@ export function ArticleEditor({
                   <p className="line-clamp-2 text-base font-semibold leading-6 text-blue-700">
                     {effectiveSeoTitle || "Untitled article"}
                   </p>
-                  <p className="truncate text-xs text-emerald-700">{publicUrl}</p>
+                  <p className="truncate text-xs text-emerald-700">
+                    {publicUrl}
+                  </p>
                   <p className="line-clamp-3 text-sm leading-6 text-slate-600">
-                    {effectiveDescription || "Add a meta description for a cleaner search preview."}
+                    {effectiveDescription ||
+                      "Add a meta description for a cleaner search preview."}
                   </p>
                 </div>
               </div>
@@ -558,9 +588,12 @@ export function ArticleEditor({
                         {effectiveSeoTitle || "Untitled article"}
                       </p>
                       <p className="line-clamp-2 text-xs leading-5 text-slate-600">
-                        {effectiveDescription || "Add a meta description to control the card summary."}
+                        {effectiveDescription ||
+                          "Add a meta description to control the card summary."}
                       </p>
-                      <p className="truncate text-[11px] text-slate-400">{publicUrl}</p>
+                      <p className="truncate text-[11px] text-slate-400">
+                        {publicUrl}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -587,10 +620,14 @@ export function ArticleEditor({
                     Hide from search
                   </div>
                   <p className="text-xs leading-5 text-amber-800">
-                    Use `noindex` for staging, syndicated content, or pages that should not appear in search.
+                    Use `noindex` for staging, syndicated content, or pages that
+                    should not appear in search.
                   </p>
                 </div>
-                <Switch checked={robotsNoindex} onCheckedChange={setRobotsNoindex} />
+                <Switch
+                  checked={robotsNoindex}
+                  onCheckedChange={setRobotsNoindex}
+                />
               </div>
             </CardContent>
           </Card>

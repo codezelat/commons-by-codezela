@@ -4,12 +4,17 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { PubThemeProvider } from "@/components/site/pub-theme-provider";
 import { PubThemeToggle } from "@/components/site/pub-theme-toggle";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 interface PublicShellProps {
   children: ReactNode;
 }
 
-export function PublicShell({ children }: PublicShellProps) {
+export async function PublicShell({ children }: PublicShellProps) {
+  const session = await auth.api
+    .getSession({ headers: await headers() })
+    .catch(() => null);
   return (
     <PubThemeProvider>
       <div className="min-h-screen bg-[var(--pub-bg)] text-[var(--pub-text)]">
@@ -39,12 +44,21 @@ export function PublicShell({ children }: PublicShellProps) {
               >
                 Articles
               </Link>
-              <Link
-                href="/login"
-                className="ml-1 px-3 py-1.5 text-[13px] text-[var(--pub-text-muted)] transition-colors hover:text-[var(--pub-text-secondary)]"
-              >
-                Sign in
-              </Link>
+              {session ? (
+                <Link
+                  href="/dashboard"
+                  className="ml-1 px-3 py-1.5 text-[13px] text-[var(--pub-text-secondary)] transition-colors hover:text-[var(--pub-text)]"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="ml-1 px-3 py-1.5 text-[13px] text-[var(--pub-text-muted)] transition-colors hover:text-[var(--pub-text-secondary)]"
+                >
+                  Sign in
+                </Link>
+              )}
               <PubThemeToggle />
             </nav>
           </div>
@@ -83,12 +97,21 @@ export function PublicShell({ children }: PublicShellProps) {
               >
                 Articles
               </Link>
-              <Link
-                href="/login"
-                className="transition-colors hover:text-neutral-300"
-              >
-                Sign in
-              </Link>
+              {session ? (
+                <Link
+                  href="/dashboard"
+                  className="transition-colors hover:text-neutral-300"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="transition-colors hover:text-neutral-300"
+                >
+                  Sign in
+                </Link>
+              )}
             </div>
           </div>
         </footer>

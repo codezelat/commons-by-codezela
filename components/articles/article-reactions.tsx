@@ -2,14 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { useSession } from "@/lib/auth-client";
+import { toggleReaction } from "@/lib/actions/reactions";
 import {
-  toggleReaction,
   REACTION_TYPES,
   REACTION_LABELS,
   REACTION_EMOJIS,
   type ReactionType,
   type ReactionCounts,
-} from "@/lib/actions/reactions";
+} from "@/lib/actions/reaction-types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -77,7 +77,9 @@ export function ArticleReactions({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs font-medium text-[var(--pub-text-muted)]">
-        {isLoggedIn ? "How did this article make you feel?" : (
+        {isLoggedIn ? (
+          "How did this article make you feel?"
+        ) : (
           <span>
             <a
               href="/login"

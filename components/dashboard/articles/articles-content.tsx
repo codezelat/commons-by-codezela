@@ -10,7 +10,8 @@ import {
   bulkUpdateStatus,
   type ArticleListResult,
 } from "@/lib/actions/articles";
-import { getReactionSummaryForArticles, type ReactionCounts } from "@/lib/actions/reactions";
+import { getReactionSummaryForArticles } from "@/lib/actions/reactions";
+import type { ReactionCounts } from "@/lib/actions/reaction-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -96,7 +97,9 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
   const currentSearch = (searchParams.search as string) || "";
 
   const [data, setData] = useState<ArticleListResult | null>(null);
-  const [reactionSummary, setReactionSummary] = useState<Record<string, ReactionCounts>>({});
+  const [reactionSummary, setReactionSummary] = useState<
+    Record<string, ReactionCounts>
+  >({});
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     [],
   );
@@ -472,9 +475,11 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                         </DropdownMenuItem>
                         {article.status === "published" && (
                           <DropdownMenuItem
-                            onClick={() =>
-                              window.open(`/articles/${article.slug}`, "_blank")
-                            }
+                            onClick={() => {
+                              const url = `/articles/${article.slug}`;
+                              const win = window.open(url, "_blank");
+                              if (!win) window.location.href = url;
+                            }}
                           >
                             <Eye className="mr-2 h-4 w-4" /> View Public
                           </DropdownMenuItem>

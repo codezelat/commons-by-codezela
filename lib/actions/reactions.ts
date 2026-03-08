@@ -4,44 +4,12 @@ import { query, queryOne, execute } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
-
-// ---------- Types ----------
-
-export type ReactionType = "like" | "insightful" | "inspiring" | "curious";
-
-export const REACTION_TYPES: ReactionType[] = [
-  "like",
-  "insightful",
-  "inspiring",
-  "curious",
-];
-
-export const REACTION_LABELS: Record<ReactionType, string> = {
-  like: "Like",
-  insightful: "Insightful",
-  inspiring: "Inspiring",
-  curious: "Curious",
-};
-
-export const REACTION_EMOJIS: Record<ReactionType, string> = {
-  like: "👍",
-  insightful: "💡",
-  inspiring: "❤️",
-  curious: "🤔",
-};
-
-export interface ReactionCounts {
-  like: number;
-  insightful: number;
-  inspiring: number;
-  curious: number;
-  total: number;
-}
-
-export interface ArticleReactionsData {
-  counts: ReactionCounts;
-  userReaction: ReactionType | null;
-}
+import type {
+  ReactionType,
+  ReactionCounts,
+  ArticleReactionsData,
+} from "./reaction-types";
+import { REACTION_TYPES } from "./reaction-types";
 
 // ---------- Helpers ----------
 

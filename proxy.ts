@@ -22,8 +22,15 @@ export async function proxy(request: NextRequest) {
 
   // If on a public/static/api route, let through
   if (isPublicRoute || isApiRoute || isStaticRoute || pathname === "/") {
-    // Redirect logged-in users away from auth pages
-    if (isPublicRoute && sessionCookie) {
+    // Redirect logged-in users away from auth pages only
+    const authRoutes = [
+      "/login",
+      "/signup",
+      "/forgot-password",
+      "/reset-password",
+    ];
+    const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+    if (isAuthRoute && sessionCookie) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
