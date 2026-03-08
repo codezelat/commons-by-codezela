@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { ManagedImage } from "@/components/ui/managed-image";
 import { Badge } from "@/components/ui/badge";
 import {
   deriveArticleSummary,
@@ -30,7 +30,7 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
       <Link href={`/articles/${article.slug}`} className="block">
         <div className="relative aspect-[16/10] overflow-hidden bg-neutral-100">
           {article.cover_image ? (
-            <Image
+            <ManagedImage
               src={article.cover_image}
               alt={article.title}
               fill

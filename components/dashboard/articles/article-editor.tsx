@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -10,6 +9,7 @@ import {
   type Article,
 } from "@/lib/actions/articles";
 import { Button } from "@/components/ui/button";
+import { ManagedImage } from "@/components/ui/managed-image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -496,11 +496,10 @@ export function ArticleEditor({
                   <div className="overflow-hidden rounded-[1.2rem] border border-slate-200 bg-slate-50">
                     <div className="relative aspect-[1.91/1] overflow-hidden border-b border-slate-200 bg-slate-100">
                       {effectiveSeoImage ? (
-                        <Image
+                        <ManagedImage
                           src={effectiveSeoImage}
                           alt=""
                           fill
-                          unoptimized
                           className="object-cover"
                           sizes="(max-width: 1024px) 100vw, 320px"
                         />

@@ -1,6 +1,4 @@
 "use client";
-
-import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
 import {
   getFeaturedArticles,
@@ -13,6 +11,7 @@ import {
 } from "@/lib/actions/featured";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ManagedImage } from "@/components/ui/managed-image";
 import {
   Dialog,
   DialogContent,
@@ -232,7 +231,7 @@ export function FeaturedContent() {
                 {/* Cover preview */}
                 {article.cover_image && (
                   <div className="hidden sm:block shrink-0 w-20 h-14 rounded-md overflow-hidden bg-muted">
-                    <Image
+                    <ManagedImage
                       src={article.cover_image}
                       alt=""
                       width={80}

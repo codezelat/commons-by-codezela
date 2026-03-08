@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { randomUUID } from "crypto";
 import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { getLocalUploadDir, getLocalUploadPath, getLocalUploadUrl } from "@/lib/local-upload";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = [
@@ -65,12 +65,11 @@ export async function POST(request: NextRequest) {
     // Local dev fallback: save to public/uploads
     const ext = file.type.split("/")[1]?.replace("svg+xml", "svg") || "bin";
     const filename = `${randomUUID()}.${ext}`;
-    const uploadDir = join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(join(uploadDir, filename), buffer);
+    await mkdir(getLocalUploadDir(), { recursive: true });
+    await writeFile(getLocalUploadPath(filename), buffer);
 
     return NextResponse.json({
-      url: `/uploads/${filename}`,
+      url: getLocalUploadUrl(filename),
       key: `uploads/${filename}`,
     });
   } catch (e) {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { ManagedImage } from "@/components/ui/managed-image";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
@@ -153,10 +153,13 @@ export default async function ArticlesPage({
               <div className="grid gap-0 md:grid-cols-2">
                 {spotlight.cover_image ? (
                   <div className="relative aspect-[16/10] overflow-hidden bg-neutral-100 md:aspect-auto md:min-h-[280px]">
-                    <img
+                    <ManagedImage
                       src={spotlight.cover_image}
                       alt={spotlight.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                      fill
+                      priority
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                      sizes="(max-width: 768px) 100vw, 50vw"
                     />
                   </div>
                 ) : (

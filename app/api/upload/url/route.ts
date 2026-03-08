@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { randomUUID } from "crypto";
 import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { getLocalUploadDir, getLocalUploadPath, getLocalUploadUrl } from "@/lib/local-upload";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const FETCH_TIMEOUT_MS = 15_000;
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.concat(chunks.map((c) => Buffer.from(c)));
 
-    // Save to R2 (prod) or local public/uploads (dev)
+    // Save to R2 (prod) or a local upload directory served through a route (dev)
     if (isR2Configured()) {
       const { uploadFile } = await import("@/lib/r2");
       const result = await uploadFile(buffer, contentType, "images");
@@ -175,12 +175,11 @@ export async function POST(request: NextRequest) {
 
     const ext = contentType.split("/")[1]?.replace("svg+xml", "svg") || "jpg";
     const filename = `${randomUUID()}.${ext}`;
-    const uploadDir = join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(join(uploadDir, filename), buffer);
+    await mkdir(getLocalUploadDir(), { recursive: true });
+    await writeFile(getLocalUploadPath(filename), buffer);
 
     return NextResponse.json({
-      url: `/uploads/${filename}`,
+      url: getLocalUploadUrl(filename),
       key: `uploads/${filename}`,
     });
   } catch (e: unknown) {

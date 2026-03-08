@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ManagedImage } from "@/components/ui/managed-image";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { ArticleBody } from "@/components/articles/article-body";
@@ -13,6 +13,7 @@ import {
 } from "@/lib/actions/articles";
 import { isMarkdownArticleContent } from "@/lib/editor-content";
 import { renderMarkdownToHtmlWithBase } from "@/lib/markdown";
+import { normalizeLocalUploadUrlsInHtml } from "@/lib/local-upload";
 import {
   deriveArticleSummary,
   getArticleMetaDescription,
@@ -39,14 +40,16 @@ async function getArticleOrThrow(slug: string) {
 
 function resolveArticleHtml(article: Article) {
   if (isMarkdownArticleContent(article.content)) {
-    return renderMarkdownToHtmlWithBase(
-      article.content.markdown,
-      article.content.baseUrl,
+    return normalizeLocalUploadUrlsInHtml(
+      renderMarkdownToHtmlWithBase(
+        article.content.markdown,
+        article.content.baseUrl,
+      ),
     );
   }
 
   if (article.content_html?.trim()) {
-    return article.content_html;
+    return normalizeLocalUploadUrlsInHtml(article.content_html);
   }
 
   return "";
@@ -211,7 +214,7 @@ export default async function PublicArticlePage({
           {/* Cover Image */}
           {article.cover_image && (
             <div className="pub-fade-in pub-fade-in-d2 relative -mx-6 mb-10 aspect-[16/9] overflow-hidden rounded-2xl sm:-mx-0">
-              <Image
+              <ManagedImage
                 src={article.cover_image}
                 alt={article.title}
                 fill

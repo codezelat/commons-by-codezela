@@ -11,6 +11,7 @@ import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
+import { normalizeLocalUploadUrl } from "@/lib/local-upload";
 
 const lowlight = createLowlight(common);
 
@@ -56,6 +57,11 @@ export function resolveMarkdownUrl(
     trimmed.startsWith("tel:")
   ) {
     return trimmed;
+  }
+
+  const normalizedLocalUpload = normalizeLocalUploadUrl(trimmed);
+  if (normalizedLocalUpload !== trimmed) {
+    return normalizedLocalUpload;
   }
 
   try {

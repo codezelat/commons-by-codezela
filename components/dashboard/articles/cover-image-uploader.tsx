@@ -1,9 +1,8 @@
 "use client";
-
-import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { ManagedImage } from "@/components/ui/managed-image";
 import {
   uploadImage,
   validateImageFile,
@@ -29,10 +28,6 @@ interface ArticleImageUploaderProps {
   aspectClassName?: string;
 }
 
-function isAbsoluteHttpUrl(value: string) {
-  return /^https?:\/\//i.test(value);
-}
-
 function ImagePreview({
   src,
   alt,
@@ -40,21 +35,8 @@ function ImagePreview({
   src: string;
   alt: string;
 }) {
-  if (isAbsoluteHttpUrl(src)) {
-    return (
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        unoptimized
-        className="object-cover"
-        sizes="(max-width: 1024px) 100vw, 320px"
-      />
-    );
-  }
-
   return (
-    <Image
+    <ManagedImage
       src={src}
       alt={alt}
       fill
