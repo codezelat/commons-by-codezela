@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useWebHaptics } from "web-haptics/react";
+import { useReactionSound } from "@/lib/use-reaction-sound";
 
 interface ArticleReactionsProps {
   articleId: string;
@@ -37,6 +38,7 @@ export function ArticleReactions({
     undefined,
   );
   const { trigger: haptic } = useWebHaptics();
+  const { play: playSound } = useReactionSound();
   const isLoggedIn = Boolean(session?.user);
 
   const triggerPop = useCallback((type: ReactionType) => {
@@ -86,11 +88,13 @@ export function ArticleReactions({
       // Visual pop on the emoji
       triggerPop(type);
 
-      // Haptic feedback (vibrates on mobile, no-ops on desktop by design)
+      // Haptic feedback (vibrates on mobile) + audio feedback (all platforms)
       if (nextReaction) {
         haptic("success");
+        playSound(type);
       } else {
         haptic("selection");
+        playSound("remove");
       }
 
       startTransition(async () => {
@@ -108,7 +112,15 @@ export function ArticleReactions({
         }
       });
     },
-    [userReaction, counts, haptic, articleId, triggerPop, isLoggedIn],
+    [
+      userReaction,
+      counts,
+      haptic,
+      playSound,
+      articleId,
+      triggerPop,
+      isLoggedIn,
+    ],
   );
 
   return (
