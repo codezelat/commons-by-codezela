@@ -1,61 +1,15 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { PubThemeProvider } from "@/components/site/pub-theme-provider";
-import { PubThemeToggle } from "@/components/site/pub-theme-toggle";
+import { PublicShell } from "@/components/site/public-shell";
 
 export default async function Home() {
-  const session = await auth.api
-    .getSession({ headers: await headers() })
-    .catch(() => null);
-  if (session) redirect("/dashboard");
-
   return (
-    <PubThemeProvider>
-      <div className="min-h-screen bg-[var(--pub-bg)]">
+    <PublicShell>
+      <div className="relative">
         {/* Subtle gradient */}
         <div
           className="absolute inset-x-0 top-0 -z-10 h-[32rem]"
           style={{ background: "var(--pub-gradient)" }}
         />
-
-        {/* Nav */}
-        <header className="border-b border-[var(--pub-border)]">
-          <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--pub-brand-bg)]">
-                <span className="font-display text-sm font-semibold italic text-[var(--pub-brand-fg)]">
-                  C
-                </span>
-              </div>
-              <span className="text-sm font-semibold tracking-tight text-[var(--pub-text)]">
-                Commons
-              </span>
-            </div>
-            <nav className="flex items-center gap-1">
-              <Link
-                href="/articles"
-                className="px-3 py-1.5 text-[13px] text-[var(--pub-text-secondary)] transition-colors hover:text-[var(--pub-text)]"
-              >
-                Articles
-              </Link>
-              <Link
-                href="/login"
-                className="px-3 py-1.5 text-[13px] text-[var(--pub-text-secondary)] transition-colors hover:text-[var(--pub-text)]"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className="inline-flex h-8 items-center rounded-lg bg-[var(--pub-brand-bg)] px-4 text-sm font-medium text-[var(--pub-brand-fg)] transition-colors hover:opacity-90"
-              >
-                Get Started
-              </Link>
-              <PubThemeToggle />
-            </nav>
-          </div>
-        </header>
 
         {/* Hero */}
         <main className="mx-auto max-w-5xl px-6">
@@ -86,25 +40,11 @@ export default async function Home() {
                 >
                   Start Publishing
                 </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex h-11 items-center px-6 text-sm font-medium text-[var(--pub-text-muted)] transition-colors hover:text-[var(--pub-text-secondary)]"
-                >
-                  Sign In
-                </Link>
               </div>
             </div>
           </div>
-
-          <div className="border-t border-[var(--pub-border)] pb-12 pt-8">
-            <p className="text-xs text-[var(--pub-text-muted)]">
-              By{" "}
-              <span className="text-[var(--pub-text-secondary)]">Codezela</span>{" "}
-              &middot; Open Source
-            </p>
-          </div>
         </main>
       </div>
-    </PubThemeProvider>
+    </PublicShell>
   );
 }

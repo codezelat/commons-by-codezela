@@ -90,7 +90,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
           collapsed && "justify-center px-2",
         )}
       >
-        <Link href="/dashboard" className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-foreground">
             <span className="font-display italic text-xs font-semibold text-background">
               C
@@ -227,7 +227,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
               <Menu className="h-5 w-5" />
             </SheetTrigger>
           </Sheet>
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground">
               <span className="font-display italic text-xs font-semibold text-background">
                 C

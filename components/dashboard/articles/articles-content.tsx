@@ -10,8 +10,7 @@ import {
   bulkUpdateStatus,
   type ArticleListResult,
 } from "@/lib/actions/articles";
-import { getReactionSummaryForArticles } from "@/lib/actions/reactions";
-import type { ReactionCounts } from "@/lib/actions/reaction-types";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -97,9 +96,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
   const currentSearch = (searchParams.search as string) || "";
 
   const [data, setData] = useState<ArticleListResult | null>(null);
-  const [reactionSummary, setReactionSummary] = useState<
-    Record<string, ReactionCounts>
-  >({});
+
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     [],
   );
@@ -125,16 +122,6 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
       ]);
       setData(articles);
       setCategories(cats);
-
-      // Fetch reaction counts for the loaded articles
-      if (articles.articles.length > 0) {
-        const reactions = await getReactionSummaryForArticles(
-          articles.articles.map((a) => a.id),
-        );
-        setReactionSummary(reactions);
-      } else {
-        setReactionSummary({});
-      }
     } catch {
       toast.error("Failed to load articles");
     } finally {
@@ -361,9 +348,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               <TableHead className="hidden w-[140px] lg:table-cell">
                 Author
               </TableHead>
-              <TableHead className="hidden w-[80px] sm:table-cell">
-                Reactions
-              </TableHead>
+
               <TableHead className="hidden w-[120px] sm:table-cell">
                 Updated
               </TableHead>
@@ -388,9 +373,6 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
                     <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Skeleton className="h-4 w-8" />
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Skeleton className="h-4 w-16" />
@@ -438,18 +420,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                       {article.author_name || "—"}
                     </span>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {(() => {
-                      const total = reactionSummary[article.id]?.total ?? 0;
-                      return total > 0 ? (
-                        <span className="text-sm font-medium tabular-nums text-foreground">
-                          {total}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      );
-                    })()}
-                  </TableCell>
+
                   <TableCell className="hidden sm:table-cell">
                     <span
                       className="text-xs text-muted-foreground"
