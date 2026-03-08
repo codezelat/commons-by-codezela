@@ -8,6 +8,12 @@ import {
   updateArticle,
   type Article,
 } from "@/lib/actions/articles";
+import {
+  REACTION_EMOJIS,
+  REACTION_LABELS,
+  REACTION_TYPES,
+  type ReactionCounts,
+} from "@/lib/actions/reactions";
 import { Button } from "@/components/ui/button";
 import { ManagedImage } from "@/components/ui/managed-image";
 import { Input } from "@/components/ui/input";
@@ -65,6 +71,7 @@ interface ArticleEditorProps {
   article?: Article;
   categories: { id: string; name: string; slug: string }[];
   tags: { id: string; name: string; slug: string }[];
+  reactionCounts?: ReactionCounts;
 }
 
 type EditorDocument = Record<string, unknown>;
@@ -131,6 +138,7 @@ export function ArticleEditor({
   article,
   categories,
   tags,
+  reactionCounts,
 }: ArticleEditorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -418,6 +426,44 @@ export function ArticleEditor({
                   <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {/* Reactions (edit mode) */}
+          {mode === "edit" && reactionCounts !== undefined && (
+            <div className="rounded-lg border bg-background p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Reactions</Label>
+                {reactionCounts.total > 0 && (
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {reactionCounts.total} total
+                  </span>
+                )}
+              </div>
+              {reactionCounts.total === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No reactions yet.
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {REACTION_TYPES.map((type) => {
+                    const count = reactionCounts[type];
+                    if (count === 0) return null;
+                    return (
+                      <div
+                        key={type}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <span aria-hidden="true">{REACTION_EMOJIS[type]}</span>
+                          {REACTION_LABELS[type]}
+                        </span>
+                        <span className="font-medium tabular-nums">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

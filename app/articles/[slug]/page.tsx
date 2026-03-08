@@ -5,12 +5,14 @@ import { ManagedImage } from "@/components/ui/managed-image";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { ArticleBody } from "@/components/articles/article-body";
+import { ArticleReactions } from "@/components/articles/article-reactions";
 import { PublicShell } from "@/components/site/public-shell";
 import {
   getPublishedArticleBySlug,
   getRelatedPublishedArticles,
   type Article,
 } from "@/lib/actions/articles";
+import { getArticleReactions } from "@/lib/actions/reactions";
 import { isMarkdownArticleContent } from "@/lib/editor-content";
 import { renderMarkdownToHtmlWithBase } from "@/lib/markdown";
 import { normalizeLocalUploadUrlsInHtml } from "@/lib/local-upload";
@@ -111,8 +113,9 @@ export default async function PublicArticlePage({
 }) {
   const { slug } = await params;
   const article = await getArticleOrThrow(slug);
-  const [relatedArticles] = await Promise.all([
+  const [relatedArticles, reactions] = await Promise.all([
     getRelatedPublishedArticles(article.id, article.category_id, 3),
+    getArticleReactions(article.id),
   ]);
 
   const html = resolveArticleHtml(article);
@@ -234,6 +237,15 @@ export default async function PublicArticlePage({
                 This article does not have renderable body HTML yet.
               </div>
             )}
+          </div>
+
+          {/* Reactions */}
+          <div className="pub-fade-in pub-fade-in-d3 mt-10 rounded-2xl border border-[var(--pub-border)] bg-[var(--pub-surface)] px-6 py-5">
+            <ArticleReactions
+              articleId={article.id}
+              initialCounts={reactions.counts}
+              initialUserReaction={reactions.userReaction}
+            />
           </div>
 
           {/* Divider */}

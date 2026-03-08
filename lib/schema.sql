@@ -137,6 +137,19 @@ CREATE TABLE IF NOT EXISTS article_tag (
 
 CREATE INDEX IF NOT EXISTS idx_article_tag_tag ON article_tag (tag_id);
 
+-- Article Reactions (one reaction per user per article)
+CREATE TABLE IF NOT EXISTS article_reaction (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  article_id TEXT NOT NULL REFERENCES article(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  reaction_type TEXT NOT NULL CHECK (reaction_type IN ('like', 'insightful', 'inspiring', 'curious')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (article_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_article_reaction_article ON article_reaction (article_id);
+CREATE INDEX IF NOT EXISTS idx_article_reaction_user ON article_reaction (user_id);
+
 -- ============================================================
 -- Seed default categories
 -- ============================================================
