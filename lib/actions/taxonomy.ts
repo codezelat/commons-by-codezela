@@ -2,7 +2,8 @@
 
 import { query, queryOne, execute } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { requireAdminSession } from "@/lib/authz";
+import { sanitizeArticleText } from "@/lib/article-metadata";
+import { isAdminRole, requireAdminSession, requireSession } from "@/lib/authz";
 
 function toSlug(text: string): string {
   return text
@@ -11,6 +12,17 @@ function toSlug(text: string): string {
     .replace(/[\s_]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 200);
+}
+
+function normalizeName(name: string): string {
+  return name.trim().replace(/\s+/g, " ");
+}
+
+function revalidateTagSurfaces() {
+  revalidatePath("/dashboard/articles");
+  revalidatePath("/dashboard/moderation");
+  revalidatePath("/dashboard/tags");
+  revalidatePath("/articles");
 }
 
 // ---------- Categories ----------
@@ -101,7 +113,6 @@ export async function updateCategory(
 
 export async function deleteCategory(id: string): Promise<void> {
   await requireAdminSession();
-  // Nullify articles in this category first
   await execute(
     `UPDATE article SET category_id = NULL WHERE category_id = $1`,
     [id],
@@ -115,7 +126,10 @@ export async function mergeCategories(
   targetId: string,
 ): Promise<void> {
   await requireAdminSession();
-  // Move all articles from source to target
+  if (sourceId === targetId) {
+    throw new Error("Cannot merge into the same category");
+  }
+
   await execute(`UPDATE article SET category_id = $1 WHERE category_id = $2`, [
     targetId,
     sourceId,
@@ -126,31 +140,56 @@ export async function mergeCategories(
 
 // ---------- Tags ----------
 
+export type TagStatus = "approved" | "pending" | "rejected";
+
 export interface Tag {
   id: string;
   name: string;
   slug: string;
+  status: TagStatus;
+  created_by: string | null;
+  approved_at: string | null;
+  moderation_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
   created_at: string;
   article_count?: number;
+  created_by_name?: string | null;
+  reviewer_name?: string | null;
 }
 
 export async function getTagsWithCount(): Promise<Tag[]> {
   await requireAdminSession();
   return query<Tag>(
-    `SELECT t.*, COALESCE(counts.cnt, 0)::int as article_count
+    `SELECT t.*,
+            creator.name as created_by_name,
+            reviewer.name as reviewer_name,
+            COALESCE(counts.cnt, 0)::int as article_count
      FROM tag t
+     LEFT JOIN "user" creator ON creator.id = t.created_by
+     LEFT JOIN "user" reviewer ON reviewer.id = t.reviewed_by
      LEFT JOIN (
        SELECT tag_id, COUNT(*) as cnt FROM article_tag GROUP BY tag_id
      ) counts ON t.id = counts.tag_id
-     ORDER BY t.name`,
+     ORDER BY
+       CASE t.status
+         WHEN 'pending' THEN 0
+         WHEN 'rejected' THEN 1
+         ELSE 2
+       END,
+       t.name ASC`,
   );
 }
 
 export async function createTag(data: {
   name: string;
 }): Promise<{ id: string }> {
-  await requireAdminSession();
-  const slug = toSlug(data.name);
+  const admin = await requireAdminSession();
+  const normalizedName = normalizeName(data.name);
+  const slug = toSlug(normalizedName);
+  if (!slug) {
+    throw new Error("Tag name is required");
+  }
 
   const existing = await queryOne<{ id: string }>(
     `SELECT id FROM tag WHERE slug = $1`,
@@ -159,12 +198,14 @@ export async function createTag(data: {
   if (existing) throw new Error("A tag with this name already exists");
 
   const result = await queryOne<{ id: string }>(
-    `INSERT INTO tag (name, slug) VALUES ($1, $2) RETURNING id`,
-    [data.name.trim(), slug],
+    `INSERT INTO tag (name, slug, status, created_by, approved_at, reviewed_by, reviewed_at, moderation_note)
+     VALUES ($1, $2, 'approved', $3, NOW(), $3, NOW(), NULL)
+     RETURNING id`,
+    [normalizedName, slug, admin.user.id],
   );
   if (!result) throw new Error("Failed to create tag");
 
-  revalidatePath("/dashboard/tags");
+  revalidateTagSurfaces();
   return result;
 }
 
@@ -173,20 +214,33 @@ export async function updateTag(
   data: { name: string },
 ): Promise<void> {
   await requireAdminSession();
-  const slug = toSlug(data.name);
+  const normalizedName = normalizeName(data.name);
+  const slug = toSlug(normalizedName);
+  if (!slug) {
+    throw new Error("Tag name is required");
+  }
+
+  const conflict = await queryOne<{ id: string }>(
+    `SELECT id FROM tag WHERE slug = $1 AND id != $2`,
+    [slug, id],
+  );
+  if (conflict) {
+    throw new Error("A tag with this name already exists");
+  }
+
   await execute(`UPDATE tag SET name = $1, slug = $2 WHERE id = $3`, [
-    data.name.trim(),
+    normalizedName,
     slug,
     id,
   ]);
-  revalidatePath("/dashboard/tags");
+  revalidateTagSurfaces();
 }
 
 export async function deleteTag(id: string): Promise<void> {
   await requireAdminSession();
   await execute(`DELETE FROM article_tag WHERE tag_id = $1`, [id]);
   await execute(`DELETE FROM tag WHERE id = $1`, [id]);
-  revalidatePath("/dashboard/tags");
+  revalidateTagSurfaces();
 }
 
 export async function mergeTags(
@@ -194,7 +248,10 @@ export async function mergeTags(
   targetId: string,
 ): Promise<void> {
   await requireAdminSession();
-  // Move article_tag entries, avoid duplicates
+  if (sourceId === targetId) {
+    throw new Error("Cannot merge into the same tag");
+  }
+
   await execute(
     `INSERT INTO article_tag (article_id, tag_id)
      SELECT article_id, $1
@@ -205,5 +262,218 @@ export async function mergeTags(
   );
   await execute(`DELETE FROM article_tag WHERE tag_id = $1`, [sourceId]);
   await execute(`DELETE FROM tag WHERE id = $1`, [sourceId]);
-  revalidatePath("/dashboard/tags");
+  revalidateTagSurfaces();
+}
+
+export async function submitTagForModeration(name: string): Promise<{
+  id: string;
+  name: string;
+  slug: string;
+  status: "approved" | "pending";
+  created: boolean;
+}> {
+  const session = await requireSession();
+  const normalizedName = normalizeName(name);
+  const slug = toSlug(normalizedName);
+  if (!slug) {
+    throw new Error("Tag name is required");
+  }
+
+  const existing = await queryOne<{
+    id: string;
+    name: string;
+    slug: string;
+    status: TagStatus;
+    created_by: string | null;
+  }>(
+    `SELECT id, name, slug, status, created_by
+     FROM tag
+     WHERE slug = $1`,
+    [slug],
+  );
+
+  const isAdmin = isAdminRole(session.user.role);
+
+  if (existing) {
+    if (existing.status === "approved") {
+      return {
+        id: existing.id,
+        name: existing.name,
+        slug: existing.slug,
+        status: "approved",
+        created: false,
+      };
+    }
+
+    if (isAdmin) {
+      await execute(
+        `UPDATE tag
+         SET name = $1,
+             status = 'approved',
+             moderation_note = NULL,
+             reviewed_by = $2,
+             reviewed_at = NOW(),
+             approved_at = NOW()
+         WHERE id = $3`,
+        [normalizedName, session.user.id, existing.id],
+      );
+      revalidateTagSurfaces();
+      return {
+        id: existing.id,
+        name: normalizedName,
+        slug: existing.slug,
+        status: "approved",
+        created: false,
+      };
+    }
+
+    if (existing.created_by !== session.user.id) {
+      throw new Error("Tag is already submitted and waiting for moderation");
+    }
+
+    if (existing.status === "pending") {
+      return {
+        id: existing.id,
+        name: existing.name,
+        slug: existing.slug,
+        status: "pending",
+        created: false,
+      };
+    }
+
+    await execute(
+      `UPDATE tag
+       SET status = 'pending',
+           moderation_note = 'Resubmitted by reader for moderation.',
+           reviewed_by = NULL,
+           reviewed_at = NULL
+       WHERE id = $1`,
+      [existing.id],
+    );
+    revalidateTagSurfaces();
+    return {
+      id: existing.id,
+      name: existing.name,
+      slug: existing.slug,
+      status: "pending",
+      created: false,
+    };
+  }
+
+  const status: TagStatus = isAdmin ? "approved" : "pending";
+  const result = await queryOne<{
+    id: string;
+    name: string;
+    slug: string;
+    status: TagStatus;
+  }>(
+    `INSERT INTO tag (name, slug, status, created_by, approved_at, reviewed_by, reviewed_at, moderation_note)
+     VALUES (
+       $1,
+       $2,
+       $3,
+       $4,
+       CASE WHEN $3 = 'approved' THEN NOW() ELSE NULL END,
+       CASE WHEN $3 = 'approved' THEN $4 ELSE NULL END,
+       CASE WHEN $3 = 'approved' THEN NOW() ELSE NULL END,
+       CASE WHEN $3 = 'pending' THEN 'Submitted by reader for moderation.' ELSE NULL END
+     )
+     RETURNING id, name, slug, status`,
+    [normalizedName, slug, status, session.user.id],
+  );
+
+  if (!result) {
+    throw new Error("Failed to submit tag");
+  }
+
+  revalidateTagSurfaces();
+  return {
+    id: result.id,
+    name: result.name,
+    slug: result.slug,
+    status: result.status === "approved" ? "approved" : "pending",
+    created: true,
+  };
+}
+
+export async function getTagsForModeration(filters?: {
+  status?: "pending" | "rejected" | "approved" | "all";
+  search?: string;
+  limit?: number;
+}): Promise<Tag[]> {
+  await requireAdminSession();
+
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  let index = 0;
+
+  if (filters?.status && filters.status !== "all") {
+    index++;
+    conditions.push(`t.status = $${index}`);
+    params.push(filters.status);
+  }
+
+  if (filters?.search?.trim()) {
+    index++;
+    conditions.push(`(t.name ILIKE '%' || $${index} || '%')`);
+    params.push(filters.search.trim());
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const limit = Math.min(100, Math.max(1, filters?.limit ?? 50));
+
+  return query<Tag>(
+    `SELECT t.*,
+            creator.name as created_by_name,
+            reviewer.name as reviewer_name,
+            COALESCE(counts.cnt, 0)::int as article_count
+     FROM tag t
+     LEFT JOIN "user" creator ON creator.id = t.created_by
+     LEFT JOIN "user" reviewer ON reviewer.id = t.reviewed_by
+     LEFT JOIN (
+       SELECT tag_id, COUNT(*) as cnt
+       FROM article_tag
+       GROUP BY tag_id
+     ) counts ON counts.tag_id = t.id
+     ${where}
+     ORDER BY
+       CASE t.status
+         WHEN 'pending' THEN 0
+         WHEN 'rejected' THEN 1
+         ELSE 2
+       END,
+       t.created_at DESC
+     LIMIT ${limit}`,
+    params,
+  );
+}
+
+export async function moderateTag(
+  id: string,
+  decision: "approved" | "rejected",
+  note?: string,
+): Promise<{ status: TagStatus }> {
+  const admin = await requireAdminSession();
+  const existing = await queryOne<{ id: string }>(
+    `SELECT id FROM tag WHERE id = $1`,
+    [id],
+  );
+  if (!existing) {
+    throw new Error("Tag not found");
+  }
+
+  const normalizedNote = sanitizeArticleText(note);
+  await execute(
+    `UPDATE tag
+     SET status = $1,
+         moderation_note = $2,
+         reviewed_by = $3,
+         reviewed_at = NOW(),
+         approved_at = CASE WHEN $1 = 'approved' THEN NOW() ELSE approved_at END
+     WHERE id = $4`,
+    [decision, normalizedNote || null, admin.user.id, id],
+  );
+
+  revalidateTagSurfaces();
+  return { status: decision };
 }

@@ -73,7 +73,10 @@ export function SignupForm() {
           Create an account
         </h1>
         <p className="text-sm text-muted-foreground">
-          Get started with Commons
+          Become a contributor now
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Contributors can submit articles for moderation
         </p>
       </div>
 

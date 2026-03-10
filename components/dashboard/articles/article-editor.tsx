@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
@@ -9,6 +9,7 @@ import {
   updateArticle,
   type Article,
 } from "@/lib/actions/articles";
+import { submitTagForModeration } from "@/lib/actions/taxonomy";
 import {
   REACTION_EMOJIS,
   REACTION_LABELS,
@@ -48,6 +49,7 @@ import {
   Search,
   Globe,
   ShieldAlert,
+  PlusCircle,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import {
@@ -77,7 +79,13 @@ interface ArticleEditorProps {
   mode: "create" | "edit";
   article?: Article;
   categories: { id: string; name: string; slug: string }[];
-  tags: { id: string; name: string; slug: string }[];
+  tags: {
+    id: string;
+    name: string;
+    slug: string;
+    status?: "approved" | "pending" | "rejected";
+    moderation_note?: string | null;
+  }[];
   reactionCounts?: ReactionCounts;
 }
 
@@ -172,9 +180,31 @@ export function ArticleEditor({
     article?.robots_noindex || false,
   );
   const [categoryId, setCategoryId] = useState(article?.category_id || "");
+  const [availableTags, setAvailableTags] = useState<
+    {
+      id: string;
+      name: string;
+      slug: string;
+      status?: "approved" | "pending" | "rejected";
+      moderation_note?: string | null;
+    }[]
+  >(() => {
+    if (!article?.tags?.length) {
+      return tags;
+    }
+    const merged = [...tags];
+    for (const tag of article.tags) {
+      if (!merged.some((existingTag) => existingTag.id === tag.id)) {
+        merged.push(tag);
+      }
+    }
+    return merged;
+  });
   const [selectedTags, setSelectedTags] = useState<string[]>(
     article?.tags?.map((t) => t.id) || [],
   );
+  const [newTagName, setNewTagName] = useState("");
+  const [isAddingTag, setIsAddingTag] = useState(false);
   const [coverImage, setCoverImage] = useState(article?.cover_image || "");
   const [editorContent, setEditorContent] = useState<{
     json: unknown;
@@ -204,12 +234,56 @@ export function ArticleEditor({
   const effectiveSeoImage = seoImage.trim() || coverImage.trim();
   const publicUrl = `${publicBaseUrl}/articles/${slug || article?.slug || ""}`;
 
+  useEffect(() => {
+    const merged = [...tags];
+    for (const tag of article?.tags || []) {
+      if (!merged.some((existingTag) => existingTag.id === tag.id)) {
+        merged.push(tag);
+      }
+    }
+    setAvailableTags(merged);
+  }, [article?.tags, tags]);
+
   function toggleTag(tagId: string) {
     setSelectedTags((prev) =>
       prev.includes(tagId)
         ? prev.filter((id) => id !== tagId)
         : [...prev, tagId],
     );
+  }
+
+  async function handleAddTag() {
+    const value = newTagName.trim();
+    if (!value) {
+      return;
+    }
+
+    setIsAddingTag(true);
+    try {
+      const submitted = await submitTagForModeration(value);
+      setAvailableTags((prev) => {
+        if (prev.some((tag) => tag.id === submitted.id)) {
+          return prev;
+        }
+        return [...prev, submitted].sort((a, b) => a.name.localeCompare(b.name));
+      });
+      setSelectedTags((prev) =>
+        prev.includes(submitted.id) ? prev : [...prev, submitted.id],
+      );
+      setNewTagName("");
+
+      toast.success(
+        submitted.status === "pending"
+          ? "Tag submitted for moderation and added to this article"
+          : "Tag added",
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create tag",
+      );
+    } finally {
+      setIsAddingTag(false);
+    }
   }
 
   async function handleSave(status: string = "draft") {
@@ -407,28 +481,86 @@ export function ArticleEditor({
 
           {/* Tags */}
           <div className="rounded-lg border bg-background p-4 space-y-3">
-            <Label className="text-sm font-medium">Tags</Label>
+            <div className="space-y-1">
+              <Label className="text-sm font-medium">Tags</Label>
+              <p className="text-xs text-muted-foreground">
+                Use approved tags, or propose a new one for moderation.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={newTagName}
+                onChange={(event) => setNewTagName(event.target.value)}
+                placeholder="Add a new tag"
+                className="h-9"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void handleAddTag();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9"
+                onClick={() => void handleAddTag()}
+                disabled={isAddingTag}
+              >
+                <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
+                {isAddingTag ? "Adding..." : "Add"}
+              </Button>
+            </div>
             <div className="flex flex-wrap gap-1.5">
-              {tags.map((tag) => {
+              {availableTags.map((tag) => {
                 const isSelected = selectedTags.includes(tag.id);
+                const isPendingTag = tag.status === "pending";
+                const isRejectedTag = tag.status === "rejected";
+                const canToggle = !isRejectedTag || isSelected;
                 return (
                   <Badge
                     key={tag.id}
                     variant={isSelected ? "default" : "outline"}
-                    className="cursor-pointer text-xs transition-colors"
-                    onClick={() => toggleTag(tag.id)}
+                    className={`text-xs transition-colors ${
+                      canToggle ? "cursor-pointer" : "cursor-not-allowed opacity-70"
+                    } ${
+                      isPendingTag
+                        ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                        : ""
+                    } ${
+                      isRejectedTag
+                        ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      if (!canToggle) {
+                        toast.error(
+                          "Rejected tags must be resubmitted before reuse.",
+                        );
+                        return;
+                      }
+                      toggleTag(tag.id);
+                    }}
                   >
                     {tag.name}
+                    {isPendingTag && <span className="ml-1">· Pending</span>}
+                    {isRejectedTag && <span className="ml-1">· Rejected</span>}
                     {isSelected && <X className="ml-1 h-3 w-3" />}
                   </Badge>
                 );
               })}
-              {tags.length === 0 && (
+              {availableTags.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  No tags yet. Create some in Tags management.
+                  No tags available yet.
                 </p>
               )}
             </div>
+            {!isAdmin && (
+              <p className="text-xs text-muted-foreground">
+                New reader tags stay pending until an admin approves them.
+              </p>
+            )}
           </div>
 
           {/* Cover Image */}

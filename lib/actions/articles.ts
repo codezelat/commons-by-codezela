@@ -44,7 +44,13 @@ export interface Article {
   author_email?: string;
   reviewer_name?: string | null;
   category_name?: string;
-  tags?: { id: string; name: string; slug: string }[];
+  tags?: {
+    id: string;
+    name: string;
+    slug: string;
+    status?: "approved" | "pending" | "rejected";
+    moderation_note?: string | null;
+  }[];
 }
 
 export interface ArticleListResult {
@@ -156,6 +162,62 @@ function resolveCreateStatus(
   }
 
   return requestedStatus === "published" ? "pending" : requestedStatus;
+}
+
+function normalizeTagIds(tagIds?: string[]): string[] {
+  if (!tagIds || tagIds.length === 0) {
+    return [];
+  }
+
+  const unique = new Set<string>();
+  for (const rawId of tagIds) {
+    const id = rawId?.trim();
+    if (id) {
+      unique.add(id);
+    }
+  }
+  return [...unique];
+}
+
+async function resolveAllowedTagIds(
+  tagIds: string[] | undefined,
+  session: Awaited<ReturnType<typeof requireSession>>,
+  isAdmin: boolean,
+): Promise<string[]> {
+  const ids = normalizeTagIds(tagIds);
+  if (ids.length === 0) {
+    return [];
+  }
+
+  const tags = await query<{
+    id: string;
+    status: "approved" | "pending" | "rejected";
+    created_by: string | null;
+  }>(
+    `SELECT id, status, created_by
+     FROM tag
+     WHERE id = ANY($1)`,
+    [ids],
+  );
+
+  if (tags.length !== ids.length) {
+    throw new Error("One or more selected tags do not exist");
+  }
+
+  if (!isAdmin) {
+    const unauthorized = tags.find(
+      (tag) =>
+        !(
+          tag.status === "approved" ||
+          (tag.status === "pending" && tag.created_by === session.user.id)
+        ),
+    );
+    if (unauthorized) {
+      throw new Error("You can only use approved tags or your own pending tags");
+    }
+  }
+
+  return ids;
 }
 
 // ---------- List Articles ----------
@@ -302,8 +364,14 @@ export async function getArticle(id: string): Promise<Article | null> {
     throw new Error("Forbidden");
   }
 
-  const tags = await query<{ id: string; name: string; slug: string }>(
-    `SELECT t.id, t.name, t.slug
+  const tags = await query<{
+    id: string;
+    name: string;
+    slug: string;
+    status: "approved" | "pending" | "rejected";
+    moderation_note: string | null;
+  }>(
+    `SELECT t.id, t.name, t.slug, t.status, t.moderation_note
      FROM article_tag at
      JOIN tag t ON at.tag_id = t.id
      WHERE at.article_id = $1`,
@@ -339,6 +407,7 @@ export async function createArticle(data: {
 }> {
   const session = await requireSession();
   const isAdmin = isAdminRole(session.user.role);
+  const tagIds = await resolveAllowedTagIds(data.tag_ids, session, isAdmin);
   const normalized = normalizeArticleDraftData(data);
   const requestedStatus = normalizeStatus(data.status);
   const status = resolveCreateStatus(requestedStatus, isAdmin);
@@ -382,11 +451,11 @@ export async function createArticle(data: {
   if (!result) throw new Error("Failed to create article");
 
   // Attach tags
-  if (data.tag_ids && data.tag_ids.length > 0) {
-    const values = data.tag_ids.map((_, i) => `($1, $${i + 2})`).join(", ");
+  if (tagIds.length > 0) {
+    const values = tagIds.map((_, i) => `($1, $${i + 2})`).join(", ");
     await execute(
       `INSERT INTO article_tag (article_id, tag_id) VALUES ${values} ON CONFLICT DO NOTHING`,
-      [result.id, ...data.tag_ids],
+      [result.id, ...tagIds],
     );
   }
 
@@ -445,6 +514,10 @@ export async function updateArticle(
   }
 
   const normalized = normalizeArticleDraftData(data);
+  const tagIds =
+    data.tag_ids !== undefined
+      ? await resolveAllowedTagIds(data.tag_ids, session, isAdmin)
+      : undefined;
   const requestedStatus =
     data.status !== undefined ? normalizeStatus(data.status) : undefined;
   const hasContentMutation = [
@@ -599,13 +672,13 @@ export async function updateArticle(
   }
 
   // Update tags
-  if (data.tag_ids !== undefined) {
+  if (tagIds !== undefined) {
     await execute(`DELETE FROM article_tag WHERE article_id = $1`, [id]);
-    if (data.tag_ids.length > 0) {
-      const values = data.tag_ids.map((_, i) => `($1, $${i + 2})`).join(", ");
+    if (tagIds.length > 0) {
+      const values = tagIds.map((_, i) => `($1, $${i + 2})`).join(", ");
       await execute(
         `INSERT INTO article_tag (article_id, tag_id) VALUES ${values} ON CONFLICT DO NOTHING`,
-        [id, ...data.tag_ids],
+        [id, ...tagIds],
       );
     }
   }
@@ -810,7 +883,9 @@ export async function getPublicArticles(
       SELECT 1
       FROM article_tag at
       JOIN tag t ON t.id = at.tag_id
-      WHERE at.article_id = a.id AND t.slug = $${paramIdx}
+      WHERE at.article_id = a.id
+        AND t.slug = $${paramIdx}
+        AND t.status = 'approved'
     )`);
     params.push(filters.tag);
   }
@@ -856,6 +931,7 @@ export async function getPublicArticles(
        FROM article_tag at
        JOIN tag t ON t.id = at.tag_id
        WHERE at.article_id = ANY($1)
+         AND t.status = 'approved'
        ORDER BY t.name ASC`,
       [articleIds],
     );
@@ -903,6 +979,7 @@ export async function getPublishedArticleBySlug(slug: string): Promise<Article |
      FROM article_tag at
      JOIN tag t ON t.id = at.tag_id
      WHERE at.article_id = $1
+       AND t.status = 'approved'
      ORDER BY t.name ASC`,
     [article.id],
   );
@@ -978,6 +1055,7 @@ export async function getPublicTags(limit: number = 12) {
        ON a.id = at.article_id
       AND a.status = 'published'
       AND a.robots_noindex = false
+     WHERE t.status = 'approved'
      GROUP BY t.id, t.name, t.slug
      ORDER BY article_count DESC, t.name ASC
      LIMIT ${limit}`,
@@ -1004,6 +1082,7 @@ export async function getFeaturedPublicArticles(limit: number = 3) {
 // ---------- Categories & Tags (read helpers) ----------
 
 export async function getCategories() {
+  await requireSession();
   return query<{
     id: string;
     name: string;
@@ -1013,7 +1092,48 @@ export async function getCategories() {
 }
 
 export async function getTags() {
-  return query<{ id: string; name: string; slug: string }>(
-    `SELECT id, name, slug FROM tag ORDER BY name`,
+  const session = await requireSession();
+  const isAdmin = isAdminRole(session.user.role);
+
+  if (isAdmin) {
+    return query<{
+      id: string;
+      name: string;
+      slug: string;
+      status: "approved" | "pending" | "rejected";
+      moderation_note: string | null;
+      created_by: string | null;
+    }>(
+      `SELECT id, name, slug, status, moderation_note, created_by
+       FROM tag
+       ORDER BY
+         CASE status
+           WHEN 'pending' THEN 0
+           WHEN 'rejected' THEN 1
+           ELSE 2
+         END,
+         name ASC`,
+    );
+  }
+
+  return query<{
+    id: string;
+    name: string;
+    slug: string;
+    status: "approved" | "pending" | "rejected";
+    moderation_note: string | null;
+    created_by: string | null;
+  }>(
+    `SELECT id, name, slug, status, moderation_note, created_by
+     FROM tag
+     WHERE status = 'approved'
+        OR (created_by = $1 AND status = 'pending')
+     ORDER BY
+       CASE status
+         WHEN 'pending' THEN 0
+         ELSE 1
+       END,
+       name ASC`,
+    [session.user.id],
   );
 }

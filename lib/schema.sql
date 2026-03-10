@@ -26,6 +26,18 @@ CREATE TABLE IF NOT EXISTS "user" (
 
 ALTER TABLE "user" ALTER COLUMN role SET DEFAULT 'reader';
 UPDATE "user" SET role = 'reader' WHERE role = 'user';
+UPDATE "user" SET role = 'reader' WHERE role IS NULL OR role NOT IN ('admin', 'reader');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'user_role_check'
+  ) THEN
+    ALTER TABLE "user"
+      ADD CONSTRAINT user_role_check CHECK (role IN ('admin', 'reader'));
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS "session" (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -82,8 +94,22 @@ CREATE TABLE IF NOT EXISTS tag (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   name TEXT NOT NULL UNIQUE,
   slug TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('approved','pending','rejected')),
+  created_by TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+  approved_at TIMESTAMPTZ,
+  moderation_note TEXT,
+  reviewed_by TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE tag ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('approved','pending','rejected'));
+ALTER TABLE tag ADD COLUMN IF NOT EXISTS created_by TEXT REFERENCES "user"(id) ON DELETE SET NULL;
+ALTER TABLE tag ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+ALTER TABLE tag ADD COLUMN IF NOT EXISTS moderation_note TEXT;
+ALTER TABLE tag ADD COLUMN IF NOT EXISTS reviewed_by TEXT REFERENCES "user"(id) ON DELETE SET NULL;
+ALTER TABLE tag ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+UPDATE tag SET status = 'approved' WHERE status IS NULL;
 
 -- Articles
 CREATE TABLE IF NOT EXISTS article (
@@ -146,6 +172,8 @@ CREATE TABLE IF NOT EXISTS article_tag (
 );
 
 CREATE INDEX IF NOT EXISTS idx_article_tag_tag ON article_tag (tag_id);
+CREATE INDEX IF NOT EXISTS idx_tag_status_created ON tag (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tag_created_by ON tag (created_by);
 
 -- Article Reactions (one reaction per user per article)
 CREATE TABLE IF NOT EXISTS article_reaction (

@@ -64,6 +64,12 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 
+const TAG_STATUS_STYLES: Record<string, string> = {
+  approved: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  pending: "border-amber-200 bg-amber-50 text-amber-700",
+  rejected: "border-red-200 bg-red-50 text-red-700",
+};
+
 export function TagsContent() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -231,6 +237,7 @@ export function TagsContent() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead className="hidden sm:table-cell">Slug</TableHead>
+                <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead className="w-[100px] text-center">
                   Articles
                 </TableHead>
@@ -246,6 +253,14 @@ export function TagsContent() {
                   <TableCell className="font-medium">{tag.name}</TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground font-mono text-sm">
                     {tag.slug}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Badge
+                      variant="outline"
+                      className={`capitalize ${TAG_STATUS_STYLES[tag.status] || ""}`}
+                    >
+                      {tag.status}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge variant="secondary">{tag.article_count ?? 0}</Badge>
