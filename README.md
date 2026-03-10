@@ -91,6 +91,7 @@ Whether you're running an internal knowledge base, a community research journal,
 
 - **Three Roles** — Reader, Moderator, Admin with granular permission boundaries
 - **Email & Password** — Secure sign-up/login with bcrypt hashing (8–128 char passwords)
+- **Email Verification** — Automatic verification email on sign-up with 24-hour expiry and auto sign-in after verification
 - **OAuth** — Google and GitHub social login
 - **Password Reset** — Email-based reset flow via Brevo (Sendinblue) transactional API
 - **Session Management** — 7-day sessions, 1-day refresh age, 5-minute cookie cache
@@ -183,7 +184,7 @@ Commons follows the **Next.js App Router** paradigm with a clear separation of c
 │   lib/rate-limit.ts  ← Token-bucket rate limiting                │
 │   lib/audit-log.ts   ← Structured audit logging                 │
 │   lib/r2.ts          ← Cloudflare R2 (S3-compatible storage)     │
-│   lib/email.ts       ← Brevo transactional email                 │
+│   lib/email.ts       ← Brevo transactional email (verification + reset) │
 └───────────────────────┬──────────────────────────────────────────┘
                         │
                         ▼
@@ -195,7 +196,7 @@ Commons follows the **Next.js App Router** paradigm with a clear separation of c
 │   article_reaction · admin_audit_log · rate_limit_bucket         │
 │                                                                  │
 │   ✦ Full-text search (tsvector/GIN index)                        │
-│   ✦ Auto-audit triggers (signup, login, logout, password reset)  │
+│   ✦ Auto-audit triggers (signup, login, logout, password reset, email verification) │
 │   ✦ Database-level role constraints                              │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -389,7 +390,7 @@ Copy `.env.example` to `.env.local` and configure the following:
 | `BREVO_REPLY_TO_EMAIL` | Reply-to email address                                            |
 | `BREVO_REPLY_TO_NAME`  | Reply-to display name                                             |
 
-> **Note:** In development, if Brevo credentials are missing, password reset URLs are logged to the console instead of sent via email.
+> **Note:** In development, if Brevo credentials are missing, password reset and email verification URLs are logged to the console instead of sent via email.
 
 ---
 
@@ -452,6 +453,13 @@ Authentication is handled by [Better Auth](https://www.better-auth.com) v1.5, co
 - **Email/Password** — 8–128 character passwords, bcrypt hashed
 - **Google OAuth** — One-click sign-in with Google accounts
 - **GitHub OAuth** — One-click sign-in with GitHub accounts
+
+### Email Verification
+
+- A verification email is automatically sent on sign-up
+- The verification link expires after 24 hours
+- Users are automatically signed in after successful verification
+- Branded HTML email template with fallback plain-text version
 
 ### Password Reset
 
@@ -1025,7 +1033,7 @@ commons-by-codezela/
 │   ├── roles.ts                      # Role definitions and helpers
 │   ├── rate-limit.ts                 # Token-bucket rate limiting
 │   ├── audit-log.ts                  # Structured audit log writer
-│   ├── email.ts                      # Brevo transactional email
+│   ├── email.ts                      # Brevo transactional email (verification + reset)
 │   ├── upload.ts                     # Client-side upload helpers + validation
 │   ├── r2.ts                         # Cloudflare R2 storage integration
 │   ├── local-upload.ts               # Local filesystem upload fallback
