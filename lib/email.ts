@@ -6,6 +6,18 @@ interface PasswordResetEmailInput {
   resetUrl: string;
 }
 
+interface EmailVerificationEmailInput {
+  email: string;
+  name?: string | null;
+  verificationUrl: string;
+}
+
+interface TransactionalEmailContent {
+  subject: string;
+  html: string;
+  text: string;
+}
+
 function getBrevoConfig() {
   return {
     apiKey: process.env.BREVO_API_KEY || "",
@@ -17,6 +29,8 @@ function getBrevoConfig() {
   };
 }
 
+const BRAND_NAME = "Commons by Codezela Technologies";
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -26,44 +40,144 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function buildPasswordResetEmailHtml(
-  input: PasswordResetEmailInput,
-): { subject: string; html: string; text: string } {
-  const subject = "Reset your password";
-  const displayName = escapeHtml(input.name?.trim() || "there");
-  const resetUrl = escapeHtml(input.resetUrl);
-  const brand = "Commons by Codezela Technologies";
+function buildTransactionalEmail(params: {
+  preheader: string;
+  subject: string;
+  greetingName: string;
+  headline: string;
+  bodyLines: string[];
+  ctaLabel: string;
+  ctaUrl: string;
+  fallbackLabel: string;
+  footerLine: string;
+  textLines: string[];
+}): TransactionalEmailContent {
+  const preheader = escapeHtml(params.preheader);
+  const subject = params.subject;
+  const greetingName = escapeHtml(params.greetingName);
+  const headline = escapeHtml(params.headline);
+  const bodyLines = params.bodyLines
+    .map((line) => `<p style="margin:0 0 12px;color:#334155;font-size:16px;line-height:1.65">${escapeHtml(line)}</p>`)
+    .join("");
+  const ctaLabel = escapeHtml(params.ctaLabel);
+  const ctaUrl = escapeHtml(params.ctaUrl);
+  const fallbackLabel = escapeHtml(params.fallbackLabel);
+  const footerLine = escapeHtml(params.footerLine);
 
   const html = `
-    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:640px;margin:0 auto;padding:24px">
-      <h1 style="font-size:24px;margin:0 0 16px">${brand}</h1>
-      <p style="margin:0 0 12px">Hi ${displayName},</p>
-      <p style="margin:0 0 16px">We received a request to reset your password.</p>
-      <p style="margin:0 0 20px">
-        <a href="${resetUrl}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:600">
-          Reset password
-        </a>
-      </p>
-      <p style="margin:0 0 10px">If you didn't request this, you can ignore this email.</p>
-      <p style="margin:0;color:#64748b;font-size:13px">For security, this link will expire automatically.</p>
-    </div>
-  `;
+<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;visibility:hidden;mso-hide:all;">${preheader}</div>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f3f4f6;">
+      <tr>
+        <td align="center" style="padding:24px 14px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;">
+            <tr>
+              <td style="padding:0 6px 12px 6px;color:#0f172a;font-size:14px;font-weight:600;letter-spacing:0.02em;">
+                ${BRAND_NAME}
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:28px 24px;">
+                <p style="margin:0 0 14px;color:#0f172a;font-size:16px;line-height:1.6;">Hi ${greetingName},</p>
+                <h1 style="margin:0 0 14px;color:#020617;font-size:24px;line-height:1.3;font-weight:700;">${headline}</h1>
+                ${bodyLines}
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 16px 0;">
+                  <tr>
+                    <td align="center" bgcolor="#0f172a" style="border-radius:10px;">
+                      <a href="${ctaUrl}" style="display:inline-block;padding:12px 18px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">
+                        ${ctaLabel}
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0 0 10px;color:#475569;font-size:14px;line-height:1.6;">
+                  ${fallbackLabel}
+                </p>
+                <p style="margin:0 0 16px;color:#0f172a;font-size:13px;line-height:1.6;word-break:break-word;">
+                  <a href="${ctaUrl}" style="color:#0f172a;text-decoration:underline;">${ctaUrl}</a>
+                </p>
+                <p style="margin:0;color:#64748b;font-size:12px;line-height:1.6;">
+                  ${footerLine}
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
 
-  const text = [
-    `Hi ${input.name?.trim() || "there"},`,
-    "",
-    "We received a request to reset your password.",
-    `Reset password: ${input.resetUrl}`,
-    "",
-    "If you didn't request this, you can ignore this email.",
-  ].join("\n");
-
+  const text = params.textLines.join("\n");
   return { subject, html, text };
 }
 
-export async function sendPasswordResetEmail(
+function buildPasswordResetEmailContent(
   input: PasswordResetEmailInput,
-): Promise<void> {
+): TransactionalEmailContent {
+  const displayName = input.name?.trim() || "there";
+  return buildTransactionalEmail({
+    preheader: "Reset your account password",
+    subject: "Reset your password",
+    greetingName: displayName,
+    headline: "Reset your password",
+    bodyLines: [
+      "We received a request to reset the password for your account.",
+      "Use the button below to choose a new password.",
+    ],
+    ctaLabel: "Reset password",
+    ctaUrl: input.resetUrl,
+    fallbackLabel: "If the button does not work, open this link:",
+    footerLine:
+      "If you did not request this, you can safely ignore this message.",
+    textLines: [
+      `Hi ${displayName},`,
+      "",
+      "We received a request to reset your password.",
+      `Reset password: ${input.resetUrl}`,
+      "",
+      "If you did not request this, you can ignore this email.",
+    ],
+  });
+}
+
+function buildEmailVerificationEmailContent(
+  input: EmailVerificationEmailInput,
+): TransactionalEmailContent {
+  const displayName = input.name?.trim() || "there";
+  return buildTransactionalEmail({
+    preheader: "Verify your email address",
+    subject: "Verify your email address",
+    greetingName: displayName,
+    headline: "Confirm your email",
+    bodyLines: [
+      "Thanks for joining Commons. Please verify your email to secure your account and complete setup.",
+      "After verification, the dashboard warning will disappear automatically.",
+    ],
+    ctaLabel: "Verify email",
+    ctaUrl: input.verificationUrl,
+    fallbackLabel: "If the button does not work, open this link:",
+    footerLine:
+      "If you did not create this account, you can ignore this message.",
+    textLines: [
+      `Hi ${displayName},`,
+      "",
+      "Please verify your email for your Commons account.",
+      `Verify email: ${input.verificationUrl}`,
+      "",
+      "If you did not create this account, you can ignore this email.",
+    ],
+  });
+}
+
+async function sendBrevoEmail(params: {
+  toEmail: string;
+  toName?: string | null;
+  content: TransactionalEmailContent;
+}): Promise<void> {
+  const { toEmail, toName, content } = params;
   const config = getBrevoConfig();
   if (!config.apiKey || !config.senderEmail) {
     const message =
@@ -72,11 +186,10 @@ export async function sendPasswordResetEmail(
       throw new Error(message);
     }
     console.warn(`[Email] ${message}`);
-    console.log(`[Email] Password reset for ${input.email}: ${input.resetUrl}`);
+    console.log(`[Email] "${content.subject}" for ${toEmail}`);
     return;
   }
 
-  const content = buildPasswordResetEmailHtml(input);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
 
@@ -93,7 +206,7 @@ export async function sendPasswordResetEmail(
           email: config.senderEmail,
           name: config.senderName,
         },
-        to: [{ email: input.email, name: input.name || undefined }],
+        to: [{ email: toEmail, name: toName || undefined }],
         replyTo: config.replyToEmail
           ? {
               email: config.replyToEmail,
@@ -115,4 +228,24 @@ export async function sendPasswordResetEmail(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function sendPasswordResetEmail(
+  input: PasswordResetEmailInput,
+): Promise<void> {
+  await sendBrevoEmail({
+    toEmail: input.email,
+    toName: input.name,
+    content: buildPasswordResetEmailContent(input),
+  });
+}
+
+export async function sendEmailVerificationEmail(
+  input: EmailVerificationEmailInput,
+): Promise<void> {
+  await sendBrevoEmail({
+    toEmail: input.email,
+    toName: input.name,
+    content: buildEmailVerificationEmailContent(input),
+  });
 }

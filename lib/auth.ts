@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { pool } from "@/lib/db"; // shared pool — respects DB_PROVIDER
-import { sendPasswordResetEmail } from "@/lib/email";
+import { sendEmailVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -45,6 +45,18 @@ export const auth = betterAuth({
         email: user.email,
         name: user.name,
         resetUrl: url,
+      });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60 * 24,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendEmailVerificationEmail({
+        email: user.email,
+        name: user.name,
+        verificationUrl: url,
       });
     },
   },
