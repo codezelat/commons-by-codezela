@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "@/lib/auth-client";
+import { sendVerificationEmail, signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { getRoleLabel, isAdminRole, isStaffRole } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,10 @@ import {
   PanelLeft,
   Users,
   Shield,
+  BadgeCheck,
+  MailWarning,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 interface NavItem {
@@ -64,6 +68,7 @@ interface DashboardShellProps {
       email: string;
       image?: string | null;
       role?: string | null;
+      emailVerified?: boolean | null;
     };
   };
 }
@@ -73,8 +78,11 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isResendingVerification, startResendVerification] = useTransition();
+  const [isRefreshingStatus, startRefreshStatus] = useTransition();
   const isAdmin = isAdminRole(session.user.role);
   const isStaff = isStaffRole(session.user.role);
+  const isEmailVerified = session.user.emailVerified === true;
   const navItems = isStaff
     ? [
         ...baseNavItems,
@@ -101,6 +109,34 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
     } catch {
       toast.error("Failed to sign out");
     }
+  }
+
+  function handleResendVerificationEmail() {
+    startResendVerification(async () => {
+      try {
+        const callbackURL =
+          typeof window !== "undefined"
+            ? `${window.location.origin}/dashboard`
+            : "/dashboard";
+        const result = await sendVerificationEmail({
+          email: session.user.email,
+          callbackURL,
+        });
+        if (result.error) {
+          toast.error(result.error.message || "Failed to send verification email");
+          return;
+        }
+        toast.success("Verification email sent. Check your inbox.");
+      } catch {
+        toast.error("Failed to send verification email");
+      }
+    });
+  }
+
+  function handleRefreshVerificationStatus() {
+    startRefreshStatus(async () => {
+      router.refresh();
+    });
   }
 
   const sidebarContent = (
@@ -195,6 +231,21 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
                   <p className="truncate text-xs text-muted-foreground">
                     {session.user.email}
                   </p>
+                  <div
+                    className={cn(
+                      "mt-1 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+                      isEmailVerified
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        : "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+                    )}
+                  >
+                    {isEmailVerified ? (
+                      <BadgeCheck className="h-2.5 w-2.5" />
+                    ) : (
+                      <MailWarning className="h-2.5 w-2.5" />
+                    )}
+                    {isEmailVerified ? "Email verified" : "Email not verified"}
+                  </div>
                   <p className="truncate text-xs text-muted-foreground/80">
                     {roleLabel}
                   </p>
@@ -208,6 +259,21 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
               <p className="text-sm font-medium">{session.user.name}</p>
               <p className="text-xs text-muted-foreground">
                 {session.user.email}
+              </p>
+              <p
+                className={cn(
+                  "mt-1 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+                  isEmailVerified
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    : "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+                )}
+              >
+                {isEmailVerified ? (
+                  <BadgeCheck className="h-2.5 w-2.5" />
+                ) : (
+                  <MailWarning className="h-2.5 w-2.5" />
+                )}
+                {isEmailVerified ? "Email verified" : "Email not verified"}
               </p>
               <p className="text-xs text-muted-foreground/80">
                 {roleLabel}
@@ -269,6 +335,49 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
 
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+            {!isEmailVerified && (
+              <div className="mb-4 rounded-xl border border-red-200/80 bg-red-50/80 px-4 py-3 text-red-950 shadow-sm dark:border-red-900/60 dark:bg-red-950/25 dark:text-red-100">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-start gap-2.5">
+                    <MailWarning className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold">Email verification required</p>
+                      <p className="text-sm text-red-900/80 dark:text-red-100/85">
+                        Verify your email to secure your account. Until then, this warning stays visible.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="border border-red-200 bg-white text-red-700 hover:bg-red-100 dark:border-red-900/70 dark:bg-red-900/30 dark:text-red-100 dark:hover:bg-red-900/50"
+                      onClick={handleResendVerificationEmail}
+                      disabled={isResendingVerification}
+                    >
+                      {isResendingVerification ? (
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      ) : null}
+                      Resend verification
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-800 hover:bg-red-100 hover:text-red-900 dark:text-red-100 dark:hover:bg-red-900/50 dark:hover:text-red-100"
+                      onClick={handleRefreshVerificationStatus}
+                      disabled={isRefreshingStatus}
+                    >
+                      {isRefreshingStatus ? (
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                      )}
+                      Refresh status
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
             {children}
           </div>
         </main>

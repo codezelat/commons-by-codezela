@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://codezela.com/favicon.ico" alt="Codezela Technologies" width="48" height="48" />
+  <img src="public/images/Frame 8.png" alt="Commons by Codezela" width="48" height="48" />
 </p>
 
 <h1 align="center">Commons by Codezela</h1>
