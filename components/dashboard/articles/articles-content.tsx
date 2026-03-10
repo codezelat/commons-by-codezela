@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
+import { isStaffRole } from "@/lib/roles";
 import {
   getArticles,
   getCategories,
@@ -67,7 +68,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
-const ADMIN_STATUS_OPTIONS = [
+const STAFF_STATUS_OPTIONS = [
   { value: "all", label: "All Statuses" },
   { value: "draft", label: "Draft" },
   { value: "pending", label: "Pending" },
@@ -99,8 +100,8 @@ interface ArticlesContentProps {
 export function ArticlesContent({ searchParams }: ArticlesContentProps) {
   const router = useRouter();
   const { data: session } = useSession();
-  const isAdmin = session?.user?.role === "admin";
-  const statusOptions = isAdmin ? ADMIN_STATUS_OPTIONS : READER_STATUS_OPTIONS;
+  const isStaff = isStaffRole(session?.user?.role);
+  const statusOptions = isStaff ? STAFF_STATUS_OPTIONS : READER_STATUS_OPTIONS;
 
   const currentPage = Number(searchParams.page) || 1;
   const currentStatus = (searchParams.status as string) || "all";
@@ -303,7 +304,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
             {selected.size} selected
           </span>
           <div className="flex gap-2">
-            {!isAdmin && (
+            {!isStaff && (
               <Button
                 variant="outline"
                 size="sm"
@@ -325,7 +326,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               <Archive className="mr-1.5 h-3 w-3" />
               Archive
             </Button>
-            {isAdmin && (
+            {isStaff && (
               <Button
                 variant="outline"
                 size="sm"
@@ -371,7 +372,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               <TableHead className="hidden w-[140px] md:table-cell">
                 Category
               </TableHead>
-              {isAdmin && (
+              {isStaff && (
                 <TableHead className="hidden w-[140px] lg:table-cell">
                   Author
                 </TableHead>
@@ -399,7 +400,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                   <TableCell className="hidden md:table-cell">
                     <Skeleton className="h-4 w-20" />
                   </TableCell>
-                  {isAdmin && (
+                  {isStaff && (
                     <TableCell className="hidden lg:table-cell">
                       <Skeleton className="h-4 w-24" />
                     </TableCell>
@@ -445,7 +446,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                       {article.category_name || "—"}
                     </span>
                   </TableCell>
-                  {isAdmin && (
+                  {isStaff && (
                     <TableCell className="hidden lg:table-cell">
                       <span className="text-sm text-muted-foreground truncate max-w-[120px] block">
                         {article.author_name || "—"}
@@ -488,7 +489,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
-                        {isAdmin && article.status === "published" && (
+                        {isStaff && article.status === "published" && (
                           <DropdownMenuItem
                             onClick={async () => {
                               try {
@@ -507,7 +508,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                             <EyeOff className="mr-2 h-4 w-4" /> Unpublish
                           </DropdownMenuItem>
                         )}
-                        {!isAdmin && (
+                        {!isStaff && (
                           <DropdownMenuItem
                             onClick={async () => {
                               try {
@@ -560,7 +561,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 8 : 7} className="h-32 text-center">
+                <TableCell colSpan={isStaff ? 8 : 7} className="h-32 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <p className="text-sm text-slate-500">No articles found</p>
                     <Link href="/dashboard/articles/new">

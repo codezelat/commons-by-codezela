@@ -3,7 +3,8 @@
 import { query, queryOne, execute } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { sanitizeArticleText } from "@/lib/article-metadata";
-import { isAdminRole, requireAdminSession, requireSession } from "@/lib/authz";
+import { requireSession, requireStaffSession } from "@/lib/authz";
+import { isStaffRole } from "@/lib/roles";
 
 function toSlug(text: string): string {
   return text
@@ -38,7 +39,7 @@ export interface Category {
 }
 
 export async function getCategoriesWithCount(): Promise<Category[]> {
-  await requireAdminSession();
+  await requireStaffSession();
   return query<Category>(
     `SELECT c.*, COALESCE(counts.cnt, 0)::int as article_count
      FROM category c
@@ -53,7 +54,7 @@ export async function createCategory(data: {
   name: string;
   description?: string;
 }): Promise<{ id: string }> {
-  await requireAdminSession();
+  await requireStaffSession();
   const slug = toSlug(data.name);
 
   const existing = await queryOne<{ id: string }>(
@@ -76,7 +77,7 @@ export async function updateCategory(
   id: string,
   data: { name?: string; description?: string },
 ): Promise<void> {
-  await requireAdminSession();
+  await requireStaffSession();
 
   const fields: string[] = [];
   const params: unknown[] = [];
@@ -112,7 +113,7 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  await requireAdminSession();
+  await requireStaffSession();
   await execute(
     `UPDATE article SET category_id = NULL WHERE category_id = $1`,
     [id],
@@ -125,7 +126,7 @@ export async function mergeCategories(
   sourceId: string,
   targetId: string,
 ): Promise<void> {
-  await requireAdminSession();
+  await requireStaffSession();
   if (sourceId === targetId) {
     throw new Error("Cannot merge into the same category");
   }
@@ -159,7 +160,7 @@ export interface Tag {
 }
 
 export async function getTagsWithCount(): Promise<Tag[]> {
-  await requireAdminSession();
+  await requireStaffSession();
   return query<Tag>(
     `SELECT t.*,
             creator.name as created_by_name,
@@ -184,7 +185,7 @@ export async function getTagsWithCount(): Promise<Tag[]> {
 export async function createTag(data: {
   name: string;
 }): Promise<{ id: string }> {
-  const admin = await requireAdminSession();
+  const staff = await requireStaffSession();
   const normalizedName = normalizeName(data.name);
   const slug = toSlug(normalizedName);
   if (!slug) {
@@ -201,7 +202,7 @@ export async function createTag(data: {
     `INSERT INTO tag (name, slug, status, created_by, approved_at, reviewed_by, reviewed_at, moderation_note)
      VALUES ($1, $2, 'approved', $3, NOW(), $3, NOW(), NULL)
      RETURNING id`,
-    [normalizedName, slug, admin.user.id],
+    [normalizedName, slug, staff.user.id],
   );
   if (!result) throw new Error("Failed to create tag");
 
@@ -213,7 +214,7 @@ export async function updateTag(
   id: string,
   data: { name: string },
 ): Promise<void> {
-  await requireAdminSession();
+  await requireStaffSession();
   const normalizedName = normalizeName(data.name);
   const slug = toSlug(normalizedName);
   if (!slug) {
@@ -237,7 +238,7 @@ export async function updateTag(
 }
 
 export async function deleteTag(id: string): Promise<void> {
-  await requireAdminSession();
+  await requireStaffSession();
   await execute(`DELETE FROM article_tag WHERE tag_id = $1`, [id]);
   await execute(`DELETE FROM tag WHERE id = $1`, [id]);
   revalidateTagSurfaces();
@@ -247,7 +248,7 @@ export async function mergeTags(
   sourceId: string,
   targetId: string,
 ): Promise<void> {
-  await requireAdminSession();
+  await requireStaffSession();
   if (sourceId === targetId) {
     throw new Error("Cannot merge into the same tag");
   }
@@ -292,7 +293,7 @@ export async function submitTagForModeration(name: string): Promise<{
     [slug],
   );
 
-  const isAdmin = isAdminRole(session.user.role);
+  const isStaff = isStaffRole(session.user.role);
 
   if (existing) {
     if (existing.status === "approved") {
@@ -305,7 +306,7 @@ export async function submitTagForModeration(name: string): Promise<{
       };
     }
 
-    if (isAdmin) {
+    if (isStaff) {
       await execute(
         `UPDATE tag
          SET name = $1,
@@ -360,7 +361,7 @@ export async function submitTagForModeration(name: string): Promise<{
     };
   }
 
-  const status: TagStatus = isAdmin ? "approved" : "pending";
+  const status: TagStatus = isStaff ? "approved" : "pending";
   const result = await queryOne<{
     id: string;
     name: string;
@@ -401,7 +402,7 @@ export async function getTagsForModeration(filters?: {
   search?: string;
   limit?: number;
 }): Promise<Tag[]> {
-  await requireAdminSession();
+  await requireStaffSession();
 
   const conditions: string[] = [];
   const params: unknown[] = [];
@@ -453,7 +454,7 @@ export async function moderateTag(
   decision: "approved" | "rejected",
   note?: string,
 ): Promise<{ status: TagStatus }> {
-  const admin = await requireAdminSession();
+  const staff = await requireStaffSession();
   const existing = await queryOne<{ id: string }>(
     `SELECT id FROM tag WHERE id = $1`,
     [id],
@@ -471,7 +472,7 @@ export async function moderateTag(
          reviewed_at = NOW(),
          approved_at = CASE WHEN $1 = 'approved' THEN NOW() ELSE approved_at END
      WHERE id = $4`,
-    [decision, normalizedNote || null, admin.user.id, id],
+    [decision, normalizedNote || null, staff.user.id, id],
   );
 
   revalidateTagSurfaces();

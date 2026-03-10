@@ -143,6 +143,7 @@ export default async function PublicArticlePage({
     author: {
       "@type": "Person",
       name: article.author_name || "Commons by Codezela",
+      url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/authors/${article.author_id}`,
     },
     publisher: {
       "@type": "Organization",
@@ -202,9 +203,12 @@ export default async function PublicArticlePage({
             {/* Meta line */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-[var(--pub-border)] pb-6 text-sm text-[var(--pub-text-muted)]">
               {article.author_name && (
-                <span className="font-medium text-[var(--pub-text)]">
+                <Link
+                  href={`/authors/${article.author_id}`}
+                  className="font-medium text-[var(--pub-text)] transition-colors hover:text-[var(--pub-accent)]"
+                >
                   {article.author_name}
-                </span>
+                </Link>
               )}
               <span>{readingTime} min read</span>
               {publishedLabel && <span>{publishedLabel}</span>}

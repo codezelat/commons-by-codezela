@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { getRoleLabel, isAdminRole, isStaffRole } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -28,6 +29,7 @@ import {
   ChevronDown,
   PanelLeftClose,
   PanelLeft,
+  Users,
 } from "lucide-react";
 
 interface NavItem {
@@ -45,6 +47,10 @@ const adminNavItems: NavItem[] = [
   { title: "Categories", href: "/dashboard/categories", icon: FolderOpen },
   { title: "Tags", href: "/dashboard/tags", icon: Tags },
   { title: "Featured", href: "/dashboard/featured", icon: Star },
+];
+
+const adminOnlyNavItems: NavItem[] = [
+  { title: "Users", href: "/dashboard/users", icon: Users },
 ];
 
 interface DashboardShellProps {
@@ -65,10 +71,16 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isAdmin = session.user.role === "admin";
-  const navItems = isAdmin
-    ? [...baseNavItems, ...adminNavItems]
+  const isAdmin = isAdminRole(session.user.role);
+  const isStaff = isStaffRole(session.user.role);
+  const navItems = isStaff
+    ? [
+        ...baseNavItems,
+        ...adminNavItems,
+        ...(isAdmin ? adminOnlyNavItems : []),
+      ]
     : baseNavItems;
+  const roleLabel = getRoleLabel(session.user.role);
 
   const initials = session.user.name
     ? session.user.name
@@ -182,7 +194,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
                     {session.user.email}
                   </p>
                   <p className="truncate text-xs text-muted-foreground/80">
-                    {isAdmin ? "Admin" : "Reader"}
+                    {roleLabel}
                   </p>
                 </div>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -196,7 +208,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
                 {session.user.email}
               </p>
               <p className="text-xs text-muted-foreground/80">
-                {isAdmin ? "Admin" : "Reader"}
+                {roleLabel}
               </p>
             </div>
             <DropdownMenuSeparator />

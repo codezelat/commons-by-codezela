@@ -8,10 +8,10 @@ import {
 } from "@/lib/article-metadata";
 import {
   canManageArticle,
-  isAdminRole,
-  requireAdminSession,
+  requireStaffSession,
   requireSession,
 } from "@/lib/authz";
+import { isStaffRole } from "@/lib/roles";
 
 // ---------- Types ----------
 
@@ -74,6 +74,7 @@ export interface PublicArticleFilters {
   search?: string;
   category?: string;
   tag?: string;
+  author?: string;
   page?: number;
   pageSize?: number;
 }
@@ -151,9 +152,9 @@ function normalizeStatus(status?: string): Article["status"] {
 
 function resolveCreateStatus(
   requestedStatus: Article["status"],
-  isAdmin: boolean,
+  isStaff: boolean,
 ): Article["status"] {
-  if (isAdmin) {
+  if (isStaff) {
     return requestedStatus;
   }
 
@@ -182,7 +183,7 @@ function normalizeTagIds(tagIds?: string[]): string[] {
 async function resolveAllowedTagIds(
   tagIds: string[] | undefined,
   session: Awaited<ReturnType<typeof requireSession>>,
-  isAdmin: boolean,
+  isStaff: boolean,
 ): Promise<string[]> {
   const ids = normalizeTagIds(tagIds);
   if (ids.length === 0) {
@@ -204,7 +205,7 @@ async function resolveAllowedTagIds(
     throw new Error("One or more selected tags do not exist");
   }
 
-  if (!isAdmin) {
+  if (!isStaff) {
     const unauthorized = tags.find(
       (tag) =>
         !(
@@ -226,7 +227,7 @@ export async function getArticles(
   filters: ArticleFilters = {},
 ): Promise<ArticleListResult> {
   const session = await requireSession();
-  const isAdmin = isAdminRole(session.user.role);
+  const isStaff = isStaffRole(session.user.role);
 
   const page = Math.max(1, filters.page || 1);
   const pageSize = Math.min(100, Math.max(1, filters.pageSize || 20));
@@ -248,7 +249,7 @@ export async function getArticles(
     params.push(filters.category);
   }
 
-  if (!isAdmin) {
+  if (!isStaff) {
     paramIdx++;
     conditions.push(`a.author_id = $${paramIdx}`);
     params.push(session.user.id);
@@ -406,13 +407,13 @@ export async function createArticle(data: {
   moderationRequired: boolean;
 }> {
   const session = await requireSession();
-  const isAdmin = isAdminRole(session.user.role);
-  const tagIds = await resolveAllowedTagIds(data.tag_ids, session, isAdmin);
+  const isStaff = isStaffRole(session.user.role);
+  const tagIds = await resolveAllowedTagIds(data.tag_ids, session, isStaff);
   const normalized = normalizeArticleDraftData(data);
   const requestedStatus = normalizeStatus(data.status);
-  const status = resolveCreateStatus(requestedStatus, isAdmin);
+  const status = resolveCreateStatus(requestedStatus, isStaff);
   const moderationRequired =
-    !isAdmin && requestedStatus === "published" && status === "pending";
+    !isStaff && requestedStatus === "published" && status === "pending";
   const moderationNote = moderationRequired
     ? "Submitted for moderation by the author."
     : null;
@@ -496,7 +497,7 @@ export async function updateArticle(
   moderationRequired: boolean;
 }> {
   const session = await requireSession();
-  const isAdmin = isAdminRole(session.user.role);
+  const isStaff = isStaffRole(session.user.role);
   const existing = await queryOne<{
     id: string;
     slug: string;
@@ -516,7 +517,7 @@ export async function updateArticle(
   const normalized = normalizeArticleDraftData(data);
   const tagIds =
     data.tag_ids !== undefined
-      ? await resolveAllowedTagIds(data.tag_ids, session, isAdmin)
+      ? await resolveAllowedTagIds(data.tag_ids, session, isStaff)
       : undefined;
   const requestedStatus =
     data.status !== undefined ? normalizeStatus(data.status) : undefined;
@@ -541,7 +542,7 @@ export async function updateArticle(
   let moderationNote: string | null | undefined;
   let clearReviewMetadata = false;
 
-  if (!isAdmin) {
+  if (!isStaff) {
     if (requestedStatus && !WRITER_ALLOWED_STATUSES.has(requestedStatus)) {
       throw new Error("Forbidden");
     }
@@ -646,13 +647,13 @@ export async function updateArticle(
     paramIdx++;
     fields.push(`moderation_note = $${paramIdx}`);
     params.push(moderationNote);
-  } else if (isAdmin && finalStatus !== undefined && finalStatus !== "pending") {
+  } else if (isStaff && finalStatus !== undefined && finalStatus !== "pending") {
     paramIdx++;
     fields.push(`moderation_note = $${paramIdx}`);
     params.push(null);
   }
 
-  if (clearReviewMetadata || (isAdmin && finalStatus !== undefined)) {
+  if (clearReviewMetadata || (isStaff && finalStatus !== undefined)) {
     fields.push(`reviewed_by = NULL`);
     fields.push(`reviewed_at = NULL`);
   }
@@ -705,7 +706,7 @@ export async function updateArticle(
 
 export async function deleteArticles(ids: string[]): Promise<void> {
   const session = await requireSession();
-  const isAdmin = isAdminRole(session.user.role);
+  const isStaff = isStaffRole(session.user.role);
   if (ids.length === 0) return;
   const articles = await query<{ id: string; slug: string; author_id: string }>(
     `SELECT id, slug, author_id FROM article WHERE id = ANY($1)`,
@@ -714,7 +715,7 @@ export async function deleteArticles(ids: string[]): Promise<void> {
   if (articles.length !== ids.length) {
     throw new Error("One or more articles no longer exist");
   }
-  const allowed = isAdmin
+  const allowed = isStaff
     ? articles
     : articles.filter((article) => article.author_id === session.user.id);
 
@@ -740,10 +741,10 @@ export async function bulkUpdateStatus(
   status: string,
 ): Promise<void> {
   const session = await requireSession();
-  const isAdmin = isAdminRole(session.user.role);
+  const isStaff = isStaffRole(session.user.role);
   if (ids.length === 0) return;
   const requestedStatus = normalizeStatus(status);
-  if (!isAdmin && !WRITER_ALLOWED_STATUSES.has(requestedStatus)) {
+  if (!isStaff && !WRITER_ALLOWED_STATUSES.has(requestedStatus)) {
     throw new Error("Forbidden");
   }
 
@@ -759,7 +760,7 @@ export async function bulkUpdateStatus(
     throw new Error("One or more articles no longer exist");
   }
 
-  const allowed = isAdmin
+  const allowed = isStaff
     ? articles
     : articles.filter((article) => article.author_id === session.user.id);
   if (allowed.length !== ids.length) {
@@ -768,7 +769,7 @@ export async function bulkUpdateStatus(
   const allowedIds = allowed.map((article) => article.id);
 
   const effectiveStatus =
-    !isAdmin && requestedStatus === "published" ? "pending" : requestedStatus;
+    !isStaff && requestedStatus === "published" ? "pending" : requestedStatus;
   const updateFields = [`status = $1`, `updated_at = NOW()`];
   const params: unknown[] = [effectiveStatus, allowedIds];
 
@@ -776,12 +777,12 @@ export async function bulkUpdateStatus(
     updateFields.push(`published_at = COALESCE(published_at, NOW())`);
   }
 
-  if (!isAdmin && effectiveStatus === "pending") {
+  if (!isStaff && effectiveStatus === "pending") {
     updateFields.push(`moderation_note = $3`);
     updateFields.push(`reviewed_by = NULL`);
     updateFields.push(`reviewed_at = NULL`);
     params.push("Submitted for moderation by the author.");
-  } else if (isAdmin && effectiveStatus !== "pending") {
+  } else if (isStaff && effectiveStatus !== "pending") {
     updateFields.push(`moderation_note = NULL`);
     updateFields.push(`reviewed_by = NULL`);
     updateFields.push(`reviewed_at = NULL`);
@@ -807,7 +808,7 @@ export async function moderateArticle(
   decision: "published" | "rejected" | "draft",
   note?: string,
 ): Promise<{ status: Article["status"] }> {
-  const session = await requireAdminSession();
+  const session = await requireStaffSession();
   const article = await queryOne<{ slug: string }>(
     `SELECT slug FROM article WHERE id = $1`,
     [id],
@@ -888,6 +889,12 @@ export async function getPublicArticles(
         AND t.status = 'approved'
     )`);
     params.push(filters.tag);
+  }
+
+  if (filters.author) {
+    paramIdx++;
+    conditions.push(`a.author_id = $${paramIdx}`);
+    params.push(filters.author);
   }
 
   const where = `WHERE ${conditions.join(" AND ")}`;
@@ -1079,6 +1086,81 @@ export async function getFeaturedPublicArticles(limit: number = 3) {
   );
 }
 
+export interface PublicAuthorProfile {
+  id: string;
+  name: string;
+  image: string | null;
+  created_at: string;
+  published_count: number;
+  first_published_at: string | null;
+  latest_published_at: string | null;
+}
+
+export async function getPublicAuthorProfile(
+  authorId: string,
+): Promise<PublicAuthorProfile | null> {
+  return queryOne<PublicAuthorProfile>(
+    `SELECT u.id,
+            u.name,
+            u.image,
+            u."createdAt" as created_at,
+            COUNT(a.id)::int as published_count,
+            MIN(a.published_at) as first_published_at,
+            MAX(a.published_at) as latest_published_at
+     FROM "user" u
+     LEFT JOIN article a
+       ON a.author_id = u.id
+      AND a.status = 'published'
+      AND a.robots_noindex = false
+     WHERE u.id = $1
+     GROUP BY u.id, u.name, u.image, u."createdAt"`,
+    [authorId],
+  );
+}
+
+export async function getPublicAuthorCategories(authorId: string) {
+  return query<{
+    id: string;
+    name: string;
+    slug: string;
+    article_count: number;
+  }>(
+    `SELECT c.id, c.name, c.slug, COUNT(a.id)::int as article_count
+     FROM category c
+     JOIN article a
+       ON a.category_id = c.id
+      AND a.status = 'published'
+      AND a.robots_noindex = false
+      AND a.author_id = $1
+     GROUP BY c.id, c.name, c.slug
+     ORDER BY article_count DESC, c.name ASC`,
+    [authorId],
+  );
+}
+
+export async function getPublicAuthorTags(authorId: string, limit: number = 20) {
+  return query<{
+    id: string;
+    name: string;
+    slug: string;
+    article_count: number;
+  }>(
+    `SELECT t.id, t.name, t.slug, COUNT(DISTINCT at.article_id)::int as article_count
+     FROM tag t
+     JOIN article_tag at ON at.tag_id = t.id
+     JOIN article a
+       ON a.id = at.article_id
+      AND a.status = 'published'
+      AND a.robots_noindex = false
+      AND a.author_id = $1
+     WHERE t.status = 'approved'
+     GROUP BY t.id, t.name, t.slug
+     ORDER BY article_count DESC, t.name ASC
+     LIMIT ${limit}`,
+    [authorId],
+  );
+}
+
 // ---------- Categories & Tags (read helpers) ----------
 
 export async function getCategories() {
@@ -1093,9 +1175,9 @@ export async function getCategories() {
 
 export async function getTags() {
   const session = await requireSession();
-  const isAdmin = isAdminRole(session.user.role);
+  const isStaff = isStaffRole(session.user.role);
 
-  if (isAdmin) {
+  if (isStaff) {
     return query<{
       id: string;
       name: string;

@@ -49,43 +49,52 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
             )}
           </div>
         </div>
+      </Link>
 
-        <div className="space-y-2.5 p-4">
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-[var(--pub-text-muted)]">
-            {article.author_name && <span>{article.author_name}</span>}
-            {article.author_name && <span>&middot;</span>}
-            <span>{readingTime} min</span>
-            {publishedLabel && (
-              <>
-                <span>&middot;</span>
-                <span>{publishedLabel}</span>
-              </>
-            )}
-          </div>
+      <div className="space-y-2.5 p-4">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-[var(--pub-text-muted)]">
+          {article.author_name && (
+            <Link
+              href={`/authors/${article.author_id}`}
+              className="font-medium text-[var(--pub-text-secondary)] transition-colors hover:text-[var(--pub-accent)]"
+            >
+              {article.author_name}
+            </Link>
+          )}
+          {article.author_name && <span>&middot;</span>}
+          <span>{readingTime} min</span>
+          {publishedLabel && (
+            <>
+              <span>&middot;</span>
+              <span>{publishedLabel}</span>
+            </>
+          )}
+        </div>
 
+        <Link href={`/articles/${article.slug}`} className="block">
           <h2 className="font-display text-lg leading-snug tracking-tight text-[var(--pub-text)] transition-colors group-hover:text-[var(--pub-accent)]">
             {article.title}
           </h2>
           {summary && (
-            <p className="line-clamp-2 text-[13px] leading-relaxed text-[var(--pub-text-secondary)]">
+            <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-[var(--pub-text-secondary)]">
               {summary}
             </p>
           )}
+        </Link>
 
-          {article.tags && article.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 pt-0.5">
-              {article.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag.id}
-                  className="rounded-full bg-[var(--pub-tag-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--pub-text-secondary)]"
-                >
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </Link>
+        {article.tags && article.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {article.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag.id}
+                className="rounded-full bg-[var(--pub-tag-bg)] px-2 py-0.5 text-[10px] font-medium text-[var(--pub-text-secondary)]"
+              >
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </article>
   );
 }

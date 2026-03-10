@@ -26,18 +26,10 @@ CREATE TABLE IF NOT EXISTS "user" (
 
 ALTER TABLE "user" ALTER COLUMN role SET DEFAULT 'reader';
 UPDATE "user" SET role = 'reader' WHERE role = 'user';
-UPDATE "user" SET role = 'reader' WHERE role IS NULL OR role NOT IN ('admin', 'reader');
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'user_role_check'
-  ) THEN
-    ALTER TABLE "user"
-      ADD CONSTRAINT user_role_check CHECK (role IN ('admin', 'reader'));
-  END IF;
-END $$;
+UPDATE "user" SET role = 'reader' WHERE role IS NULL OR role NOT IN ('admin', 'moderator', 'reader');
+ALTER TABLE "user" DROP CONSTRAINT IF EXISTS user_role_check;
+ALTER TABLE "user"
+  ADD CONSTRAINT user_role_check CHECK (role IN ('admin', 'moderator', 'reader'));
 
 CREATE TABLE IF NOT EXISTS "session" (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,

@@ -2,7 +2,7 @@
 
 import { query, queryOne, execute } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { requireAdminSession } from "@/lib/authz";
+import { requireStaffSession } from "@/lib/authz";
 
 export interface FeaturedArticle {
   id: string;
@@ -17,7 +17,7 @@ export interface FeaturedArticle {
 }
 
 export async function getFeaturedArticles(): Promise<FeaturedArticle[]> {
-  await requireAdminSession();
+  await requireStaffSession();
   return query<FeaturedArticle>(
     `SELECT a.id, a.title, a.slug, a.cover_image, a.featured_order, a.status,
             u.name as author_name, c.name as category_name, a.published_at
@@ -37,7 +37,7 @@ export interface ArticleForPicker {
 }
 
 export async function getPublishedArticles(): Promise<ArticleForPicker[]> {
-  await requireAdminSession();
+  await requireStaffSession();
   return query<ArticleForPicker>(
     `SELECT a.id, a.title, a.status, u.name as author_name
      FROM article a
@@ -49,7 +49,7 @@ export async function getPublishedArticles(): Promise<ArticleForPicker[]> {
 }
 
 export async function addFeaturedArticle(articleId: string): Promise<void> {
-  await requireAdminSession();
+  await requireStaffSession();
 
   // Check count — max 3
   const result = await queryOne<{ count: string }>(
@@ -74,7 +74,7 @@ export async function addFeaturedArticle(articleId: string): Promise<void> {
 }
 
 export async function removeFeaturedArticle(articleId: string): Promise<void> {
-  await requireAdminSession();
+  await requireStaffSession();
   await execute(
     `UPDATE article SET is_featured = false, featured_order = 0 WHERE id = $1`,
     [articleId],
@@ -93,7 +93,7 @@ export async function removeFeaturedArticle(articleId: string): Promise<void> {
 }
 
 export async function reorderFeatured(orderedIds: string[]): Promise<void> {
-  await requireAdminSession();
+  await requireStaffSession();
   for (let i = 0; i < orderedIds.length; i++) {
     await execute(`UPDATE article SET featured_order = $1 WHERE id = $2`, [
       i + 1,

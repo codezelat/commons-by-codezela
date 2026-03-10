@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
+import { isStaffRole } from "@/lib/roles";
 import {
   createArticle,
   updateArticle,
@@ -162,7 +163,7 @@ export function ArticleEditor({
   const router = useRouter();
   const { data: session } = useSession();
   const [isPending, startTransition] = useTransition();
-  const isAdmin = session?.user?.role === "admin";
+  const isStaff = isStaffRole(session?.user?.role);
   const initialEditorContent = getInitialEditorContent(article);
 
   const [title, setTitle] = useState(article?.title || "");
@@ -392,7 +393,7 @@ export function ArticleEditor({
             disabled={isPending}
           >
             {isPending ? <Loader2 className="animate-spin" /> : <Send />}
-            {isAdmin ? "Publish" : "Submit for review"}
+            {isStaff ? "Publish" : "Submit for review"}
           </Button>
         </div>
       </div>
@@ -556,9 +557,9 @@ export function ArticleEditor({
                 </p>
               )}
             </div>
-            {!isAdmin && (
+            {!isStaff && (
               <p className="text-xs text-muted-foreground">
-                New reader tags stay pending until an admin approves them.
+                New reader tags stay pending until a moderator approves them.
               </p>
             )}
           </div>
@@ -590,12 +591,12 @@ export function ArticleEditor({
                 <SelectContent>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="pending">Pending Review</SelectItem>
-                  {isAdmin && <SelectItem value="published">Published</SelectItem>}
-                  {isAdmin && <SelectItem value="rejected">Rejected</SelectItem>}
+                  {isStaff && <SelectItem value="published">Published</SelectItem>}
+                  {isStaff && <SelectItem value="rejected">Rejected</SelectItem>}
                   <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
-              {!isAdmin && (
+              {!isStaff && (
                 <p className="text-xs text-muted-foreground">
                   Reader submissions are routed to moderation before publishing.
                 </p>

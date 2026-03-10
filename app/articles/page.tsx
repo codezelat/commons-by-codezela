@@ -146,25 +146,24 @@ export default async function ArticlesPage({
         {/* Featured Spotlight */}
         {spotlight && !hasFilters && (
           <div className="pub-fade-in pub-fade-in-d2 mb-10">
-            <Link
-              href={`/articles/${spotlight.slug}`}
-              className="group block overflow-hidden rounded-2xl border border-[var(--pub-border)] bg-[var(--pub-surface)] transition-shadow hover:shadow-lg hover:shadow-[var(--pub-card-hover-shadow)]"
-            >
+            <div className="group overflow-hidden rounded-2xl border border-[var(--pub-border)] bg-[var(--pub-surface)] transition-shadow hover:shadow-lg hover:shadow-[var(--pub-card-hover-shadow)]">
               <div className="grid gap-0 md:grid-cols-2">
-                {spotlight.cover_image ? (
-                  <div className="relative aspect-[16/10] overflow-hidden bg-neutral-100 md:aspect-auto md:min-h-[280px]">
-                    <ManagedImage
-                      src={spotlight.cover_image}
-                      alt={spotlight.title}
-                      fill
-                      priority
-                      className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                    />
-                  </div>
-                ) : (
-                  <div className="aspect-[16/10] bg-[var(--pub-accent-subtle)] md:aspect-auto md:min-h-[280px]" />
-                )}
+                <Link href={`/articles/${spotlight.slug}`} className="block">
+                  {spotlight.cover_image ? (
+                    <div className="relative aspect-[16/10] overflow-hidden bg-neutral-100 md:aspect-auto md:min-h-[280px]">
+                      <ManagedImage
+                        src={spotlight.cover_image}
+                        alt={spotlight.title}
+                        fill
+                        priority
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-[16/10] bg-[var(--pub-accent-subtle)] md:aspect-auto md:min-h-[280px]" />
+                  )}
+                </Link>
                 <div className="flex flex-col justify-center p-6 sm:p-8">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="rounded-full bg-[var(--pub-pill-bg)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--pub-pill-text)]">
@@ -176,15 +175,22 @@ export default async function ArticlesPage({
                       </span>
                     )}
                   </div>
-                  <h2 className="font-display text-2xl leading-snug tracking-tight text-[var(--pub-text)] group-hover:text-[var(--pub-accent)] transition-colors sm:text-3xl">
-                    {spotlight.title}
-                  </h2>
-                  <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[var(--pub-text-secondary)]">
-                    {deriveArticleSummary(spotlight.content_text, 200)}
-                  </p>
+                  <Link href={`/articles/${spotlight.slug}`} className="block">
+                    <h2 className="font-display text-2xl leading-snug tracking-tight text-[var(--pub-text)] transition-colors group-hover:text-[var(--pub-accent)] sm:text-3xl">
+                      {spotlight.title}
+                    </h2>
+                    <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[var(--pub-text-secondary)]">
+                      {deriveArticleSummary(spotlight.content_text, 200)}
+                    </p>
+                  </Link>
                   <div className="mt-4 flex flex-wrap items-center gap-x-3 text-[12px] text-[var(--pub-text-muted)]">
                     {spotlight.author_name && (
-                      <span>{spotlight.author_name}</span>
+                      <Link
+                        href={`/authors/${spotlight.author_id}`}
+                        className="font-medium text-[var(--pub-text-secondary)] transition-colors hover:text-[var(--pub-accent)]"
+                      >
+                        {spotlight.author_name}
+                      </Link>
                     )}
                     <span>
                       {getArticleReadingTimeMinutes(spotlight.content_text)} min
@@ -212,7 +218,7 @@ export default async function ArticlesPage({
                   </div>
                 </div>
               </div>
-            </Link>
+            </div>
           </div>
         )}
 

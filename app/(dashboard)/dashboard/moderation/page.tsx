@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ModerationContent } from "@/components/dashboard/moderation/moderation-content";
-import { requireAdminSession } from "@/lib/authz";
+import { requireStaffSession } from "@/lib/authz";
 
 export const metadata = {
   title: "Moderation",
@@ -31,7 +31,7 @@ export default function ModerationPage() {
 }
 
 async function ModerationContentWrapper() {
-  const session = await requireAdminSession().catch(() => null);
+  const session = await requireStaffSession().catch(() => null);
   if (!session) {
     redirect("/dashboard/articles");
   }

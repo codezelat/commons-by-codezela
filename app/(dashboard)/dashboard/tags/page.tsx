@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TagsContent } from "@/components/dashboard/tags/tags-content";
-import { requireAdminSession } from "@/lib/authz";
+import { requireStaffSession } from "@/lib/authz";
 import { redirect } from "next/navigation";
 
 export const metadata = {
@@ -33,7 +33,7 @@ export default function TagsPage() {
 }
 
 async function TagsContentWrapper() {
-  const session = await requireAdminSession().catch(() => null);
+  const session = await requireStaffSession().catch(() => null);
   if (!session) {
     redirect("/dashboard/articles");
   }
