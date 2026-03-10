@@ -110,6 +110,30 @@ export async function PublicShell({ children }: PublicShellProps) {
                   Sign in
                 </Link>
               )}
+              <Link
+                href="/moderation-policy"
+                className="transition-colors hover:text-neutral-300"
+              >
+                Moderation
+              </Link>
+              <Link
+                href="/reporting"
+                className="transition-colors hover:text-neutral-300"
+              >
+                Reporting
+              </Link>
+              <Link
+                href="/terms"
+                className="transition-colors hover:text-neutral-300"
+              >
+                Terms
+              </Link>
+              <Link
+                href="/privacy"
+                className="transition-colors hover:text-neutral-300"
+              >
+                Privacy
+              </Link>
             </div>
           </div>
         </footer>

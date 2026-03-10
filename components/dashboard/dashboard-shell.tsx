@@ -30,6 +30,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Users,
+  Shield,
 } from "lucide-react";
 
 interface NavItem {
@@ -51,6 +52,7 @@ const adminNavItems: NavItem[] = [
 
 const adminOnlyNavItems: NavItem[] = [
   { title: "Users", href: "/dashboard/users", icon: Users },
+  { title: "Audit", href: "/dashboard/audit", icon: Shield },
 ];
 
 interface DashboardShellProps {

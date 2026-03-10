@@ -180,6 +180,34 @@ CREATE TABLE IF NOT EXISTS article_reaction (
 CREATE INDEX IF NOT EXISTS idx_article_reaction_article ON article_reaction (article_id);
 CREATE INDEX IF NOT EXISTS idx_article_reaction_user ON article_reaction (user_id);
 
+-- Admin/Moderator audit trail
+CREATE TABLE IF NOT EXISTS admin_audit_log (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  actor_id TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+  actor_role TEXT NOT NULL CHECK (actor_role IN ('admin', 'moderator', 'reader')),
+  action TEXT NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id TEXT,
+  target_label TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created_at ON admin_audit_log (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_actor_id ON admin_audit_log (actor_id);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_action_target ON admin_audit_log (action, target_type);
+
+-- Rate limit counters
+CREATE TABLE IF NOT EXISTS rate_limit_bucket (
+  rate_key TEXT NOT NULL,
+  bucket_start TIMESTAMPTZ NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0 CHECK (count >= 0),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (rate_key, bucket_start)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limit_bucket_updated_at ON rate_limit_bucket (updated_at);
+
 -- ============================================================
 -- Seed default categories
 -- ============================================================

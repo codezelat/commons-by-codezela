@@ -12,6 +12,8 @@ import {
   requireSession,
 } from "@/lib/authz";
 import { isStaffRole } from "@/lib/roles";
+import { safeRecordAuditLog } from "@/lib/audit-log";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 // ---------- Types ----------
 
@@ -228,6 +230,12 @@ export async function getArticles(
 ): Promise<ArticleListResult> {
   const session = await requireSession();
   const isStaff = isStaffRole(session.user.role);
+  const writerLimit = isStaff ? 180 : 40;
+  await enforceRateLimit({
+    key: `article:write:${session.user.id}`,
+    limit: writerLimit,
+    windowSeconds: 60 * 60,
+  });
 
   const page = Math.max(1, filters.page || 1);
   const pageSize = Math.min(100, Math.max(1, filters.pageSize || 20));
@@ -414,6 +422,13 @@ export async function createArticle(data: {
   const status = resolveCreateStatus(requestedStatus, isStaff);
   const moderationRequired =
     !isStaff && requestedStatus === "published" && status === "pending";
+  if (!isStaff && requestedStatus === "published") {
+    await enforceRateLimit({
+      key: `article:submit:${session.user.id}`,
+      limit: 10,
+      windowSeconds: 60 * 60 * 24,
+    });
+  }
   const moderationNote = moderationRequired
     ? "Submitted for moderation by the author."
     : null;
@@ -498,6 +513,12 @@ export async function updateArticle(
 }> {
   const session = await requireSession();
   const isStaff = isStaffRole(session.user.role);
+  const writerLimit = isStaff ? 200 : 60;
+  await enforceRateLimit({
+    key: `article:update:${session.user.id}`,
+    limit: writerLimit,
+    windowSeconds: 60 * 60,
+  });
   const existing = await queryOne<{
     id: string;
     slug: string;
@@ -548,6 +569,11 @@ export async function updateArticle(
     }
 
     if (requestedStatus === "published") {
+      await enforceRateLimit({
+        key: `article:submit:${session.user.id}`,
+        limit: 10,
+        windowSeconds: 60 * 60 * 24,
+      });
       finalStatus = "pending";
       moderationRequired = true;
       moderationNote = "Submitted for moderation by the author.";
@@ -747,6 +773,13 @@ export async function bulkUpdateStatus(
   if (!isStaff && !WRITER_ALLOWED_STATUSES.has(requestedStatus)) {
     throw new Error("Forbidden");
   }
+  if (!isStaff && requestedStatus === "published") {
+    await enforceRateLimit({
+      key: `article:submit:${session.user.id}`,
+      limit: 10,
+      windowSeconds: 60 * 60 * 24,
+    });
+  }
 
   const articles = await query<{
     id: string;
@@ -809,8 +842,8 @@ export async function moderateArticle(
   note?: string,
 ): Promise<{ status: Article["status"] }> {
   const session = await requireStaffSession();
-  const article = await queryOne<{ slug: string }>(
-    `SELECT slug FROM article WHERE id = $1`,
+  const article = await queryOne<{ slug: string; title: string }>(
+    `SELECT slug, title FROM article WHERE id = $1`,
     [id],
   );
 
@@ -849,6 +882,19 @@ export async function moderateArticle(
   revalidatePath("/articles");
   revalidatePath(`/articles/${article.slug}`);
   revalidatePath("/");
+
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "article.moderated",
+    targetType: "article",
+    targetId: id,
+    targetLabel: article.title,
+    metadata: {
+      decision,
+      note: sanitizedNote || null,
+    },
+  });
 
   return { status: decision };
 }

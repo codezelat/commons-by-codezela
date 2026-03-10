@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { sanitizeArticleText } from "@/lib/article-metadata";
 import { requireSession, requireStaffSession } from "@/lib/authz";
 import { isStaffRole } from "@/lib/roles";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { safeRecordAuditLog } from "@/lib/audit-log";
 
 function toSlug(text: string): string {
   return text
@@ -294,6 +296,11 @@ export async function submitTagForModeration(name: string): Promise<{
   );
 
   const isStaff = isStaffRole(session.user.role);
+  await enforceRateLimit({
+    key: `tag:submit:${session.user.id}`,
+    limit: isStaff ? 120 : 25,
+    windowSeconds: 60 * 60 * 24,
+  });
 
   if (existing) {
     if (existing.status === "approved") {
@@ -455,8 +462,8 @@ export async function moderateTag(
   note?: string,
 ): Promise<{ status: TagStatus }> {
   const staff = await requireStaffSession();
-  const existing = await queryOne<{ id: string }>(
-    `SELECT id FROM tag WHERE id = $1`,
+  const existing = await queryOne<{ id: string; name: string }>(
+    `SELECT id, name FROM tag WHERE id = $1`,
     [id],
   );
   if (!existing) {
@@ -474,6 +481,19 @@ export async function moderateTag(
      WHERE id = $4`,
     [decision, normalizedNote || null, staff.user.id, id],
   );
+
+  await safeRecordAuditLog({
+    actorId: staff.user.id,
+    actorRole: staff.user.role,
+    action: "tag.moderated",
+    targetType: "tag",
+    targetId: id,
+    targetLabel: existing.name,
+    metadata: {
+      decision,
+      note: normalizedNote || null,
+    },
+  });
 
   revalidateTagSurfaces();
   return { status: decision };

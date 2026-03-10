@@ -4,6 +4,11 @@ import { headers } from "next/headers";
 import { randomUUID } from "crypto";
 import { writeFile, mkdir } from "fs/promises";
 import { getLocalUploadDir, getLocalUploadPath, getLocalUploadUrl } from "@/lib/local-upload";
+import {
+  enforceRateLimit,
+  getClientIpFromHeaders,
+  RateLimitError,
+} from "@/lib/rate-limit";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = [
@@ -29,6 +34,34 @@ export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const clientIp = getClientIpFromHeaders(
+    request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+  );
+  const actorKey = session.user.id || clientIp;
+  try {
+    await enforceRateLimit({
+      key: `upload:file:minute:${actorKey}`,
+      limit: 25,
+      windowSeconds: 60,
+    });
+    await enforceRateLimit({
+      key: `upload:file:hour:${actorKey}`,
+      limit: 250,
+      windowSeconds: 60 * 60,
+    });
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      return NextResponse.json(
+        { error: error.message },
+        {
+          status: 429,
+          headers: { "Retry-After": String(error.retryAfterSeconds) },
+        },
+      );
+    }
+    throw error;
   }
 
   try {

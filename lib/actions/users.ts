@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/authz";
 import { sanitizeArticleText } from "@/lib/article-metadata";
 import { normalizeRole, type AppRole } from "@/lib/roles";
+import { safeRecordAuditLog } from "@/lib/audit-log";
 
 export interface ManagedUser {
   id: string;
@@ -185,6 +186,18 @@ export async function updateUserRole(
     [role, userId],
   );
 
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "user.role.updated",
+    targetType: "user",
+    targetId: userId,
+    metadata: {
+      previousRole: user.role,
+      nextRole: role,
+    },
+  });
+
   revalidateUserSurfaces();
   if (session.user.id === userId) {
     revalidatePath("/dashboard/articles");
@@ -239,12 +252,23 @@ export async function setUserBanState(
     [banned, note, userId],
   );
 
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: banned ? "user.suspended" : "user.reactivated",
+    targetType: "user",
+    targetId: userId,
+    metadata: {
+      reason: note,
+    },
+  });
+
   revalidateUserSurfaces();
   return { banned };
 }
 
 export async function sendUserPasswordReset(userId: string): Promise<void> {
-  await requireAdminSession();
+  const session = await requireAdminSession();
   const user = await queryOne<{ email: string }>(
     `SELECT email FROM "user" WHERE id = $1`,
     [userId],
@@ -270,4 +294,15 @@ export async function sendUserPasswordReset(userId: string): Promise<void> {
     const text = await response.text().catch(() => "");
     throw new Error(text || "Failed to send password reset");
   }
+
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "user.password_reset.sent",
+    targetType: "user",
+    targetId: userId,
+    metadata: {
+      email: user.email,
+    },
+  });
 }

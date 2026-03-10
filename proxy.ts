@@ -12,6 +12,13 @@ export async function proxy(request: NextRequest) {
     "/forgot-password",
     "/reset-password",
     "/articles",
+    "/authors",
+    "/moderation-policy",
+    "/reporting",
+    "/terms",
+    "/privacy",
+    "/robots.txt",
+    "/sitemap.xml",
   ];
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route),
