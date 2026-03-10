@@ -48,6 +48,16 @@ async function getActiveAdminCount() {
   return parseInt(result?.count || "0", 10);
 }
 
+async function getAdminCount() {
+  const result = await queryOne<{ count: string }>(
+    `SELECT COUNT(*)::text as count
+     FROM "user"
+     WHERE role = 'admin'`,
+  );
+
+  return parseInt(result?.count || "0", 10);
+}
+
 function revalidateUserSurfaces() {
   revalidatePath("/dashboard/users");
   revalidatePath("/dashboard");
@@ -161,9 +171,9 @@ export async function updateUserRole(
   }
 
   if (user.role === "admin" && role !== "admin") {
-    const activeAdmins = await getActiveAdminCount();
-    if (activeAdmins <= 1 && !user.banned) {
-      throw new Error("At least one active admin must remain");
+    const adminCount = await getAdminCount();
+    if (adminCount <= 1) {
+      throw new Error("At least one admin must remain");
     }
   }
 
@@ -208,9 +218,10 @@ export async function setUserBanState(
   }
 
   if (banned && user.role === "admin" && !user.banned) {
+    const adminCount = await getAdminCount();
     const activeAdmins = await getActiveAdminCount();
-    if (activeAdmins <= 1) {
-      throw new Error("At least one active admin must remain");
+    if (adminCount <= 1 || activeAdmins <= 1) {
+      throw new Error("The last admin account cannot be suspended");
     }
   }
 
