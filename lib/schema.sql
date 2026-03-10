@@ -16,13 +16,16 @@ CREATE TABLE IF NOT EXISTS "user" (
   email TEXT NOT NULL UNIQUE,
   "emailVerified" BOOLEAN NOT NULL DEFAULT FALSE,
   image TEXT,
-  role TEXT NOT NULL DEFAULT 'user',
+  role TEXT NOT NULL DEFAULT 'reader',
   banned BOOLEAN DEFAULT FALSE,
   "banReason" TEXT,
   "banExpires" BIGINT,
   "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE "user" ALTER COLUMN role SET DEFAULT 'reader';
+UPDATE "user" SET role = 'reader' WHERE role = 'user';
 
 CREATE TABLE IF NOT EXISTS "session" (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -99,6 +102,9 @@ CREATE TABLE IF NOT EXISTS article (
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','pending','published','rejected','archived')),
   is_featured BOOLEAN NOT NULL DEFAULT FALSE,
   featured_order INTEGER,
+  moderation_note TEXT,
+  reviewed_by TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMPTZ,
   author_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
   category_id TEXT REFERENCES category(id) ON DELETE SET NULL,
   published_at TIMESTAMPTZ,
@@ -117,6 +123,9 @@ ALTER TABLE article ADD COLUMN IF NOT EXISTS seo_description TEXT;
 ALTER TABLE article ADD COLUMN IF NOT EXISTS seo_image TEXT;
 ALTER TABLE article ADD COLUMN IF NOT EXISTS canonical_url TEXT;
 ALTER TABLE article ADD COLUMN IF NOT EXISTS robots_noindex BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE article ADD COLUMN IF NOT EXISTS moderation_note TEXT;
+ALTER TABLE article ADD COLUMN IF NOT EXISTS reviewed_by TEXT REFERENCES "user"(id) ON DELETE SET NULL;
+ALTER TABLE article ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
 ALTER TABLE article DROP COLUMN IF EXISTS excerpt;
 
 -- GIN index for full-text search
@@ -127,6 +136,7 @@ CREATE INDEX IF NOT EXISTS idx_article_category ON article (category_id);
 CREATE INDEX IF NOT EXISTS idx_article_featured ON article (is_featured, featured_order) WHERE is_featured = TRUE;
 CREATE INDEX IF NOT EXISTS idx_article_published_at ON article (published_at DESC) WHERE status = 'published';
 CREATE INDEX IF NOT EXISTS idx_article_slug ON article (slug);
+CREATE INDEX IF NOT EXISTS idx_article_pending_updated ON article (updated_at DESC) WHERE status = 'pending';
 
 -- Article ↔ Tag many-to-many
 CREATE TABLE IF NOT EXISTS article_tag (

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "@/lib/auth-client";
 import {
   getArticles,
   getCategories,
@@ -66,12 +67,20 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
-const STATUS_OPTIONS = [
+const ADMIN_STATUS_OPTIONS = [
   { value: "all", label: "All Statuses" },
   { value: "draft", label: "Draft" },
   { value: "pending", label: "Pending" },
   { value: "published", label: "Published" },
   { value: "rejected", label: "Rejected" },
+  { value: "archived", label: "Archived" },
+];
+
+const READER_STATUS_OPTIONS = [
+  { value: "all", label: "All Statuses" },
+  { value: "draft", label: "Draft" },
+  { value: "pending", label: "Pending" },
+  { value: "published", label: "Published" },
   { value: "archived", label: "Archived" },
 ];
 
@@ -89,6 +98,9 @@ interface ArticlesContentProps {
 
 export function ArticlesContent({ searchParams }: ArticlesContentProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
+  const statusOptions = isAdmin ? ADMIN_STATUS_OPTIONS : READER_STATUS_OPTIONS;
 
   const currentPage = Number(searchParams.page) || 1;
   const currentStatus = (searchParams.status as string) || "all";
@@ -253,7 +265,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              {STATUS_OPTIONS.map((opt) => (
+              {statusOptions.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
@@ -291,6 +303,18 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
             {selected.size} selected
           </span>
           <div className="flex gap-2">
+            {!isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => handleBulkAction("pending")}
+                disabled={actionLoading}
+              >
+                <Eye className="mr-1.5 h-3 w-3" />
+                Submit review
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -301,16 +325,18 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               <Archive className="mr-1.5 h-3 w-3" />
               Archive
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => handleBulkAction("draft")}
-              disabled={actionLoading}
-            >
-              <EyeOff className="mr-1.5 h-3 w-3" />
-              Unpublish
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => handleBulkAction("draft")}
+                disabled={actionLoading}
+              >
+                <EyeOff className="mr-1.5 h-3 w-3" />
+                Unpublish
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -345,9 +371,11 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               <TableHead className="hidden w-[140px] md:table-cell">
                 Category
               </TableHead>
-              <TableHead className="hidden w-[140px] lg:table-cell">
-                Author
-              </TableHead>
+              {isAdmin && (
+                <TableHead className="hidden w-[140px] lg:table-cell">
+                  Author
+                </TableHead>
+              )}
 
               <TableHead className="hidden w-[120px] sm:table-cell">
                 Updated
@@ -371,9 +399,11 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                   <TableCell className="hidden md:table-cell">
                     <Skeleton className="h-4 w-20" />
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="hidden lg:table-cell">
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                  )}
                   <TableCell className="hidden sm:table-cell">
                     <Skeleton className="h-4 w-16" />
                   </TableCell>
@@ -415,11 +445,13 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                       {article.category_name || "—"}
                     </span>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <span className="text-sm text-muted-foreground truncate max-w-[120px] block">
-                      {article.author_name || "—"}
-                    </span>
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="hidden lg:table-cell">
+                      <span className="text-sm text-muted-foreground truncate max-w-[120px] block">
+                        {article.author_name || "—"}
+                      </span>
+                    </TableCell>
+                  )}
 
                   <TableCell className="hidden sm:table-cell">
                     <span
@@ -456,22 +488,57 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
-                        {article.status === "published" && (
+                        {isAdmin && article.status === "published" && (
                           <DropdownMenuItem
                             onClick={async () => {
-                              await bulkUpdateStatus([article.id], "draft");
-                              toast.success("Article unpublished");
-                              fetchData();
+                              try {
+                                await bulkUpdateStatus([article.id], "draft");
+                                toast.success("Article unpublished");
+                                fetchData();
+                              } catch (error) {
+                                toast.error(
+                                  error instanceof Error
+                                    ? error.message
+                                    : "Failed to update article",
+                                );
+                              }
                             }}
                           >
                             <EyeOff className="mr-2 h-4 w-4" /> Unpublish
                           </DropdownMenuItem>
                         )}
+                        {!isAdmin && (
+                          <DropdownMenuItem
+                            onClick={async () => {
+                              try {
+                                await bulkUpdateStatus([article.id], "pending");
+                                toast.success("Article submitted for review");
+                                fetchData();
+                              } catch (error) {
+                                toast.error(
+                                  error instanceof Error
+                                    ? error.message
+                                    : "Failed to update article",
+                                );
+                              }
+                            }}
+                          >
+                            <Eye className="mr-2 h-4 w-4" /> Submit for review
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           onClick={async () => {
-                            await bulkUpdateStatus([article.id], "archived");
-                            toast.success("Article archived");
-                            fetchData();
+                            try {
+                              await bulkUpdateStatus([article.id], "archived");
+                              toast.success("Article archived");
+                              fetchData();
+                            } catch (error) {
+                              toast.error(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Failed to update article",
+                              );
+                            }
                           }}
                         >
                           <Archive className="mr-2 h-4 w-4" /> Archive
@@ -493,7 +560,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center">
+                <TableCell colSpan={isAdmin ? 8 : 7} className="h-32 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <p className="text-sm text-slate-500">No articles found</p>
                     <Link href="/dashboard/articles/new">

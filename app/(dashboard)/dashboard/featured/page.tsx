@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FeaturedContent } from "@/components/dashboard/featured/featured-content";
+import { requireAdminSession } from "@/lib/authz";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Featured Articles",
@@ -25,7 +27,18 @@ function FeaturedLoading() {
 export default function FeaturedPage() {
   return (
     <Suspense fallback={<FeaturedLoading />}>
-      <FeaturedContent />
+      <FeaturedContentWrapper />
     </Suspense>
+  );
+}
+
+async function FeaturedContentWrapper() {
+  const session = await requireAdminSession().catch(() => null);
+  if (!session) {
+    redirect("/dashboard/articles");
+  }
+
+  return (
+    <FeaturedContent />
   );
 }

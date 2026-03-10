@@ -30,12 +30,25 @@ function shouldBypassOptimization(src: string) {
   );
 }
 
+function isRenderableSrc(src: string) {
+  return (
+    src.startsWith("/") ||
+    src.startsWith("http://") ||
+    src.startsWith("https://") ||
+    src.startsWith("data:") ||
+    src.startsWith("blob:")
+  );
+}
+
 export function ManagedImage({ alt, ...props }: ManagedImageProps) {
   const normalizedSrc =
     typeof props.src === "string"
       ? normalizeLocalUploadUrl(props.src)
       : props.src;
   const src = getImageSrc(normalizedSrc);
+  if (!src || !isRenderableSrc(src)) {
+    return null;
+  }
 
   return (
     <Image

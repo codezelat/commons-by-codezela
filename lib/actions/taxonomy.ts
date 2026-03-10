@@ -1,17 +1,8 @@
 "use server";
 
 import { query, queryOne, execute } from "@/lib/db";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
-
-// ---------- Helpers ----------
-
-async function requireSession() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) throw new Error("Unauthorized");
-  return session;
-}
+import { requireAdminSession } from "@/lib/authz";
 
 function toSlug(text: string): string {
   return text
@@ -35,7 +26,7 @@ export interface Category {
 }
 
 export async function getCategoriesWithCount(): Promise<Category[]> {
-  await requireSession();
+  await requireAdminSession();
   return query<Category>(
     `SELECT c.*, COALESCE(counts.cnt, 0)::int as article_count
      FROM category c
@@ -50,7 +41,7 @@ export async function createCategory(data: {
   name: string;
   description?: string;
 }): Promise<{ id: string }> {
-  await requireSession();
+  await requireAdminSession();
   const slug = toSlug(data.name);
 
   const existing = await queryOne<{ id: string }>(
@@ -73,7 +64,7 @@ export async function updateCategory(
   id: string,
   data: { name?: string; description?: string },
 ): Promise<void> {
-  await requireSession();
+  await requireAdminSession();
 
   const fields: string[] = [];
   const params: unknown[] = [];
@@ -109,7 +100,7 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  await requireSession();
+  await requireAdminSession();
   // Nullify articles in this category first
   await execute(
     `UPDATE article SET category_id = NULL WHERE category_id = $1`,
@@ -123,7 +114,7 @@ export async function mergeCategories(
   sourceId: string,
   targetId: string,
 ): Promise<void> {
-  await requireSession();
+  await requireAdminSession();
   // Move all articles from source to target
   await execute(`UPDATE article SET category_id = $1 WHERE category_id = $2`, [
     targetId,
@@ -144,7 +135,7 @@ export interface Tag {
 }
 
 export async function getTagsWithCount(): Promise<Tag[]> {
-  await requireSession();
+  await requireAdminSession();
   return query<Tag>(
     `SELECT t.*, COALESCE(counts.cnt, 0)::int as article_count
      FROM tag t
@@ -158,7 +149,7 @@ export async function getTagsWithCount(): Promise<Tag[]> {
 export async function createTag(data: {
   name: string;
 }): Promise<{ id: string }> {
-  await requireSession();
+  await requireAdminSession();
   const slug = toSlug(data.name);
 
   const existing = await queryOne<{ id: string }>(
@@ -181,7 +172,7 @@ export async function updateTag(
   id: string,
   data: { name: string },
 ): Promise<void> {
-  await requireSession();
+  await requireAdminSession();
   const slug = toSlug(data.name);
   await execute(`UPDATE tag SET name = $1, slug = $2 WHERE id = $3`, [
     data.name.trim(),
@@ -192,7 +183,7 @@ export async function updateTag(
 }
 
 export async function deleteTag(id: string): Promise<void> {
-  await requireSession();
+  await requireAdminSession();
   await execute(`DELETE FROM article_tag WHERE tag_id = $1`, [id]);
   await execute(`DELETE FROM tag WHERE id = $1`, [id]);
   revalidatePath("/dashboard/tags");
@@ -202,7 +193,7 @@ export async function mergeTags(
   sourceId: string,
   targetId: string,
 ): Promise<void> {
-  await requireSession();
+  await requireAdminSession();
   // Move article_tag entries, avoid duplicates
   await execute(
     `INSERT INTO article_tag (article_id, tag_id)

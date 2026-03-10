@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut, useSession } from "@/lib/auth-client";
+import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,10 +16,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   FileText,
+  ShieldCheck,
   FolderOpen,
   Tags,
   Star,
@@ -36,8 +36,12 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   { title: "Articles", href: "/dashboard/articles", icon: FileText },
+];
+
+const adminNavItems: NavItem[] = [
+  { title: "Moderation", href: "/dashboard/moderation", icon: ShieldCheck },
   { title: "Categories", href: "/dashboard/categories", icon: FolderOpen },
   { title: "Tags", href: "/dashboard/tags", icon: Tags },
   { title: "Featured", href: "/dashboard/featured", icon: Star },
@@ -61,6 +65,10 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isAdmin = session.user.role === "admin";
+  const navItems = isAdmin
+    ? [...baseNavItems, ...adminNavItems]
+    : baseNavItems;
 
   const initials = session.user.name
     ? session.user.name
@@ -173,6 +181,9 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
                   <p className="truncate text-xs text-muted-foreground">
                     {session.user.email}
                   </p>
+                  <p className="truncate text-xs text-muted-foreground/80">
+                    {isAdmin ? "Admin" : "Reader"}
+                  </p>
                 </div>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </>
@@ -183,6 +194,9 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
               <p className="text-sm font-medium">{session.user.name}</p>
               <p className="text-xs text-muted-foreground">
                 {session.user.email}
+              </p>
+              <p className="text-xs text-muted-foreground/80">
+                {isAdmin ? "Admin" : "Reader"}
               </p>
             </div>
             <DropdownMenuSeparator />

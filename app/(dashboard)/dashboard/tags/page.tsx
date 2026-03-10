@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TagsContent } from "@/components/dashboard/tags/tags-content";
+import { requireAdminSession } from "@/lib/authz";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Tags",
@@ -25,7 +27,18 @@ function TagsLoading() {
 export default function TagsPage() {
   return (
     <Suspense fallback={<TagsLoading />}>
-      <TagsContent />
+      <TagsContentWrapper />
     </Suspense>
+  );
+}
+
+async function TagsContentWrapper() {
+  const session = await requireAdminSession().catch(() => null);
+  if (!session) {
+    redirect("/dashboard/articles");
+  }
+
+  return (
+    <TagsContent />
   );
 }

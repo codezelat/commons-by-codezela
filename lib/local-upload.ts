@@ -17,27 +17,44 @@ export function getLocalUploadUrl(filename: string) {
 }
 
 export function normalizeLocalUploadUrl(url?: string | null) {
-  if (!url) {
-    return url ?? "";
+  const value = url?.trim();
+  if (!value) {
+    return "";
   }
 
-  if (url.startsWith("/api/uploads/")) {
-    return url;
+  if (value.startsWith("/api/uploads/")) {
+    return value;
   }
 
-  if (url.startsWith("/uploads/")) {
-    return `/api${url}`;
+  if (value.startsWith("api/uploads/")) {
+    return `/${value}`;
+  }
+
+  if (value.startsWith("/uploads/")) {
+    return `/api${value}`;
+  }
+
+  if (value.startsWith("uploads/")) {
+    return `/api/${value}`;
+  }
+
+  if (value.startsWith("./uploads/")) {
+    return `/api/${value.slice(2)}`;
   }
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
     /\/$/,
     "",
   );
-  if (url.startsWith(`${appUrl}/uploads/`)) {
-    return `${appUrl}/api${url.slice(appUrl.length)}`;
+  if (value.startsWith(`${appUrl}/uploads/`)) {
+    return `${appUrl}/api${value.slice(appUrl.length)}`;
   }
 
-  return url;
+  if (value.startsWith(`${appUrl}/api/uploads/`)) {
+    return value;
+  }
+
+  return value;
 }
 
 export function normalizeLocalUploadUrlsInHtml(html: string) {

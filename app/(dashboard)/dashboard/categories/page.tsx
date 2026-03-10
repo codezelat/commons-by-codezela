@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoriesContent } from "@/components/dashboard/categories/categories-content";
+import { requireAdminSession } from "@/lib/authz";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Categories",
@@ -25,7 +27,18 @@ function CategoriesLoading() {
 export default function CategoriesPage() {
   return (
     <Suspense fallback={<CategoriesLoading />}>
-      <CategoriesContent />
+      <CategoriesContentWrapper />
     </Suspense>
+  );
+}
+
+async function CategoriesContentWrapper() {
+  const session = await requireAdminSession().catch(() => null);
+  if (!session) {
+    redirect("/dashboard/articles");
+  }
+
+  return (
+    <CategoriesContent />
   );
 }

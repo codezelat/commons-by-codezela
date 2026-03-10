@@ -111,6 +111,14 @@ export async function toggleReaction(
     throw new Error("Invalid reaction type.");
   }
 
+  const article = await queryOne<{ id: string }>(
+    `SELECT id FROM article WHERE id = $1 AND status = 'published'`,
+    [articleId],
+  );
+  if (!article) {
+    throw new Error("Reactions are only available on published articles.");
+  }
+
   const existing = await queryOne<{ reaction_type: string }>(
     `SELECT reaction_type FROM article_reaction WHERE article_id = $1 AND user_id = $2`,
     [articleId, session.user.id],

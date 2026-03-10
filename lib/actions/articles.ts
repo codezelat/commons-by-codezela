@@ -1,13 +1,17 @@
 "use server";
 
 import { query, queryOne, execute } from "@/lib/db";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import {
   deriveArticleSummary,
   sanitizeArticleText,
 } from "@/lib/article-metadata";
+import {
+  canManageArticle,
+  isAdminRole,
+  requireAdminSession,
+  requireSession,
+} from "@/lib/authz";
 
 // ---------- Types ----------
 
@@ -27,6 +31,9 @@ export interface Article {
   status: "draft" | "pending" | "published" | "rejected" | "archived";
   is_featured: boolean;
   featured_order: number | null;
+  moderation_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
   author_id: string;
   category_id: string | null;
   published_at: string | null;
@@ -35,6 +42,7 @@ export interface Article {
   // Joined fields
   author_name?: string;
   author_email?: string;
+  reviewer_name?: string | null;
   category_name?: string;
   tags?: { id: string; name: string; slug: string }[];
 }
@@ -66,11 +74,14 @@ export interface PublicArticleFilters {
 
 // ---------- Helpers ----------
 
-async function requireSession() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) throw new Error("Unauthorized");
-  return session;
-}
+const WRITER_ALLOWED_STATUSES = new Set(["draft", "pending", "published", "archived"]);
+const ALL_ALLOWED_STATUSES = new Set([
+  "draft",
+  "pending",
+  "published",
+  "rejected",
+  "archived",
+]);
 
 function slugify(text: string): string {
   return text
@@ -124,12 +135,36 @@ function normalizeArticleDraftData(data: {
   };
 }
 
+function normalizeStatus(status?: string): Article["status"] {
+  if (!status || !ALL_ALLOWED_STATUSES.has(status)) {
+    return "draft";
+  }
+
+  return status as Article["status"];
+}
+
+function resolveCreateStatus(
+  requestedStatus: Article["status"],
+  isAdmin: boolean,
+): Article["status"] {
+  if (isAdmin) {
+    return requestedStatus;
+  }
+
+  if (!WRITER_ALLOWED_STATUSES.has(requestedStatus)) {
+    return "draft";
+  }
+
+  return requestedStatus === "published" ? "pending" : requestedStatus;
+}
+
 // ---------- List Articles ----------
 
 export async function getArticles(
   filters: ArticleFilters = {},
 ): Promise<ArticleListResult> {
-  await requireSession();
+  const session = await requireSession();
+  const isAdmin = isAdminRole(session.user.role);
 
   const page = Math.max(1, filters.page || 1);
   const pageSize = Math.min(100, Math.max(1, filters.pageSize || 20));
@@ -151,7 +186,11 @@ export async function getArticles(
     params.push(filters.category);
   }
 
-  if (filters.author) {
+  if (!isAdmin) {
+    paramIdx++;
+    conditions.push(`a.author_id = $${paramIdx}`);
+    params.push(session.user.id);
+  } else if (filters.author) {
     paramIdx++;
     conditions.push(`a.author_id = $${paramIdx}`);
     params.push(filters.author);
@@ -185,9 +224,11 @@ export async function getArticles(
     `SELECT a.*,
             u.name as author_name,
             u.email as author_email,
-            c.name as category_name
+            c.name as category_name,
+            reviewer.name as reviewer_name
      FROM article a
      LEFT JOIN "user" u ON a.author_id = u.id
+     LEFT JOIN "user" reviewer ON a.reviewed_by = reviewer.id
      LEFT JOIN category c ON a.category_id = c.id
      ${where}
      ORDER BY a.updated_at DESC
@@ -238,21 +279,28 @@ export async function getArticles(
 // ---------- Get Single Article ----------
 
 export async function getArticle(id: string): Promise<Article | null> {
-  await requireSession();
+  const session = await requireSession();
 
   const article = await queryOne<Article>(
     `SELECT a.*,
             u.name as author_name,
             u.email as author_email,
-            c.name as category_name
+            c.name as category_name,
+            reviewer.name as reviewer_name
      FROM article a
      LEFT JOIN "user" u ON a.author_id = u.id
+     LEFT JOIN "user" reviewer ON a.reviewed_by = reviewer.id
      LEFT JOIN category c ON a.category_id = c.id
      WHERE a.id = $1`,
     [id],
   );
 
   if (!article) return null;
+  if (
+    !canManageArticle(session.user.role, session.user.id, article.author_id)
+  ) {
+    throw new Error("Forbidden");
+  }
 
   const tags = await query<{ id: string; name: string; slug: string }>(
     `SELECT t.id, t.name, t.slug
@@ -283,17 +331,34 @@ export async function createArticle(data: {
   status?: string;
   category_id?: string;
   tag_ids?: string[];
-}): Promise<{ id: string; slug: string }> {
+}): Promise<{
+  id: string;
+  slug: string;
+  status: Article["status"];
+  moderationRequired: boolean;
+}> {
   const session = await requireSession();
+  const isAdmin = isAdminRole(session.user.role);
   const normalized = normalizeArticleDraftData(data);
+  const requestedStatus = normalizeStatus(data.status);
+  const status = resolveCreateStatus(requestedStatus, isAdmin);
+  const moderationRequired =
+    !isAdmin && requestedStatus === "published" && status === "pending";
+  const moderationNote = moderationRequired
+    ? "Submitted for moderation by the author."
+    : null;
   const slug = await ensureUniqueSlug(
     normalizeSlugInput(data.slug, normalized.title),
   );
 
-  const result = await queryOne<{ id: string; slug: string }>(
-    `INSERT INTO article (title, slug, seo_title, seo_description, seo_image, canonical_url, robots_noindex, content, content_html, content_text, cover_image, status, author_id, category_id, published_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-     RETURNING id, slug`,
+  const result = await queryOne<{
+    id: string;
+    slug: string;
+    status: Article["status"];
+  }>(
+    `INSERT INTO article (title, slug, seo_title, seo_description, seo_image, canonical_url, robots_noindex, content, content_html, content_text, cover_image, status, moderation_note, author_id, category_id, published_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+     RETURNING id, slug, status`,
     [
       normalized.title,
       slug,
@@ -306,10 +371,11 @@ export async function createArticle(data: {
       data.content_html || null,
       normalized.contentText,
       data.cover_image || null,
-      data.status || "draft",
+      status,
+      moderationNote,
       session.user.id,
       data.category_id || null,
-      data.status === "published" ? new Date().toISOString() : null,
+      status === "published" ? new Date().toISOString() : null,
     ],
   );
 
@@ -325,9 +391,15 @@ export async function createArticle(data: {
   }
 
   revalidatePath("/dashboard/articles");
+  revalidatePath("/dashboard/moderation");
   revalidatePath("/articles");
   revalidatePath("/");
-  return result;
+  return {
+    id: result.id,
+    slug: result.slug,
+    status: result.status,
+    moderationRequired,
+  };
 }
 
 // ---------- Update Article ----------
@@ -350,19 +422,72 @@ export async function updateArticle(
     category_id?: string | null;
     tag_ids?: string[];
   },
-): Promise<void> {
-  await requireSession();
+): Promise<{
+  status: Article["status"];
+  moderationRequired: boolean;
+}> {
+  const session = await requireSession();
+  const isAdmin = isAdminRole(session.user.role);
   const existing = await queryOne<{
     id: string;
     slug: string;
-    status: string;
-  }>(`SELECT id, slug, status FROM article WHERE id = $1`, [id]);
+    status: Article["status"];
+    author_id: string;
+  }>(`SELECT id, slug, status, author_id FROM article WHERE id = $1`, [id]);
 
   if (!existing) {
     throw new Error("Article not found");
   }
+  if (
+    !canManageArticle(session.user.role, session.user.id, existing.author_id)
+  ) {
+    throw new Error("Forbidden");
+  }
 
   const normalized = normalizeArticleDraftData(data);
+  const requestedStatus =
+    data.status !== undefined ? normalizeStatus(data.status) : undefined;
+  const hasContentMutation = [
+    "title",
+    "slug",
+    "seo_title",
+    "seo_description",
+    "seo_image",
+    "canonical_url",
+    "robots_noindex",
+    "content",
+    "content_html",
+    "content_text",
+    "cover_image",
+    "category_id",
+    "tag_ids",
+  ].some((field) => field in data);
+
+  let finalStatus = requestedStatus;
+  let moderationRequired = false;
+  let moderationNote: string | null | undefined;
+  let clearReviewMetadata = false;
+
+  if (!isAdmin) {
+    if (requestedStatus && !WRITER_ALLOWED_STATUSES.has(requestedStatus)) {
+      throw new Error("Forbidden");
+    }
+
+    if (requestedStatus === "published") {
+      finalStatus = "pending";
+      moderationRequired = true;
+      moderationNote = "Submitted for moderation by the author.";
+      clearReviewMetadata = true;
+    }
+
+    if (existing.status === "published" && hasContentMutation) {
+      finalStatus = "pending";
+      moderationRequired = true;
+      moderationNote =
+        "Published article was edited and routed back to moderation.";
+      clearReviewMetadata = true;
+    }
+  }
 
   const fields: string[] = [];
   const params: unknown[] = [];
@@ -427,12 +552,12 @@ export async function updateArticle(
     fields.push(`cover_image = $${paramIdx}`);
     params.push(data.cover_image);
   }
-  if (data.status !== undefined) {
+  if (finalStatus !== undefined) {
     paramIdx++;
     fields.push(`status = $${paramIdx}`);
-    params.push(data.status);
+    params.push(finalStatus);
     // Set published_at if publishing
-    if (data.status === "published") {
+    if (finalStatus === "published") {
       paramIdx++;
       fields.push(`published_at = COALESCE(published_at, $${paramIdx})`);
       params.push(new Date().toISOString());
@@ -442,6 +567,21 @@ export async function updateArticle(
     paramIdx++;
     fields.push(`category_id = $${paramIdx}`);
     params.push(data.category_id);
+  }
+
+  if (moderationNote !== undefined) {
+    paramIdx++;
+    fields.push(`moderation_note = $${paramIdx}`);
+    params.push(moderationNote);
+  } else if (isAdmin && finalStatus !== undefined && finalStatus !== "pending") {
+    paramIdx++;
+    fields.push(`moderation_note = $${paramIdx}`);
+    params.push(null);
+  }
+
+  if (clearReviewMetadata || (isAdmin && finalStatus !== undefined)) {
+    fields.push(`reviewed_by = NULL`);
+    fields.push(`reviewed_at = NULL`);
   }
 
   paramIdx++;
@@ -471,6 +611,7 @@ export async function updateArticle(
   }
 
   revalidatePath("/dashboard/articles");
+  revalidatePath("/dashboard/moderation");
   revalidatePath("/articles");
   revalidatePath(`/articles/${existing.slug}`);
   const latest = await queryOne<{ slug: string; status: string }>(
@@ -481,22 +622,40 @@ export async function updateArticle(
     revalidatePath(`/articles/${latest.slug}`);
   }
   revalidatePath("/");
+  return {
+    status: (finalStatus ?? existing.status) as Article["status"],
+    moderationRequired,
+  };
 }
 
 // ---------- Delete Article(s) ----------
 
 export async function deleteArticles(ids: string[]): Promise<void> {
-  await requireSession();
+  const session = await requireSession();
+  const isAdmin = isAdminRole(session.user.role);
   if (ids.length === 0) return;
-  const articles = await query<{ slug: string }>(
-    `SELECT slug FROM article WHERE id = ANY($1)`,
+  const articles = await query<{ id: string; slug: string; author_id: string }>(
+    `SELECT id, slug, author_id FROM article WHERE id = ANY($1)`,
     [ids],
   );
-  await execute(`DELETE FROM article WHERE id = ANY($1)`, [ids]);
+  if (articles.length !== ids.length) {
+    throw new Error("One or more articles no longer exist");
+  }
+  const allowed = isAdmin
+    ? articles
+    : articles.filter((article) => article.author_id === session.user.id);
+
+  if (allowed.length !== ids.length) {
+    throw new Error("Forbidden");
+  }
+
+  const allowedIds = allowed.map((article) => article.id);
+  await execute(`DELETE FROM article WHERE id = ANY($1)`, [allowedIds]);
   revalidatePath("/dashboard/articles");
+  revalidatePath("/dashboard/moderation");
   revalidatePath("/articles");
   revalidatePath("/");
-  for (const article of articles) {
+  for (const article of allowed) {
     revalidatePath(`/articles/${article.slug}`);
   }
 }
@@ -507,22 +666,117 @@ export async function bulkUpdateStatus(
   ids: string[],
   status: string,
 ): Promise<void> {
-  await requireSession();
+  const session = await requireSession();
+  const isAdmin = isAdminRole(session.user.role);
   if (ids.length === 0) return;
-  const articles = await query<{ slug: string }>(
-    `SELECT slug FROM article WHERE id = ANY($1)`,
+  const requestedStatus = normalizeStatus(status);
+  if (!isAdmin && !WRITER_ALLOWED_STATUSES.has(requestedStatus)) {
+    throw new Error("Forbidden");
+  }
+
+  const articles = await query<{
+    id: string;
+    slug: string;
+    author_id: string;
+  }>(
+    `SELECT id, slug, author_id FROM article WHERE id = ANY($1)`,
     [ids],
   );
+  if (articles.length !== ids.length) {
+    throw new Error("One or more articles no longer exist");
+  }
+
+  const allowed = isAdmin
+    ? articles
+    : articles.filter((article) => article.author_id === session.user.id);
+  if (allowed.length !== ids.length) {
+    throw new Error("Forbidden");
+  }
+  const allowedIds = allowed.map((article) => article.id);
+
+  const effectiveStatus =
+    !isAdmin && requestedStatus === "published" ? "pending" : requestedStatus;
+  const updateFields = [`status = $1`, `updated_at = NOW()`];
+  const params: unknown[] = [effectiveStatus, allowedIds];
+
+  if (effectiveStatus === "published") {
+    updateFields.push(`published_at = COALESCE(published_at, NOW())`);
+  }
+
+  if (!isAdmin && effectiveStatus === "pending") {
+    updateFields.push(`moderation_note = $3`);
+    updateFields.push(`reviewed_by = NULL`);
+    updateFields.push(`reviewed_at = NULL`);
+    params.push("Submitted for moderation by the author.");
+  } else if (isAdmin && effectiveStatus !== "pending") {
+    updateFields.push(`moderation_note = NULL`);
+    updateFields.push(`reviewed_by = NULL`);
+    updateFields.push(`reviewed_at = NULL`);
+  }
+
   await execute(
-    `UPDATE article SET status = $1, updated_at = NOW() WHERE id = ANY($2)`,
-    [status, ids],
+    `UPDATE article
+     SET ${updateFields.join(", ")}
+     WHERE id = ANY($2)`,
+    params,
   );
   revalidatePath("/dashboard/articles");
+  revalidatePath("/dashboard/moderation");
   revalidatePath("/articles");
   revalidatePath("/");
-  for (const article of articles) {
+  for (const article of allowed) {
     revalidatePath(`/articles/${article.slug}`);
   }
+}
+
+export async function moderateArticle(
+  id: string,
+  decision: "published" | "rejected" | "draft",
+  note?: string,
+): Promise<{ status: Article["status"] }> {
+  const session = await requireAdminSession();
+  const article = await queryOne<{ slug: string }>(
+    `SELECT slug FROM article WHERE id = $1`,
+    [id],
+  );
+
+  if (!article) {
+    throw new Error("Article not found");
+  }
+
+  const sanitizedNote = sanitizeArticleText(note);
+  const fields = [
+    `status = $1`,
+    `moderation_note = $2`,
+    `reviewed_by = $3`,
+    `reviewed_at = NOW()`,
+    `updated_at = NOW()`,
+  ];
+  const params: unknown[] = [
+    decision,
+    sanitizedNote || null,
+    session.user.id,
+    id,
+  ];
+
+  if (decision === "published") {
+    fields.push(`published_at = COALESCE(published_at, NOW())`);
+  }
+
+  await execute(
+    `UPDATE article
+     SET ${fields.join(", ")}
+     WHERE id = $4`,
+    params,
+  );
+
+  revalidatePath("/dashboard/articles");
+  revalidatePath("/dashboard/moderation");
+  revalidatePath("/articles");
+  revalidatePath(`/articles/${article.slug}`);
+  revalidatePath("/");
+
+  return { status: decision };
 }
 
 export async function getPublicArticles(

@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "@/lib/auth-client";
 import {
   createArticle,
   updateArticle,
@@ -151,7 +152,9 @@ export function ArticleEditor({
   reactionCounts,
 }: ArticleEditorProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isPending, startTransition] = useTransition();
+  const isAdmin = session?.user?.role === "admin";
   const initialEditorContent = getInitialEditorContent(article);
 
   const [title, setTitle] = useState(article?.title || "");
@@ -242,15 +245,27 @@ export function ArticleEditor({
 
         if (mode === "create") {
           const result = await createArticle(payload);
-          toast.success("Article created!");
+          if (result.moderationRequired) {
+            toast.success("Article submitted for moderation");
+          } else if (result.status === "published") {
+            toast.success("Article published");
+          } else {
+            toast.success("Article created");
+          }
           router.push(`/dashboard/articles/${result.id}`);
         } else if (article) {
-          await updateArticle(article.id, payload);
-          toast.success("Article saved!");
+          const result = await updateArticle(article.id, payload);
+          if (result.moderationRequired) {
+            toast.success("Changes submitted for moderation");
+          } else if (result.status === "published") {
+            toast.success("Article updated and published");
+          } else {
+            toast.success("Article saved");
+          }
           router.refresh();
         }
-      } catch {
-        toast.error("Failed to save article");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to save article");
       }
     });
   }
@@ -303,7 +318,7 @@ export function ArticleEditor({
             disabled={isPending}
           >
             {isPending ? <Loader2 className="animate-spin" /> : <Send />}
-            Publish
+            {isAdmin ? "Publish" : "Submit for review"}
           </Button>
         </div>
       </div>
@@ -443,11 +458,21 @@ export function ArticleEditor({
                 <SelectContent>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="pending">Pending Review</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
+                  {isAdmin && <SelectItem value="published">Published</SelectItem>}
+                  {isAdmin && <SelectItem value="rejected">Rejected</SelectItem>}
                   <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
+              {!isAdmin && (
+                <p className="text-xs text-muted-foreground">
+                  Reader submissions are routed to moderation before publishing.
+                </p>
+              )}
+              {article.moderation_note && (
+                <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+                  {article.moderation_note}
+                </p>
+              )}
             </div>
           )}
 
