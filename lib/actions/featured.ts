@@ -3,6 +3,7 @@
 import { query, queryOne, execute } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { requireStaffSession } from "@/lib/authz";
+import { safeRecordAuditLog } from "@/lib/audit-log";
 
 export interface FeaturedArticle {
   id: string;
@@ -49,7 +50,7 @@ export async function getPublishedArticles(): Promise<ArticleForPicker[]> {
 }
 
 export async function addFeaturedArticle(articleId: string): Promise<void> {
-  await requireStaffSession();
+  const session = await requireStaffSession();
 
   // Check count — max 3
   const result = await queryOne<{ count: string }>(
@@ -70,11 +71,31 @@ export async function addFeaturedArticle(articleId: string): Promise<void> {
     [nextOrder, articleId],
   );
 
+  const article = await queryOne<{ title: string }>(
+    `SELECT title FROM article WHERE id = $1`,
+    [articleId],
+  );
+
   revalidatePath("/dashboard/featured");
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "featured.added",
+    targetType: "article",
+    targetId: articleId,
+    targetLabel: article?.title || null,
+    metadata: {
+      featuredOrder: nextOrder,
+    },
+  });
 }
 
 export async function removeFeaturedArticle(articleId: string): Promise<void> {
-  await requireStaffSession();
+  const session = await requireStaffSession();
+  const article = await queryOne<{ title: string }>(
+    `SELECT title FROM article WHERE id = $1`,
+    [articleId],
+  );
   await execute(
     `UPDATE article SET is_featured = false, featured_order = 0 WHERE id = $1`,
     [articleId],
@@ -90,10 +111,19 @@ export async function removeFeaturedArticle(articleId: string): Promise<void> {
     ]);
   }
   revalidatePath("/dashboard/featured");
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "featured.removed",
+    targetType: "article",
+    targetId: articleId,
+    targetLabel: article?.title || null,
+    metadata: null,
+  });
 }
 
 export async function reorderFeatured(orderedIds: string[]): Promise<void> {
-  await requireStaffSession();
+  const session = await requireStaffSession();
   for (let i = 0; i < orderedIds.length; i++) {
     await execute(`UPDATE article SET featured_order = $1 WHERE id = $2`, [
       i + 1,
@@ -101,4 +131,15 @@ export async function reorderFeatured(orderedIds: string[]): Promise<void> {
     ]);
   }
   revalidatePath("/dashboard/featured");
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "featured.reordered",
+    targetType: "article",
+    targetId: null,
+    targetLabel: `${orderedIds.length} featured article(s)`,
+    metadata: {
+      orderedIds,
+    },
+  });
 }

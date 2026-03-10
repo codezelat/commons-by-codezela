@@ -26,12 +26,26 @@ import { Search } from "lucide-react";
 
 const ACTION_FILTERS = [
   { value: "all", label: "All actions" },
+  { value: "auth.signup", label: "Signups" },
+  { value: "auth.session.created", label: "Logins" },
+  { value: "auth.session.revoked", label: "Session revocations" },
+  { value: "auth.password.updated", label: "Password updates" },
+  { value: "auth.verification.requested", label: "Verification requests" },
+  { value: "article.created", label: "Article creates" },
+  { value: "article.updated", label: "Article updates" },
+  { value: "article.deleted", label: "Article deletes" },
+  { value: "article.status.bulk_updated", label: "Bulk status changes" },
   { value: "user.role.updated", label: "Role updates" },
   { value: "user.suspended", label: "Suspensions" },
   { value: "user.reactivated", label: "Reactivations" },
   { value: "user.password_reset.sent", label: "Password reset sends" },
   { value: "article.moderated", label: "Article moderation" },
+  { value: "tag.submission.created", label: "Tag submissions" },
   { value: "tag.moderated", label: "Tag moderation" },
+  { value: "reaction.toggled", label: "Reactions" },
+  { value: "featured.added", label: "Featured adds" },
+  { value: "featured.removed", label: "Featured removals" },
+  { value: "featured.reordered", label: "Featured reorder" },
 ];
 
 const TARGET_FILTERS = [
@@ -39,6 +53,9 @@ const TARGET_FILTERS = [
   { value: "user", label: "Users" },
   { value: "article", label: "Articles" },
   { value: "tag", label: "Tags" },
+  { value: "session", label: "Sessions" },
+  { value: "verification", label: "Verifications" },
+  { value: "account", label: "Accounts" },
 ];
 
 export function AuditContent() {

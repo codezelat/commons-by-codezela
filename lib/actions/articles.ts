@@ -416,6 +416,12 @@ export async function createArticle(data: {
 }> {
   const session = await requireSession();
   const isStaff = isStaffRole(session.user.role);
+  const writerLimit = isStaff ? 180 : 40;
+  await enforceRateLimit({
+    key: `article:create:${session.user.id}`,
+    limit: writerLimit,
+    windowSeconds: 60 * 60,
+  });
   const tagIds = await resolveAllowedTagIds(data.tag_ids, session, isStaff);
   const normalized = normalizeArticleDraftData(data);
   const requestedStatus = normalizeStatus(data.status);
@@ -479,6 +485,22 @@ export async function createArticle(data: {
   revalidatePath("/dashboard/moderation");
   revalidatePath("/articles");
   revalidatePath("/");
+
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "article.created",
+    targetType: "article",
+    targetId: result.id,
+    targetLabel: normalized.title,
+    metadata: {
+      status: result.status,
+      moderationRequired,
+      categoryId: data.category_id || null,
+      tagCount: tagIds.length,
+    },
+  });
+
   return {
     id: result.id,
     slug: result.slug,
@@ -722,6 +744,23 @@ export async function updateArticle(
     revalidatePath(`/articles/${latest.slug}`);
   }
   revalidatePath("/");
+
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "article.updated",
+    targetType: "article",
+    targetId: id,
+    targetLabel: normalized.title || null,
+    metadata: {
+      previousStatus: existing.status,
+      nextStatus: (finalStatus ?? existing.status) as Article["status"],
+      moderationRequired,
+      contentMutated: hasContentMutation,
+      updatedTagCount: tagIds?.length ?? null,
+    },
+  });
+
   return {
     status: (finalStatus ?? existing.status) as Article["status"],
     moderationRequired,
@@ -758,6 +797,18 @@ export async function deleteArticles(ids: string[]): Promise<void> {
   for (const article of allowed) {
     revalidatePath(`/articles/${article.slug}`);
   }
+
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "article.deleted",
+    targetType: "article",
+    targetId: null,
+    targetLabel: `${allowedIds.length} article(s)`,
+    metadata: {
+      articleIds: allowedIds,
+    },
+  });
 }
 
 // ---------- Bulk Actions ----------
@@ -834,6 +885,20 @@ export async function bulkUpdateStatus(
   for (const article of allowed) {
     revalidatePath(`/articles/${article.slug}`);
   }
+
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "article.status.bulk_updated",
+    targetType: "article",
+    targetId: null,
+    targetLabel: `${allowedIds.length} article(s)`,
+    metadata: {
+      requestedStatus,
+      appliedStatus: effectiveStatus,
+      articleIds: allowedIds,
+    },
+  });
 }
 
 export async function moderateArticle(

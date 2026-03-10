@@ -10,6 +10,7 @@ import type {
   ArticleReactionsData,
 } from "./reaction-types";
 import { REACTION_TYPES } from "./reaction-types";
+import { safeRecordAuditLog } from "@/lib/audit-log";
 
 // ---------- Helpers ----------
 
@@ -150,6 +151,20 @@ export async function toggleReaction(
     );
     userReaction = reactionType;
   }
+
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "reaction.toggled",
+    targetType: "article",
+    targetId: articleId,
+    targetLabel: null,
+    metadata: {
+      previousReaction: existing?.reaction_type || null,
+      nextReaction: userReaction,
+      requestedReaction: reactionType,
+    },
+  });
 
   revalidatePath(`/articles/`);
 

@@ -56,7 +56,7 @@ export async function createCategory(data: {
   name: string;
   description?: string;
 }): Promise<{ id: string }> {
-  await requireStaffSession();
+  const session = await requireStaffSession();
   const slug = toSlug(data.name);
 
   const existing = await queryOne<{ id: string }>(
@@ -72,6 +72,17 @@ export async function createCategory(data: {
   if (!result) throw new Error("Failed to create category");
 
   revalidatePath("/dashboard/categories");
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "category.created",
+    targetType: "category",
+    targetId: result.id,
+    targetLabel: data.name.trim(),
+    metadata: {
+      description: data.description?.trim() || null,
+    },
+  });
   return result;
 }
 
@@ -79,7 +90,7 @@ export async function updateCategory(
   id: string,
   data: { name?: string; description?: string },
 ): Promise<void> {
-  await requireStaffSession();
+  const session = await requireStaffSession();
 
   const fields: string[] = [];
   const params: unknown[] = [];
@@ -112,23 +123,47 @@ export async function updateCategory(
   );
 
   revalidatePath("/dashboard/categories");
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "category.updated",
+    targetType: "category",
+    targetId: id,
+    targetLabel: data.name?.trim() || null,
+    metadata: {
+      description: data.description?.trim() || null,
+    },
+  });
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  await requireStaffSession();
+  const session = await requireStaffSession();
+  const existing = await queryOne<{ name: string }>(
+    `SELECT name FROM category WHERE id = $1`,
+    [id],
+  );
   await execute(
     `UPDATE article SET category_id = NULL WHERE category_id = $1`,
     [id],
   );
   await execute(`DELETE FROM category WHERE id = $1`, [id]);
   revalidatePath("/dashboard/categories");
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "category.deleted",
+    targetType: "category",
+    targetId: id,
+    targetLabel: existing?.name || null,
+    metadata: null,
+  });
 }
 
 export async function mergeCategories(
   sourceId: string,
   targetId: string,
 ): Promise<void> {
-  await requireStaffSession();
+  const session = await requireStaffSession();
   if (sourceId === targetId) {
     throw new Error("Cannot merge into the same category");
   }
@@ -139,6 +174,18 @@ export async function mergeCategories(
   ]);
   await execute(`DELETE FROM category WHERE id = $1`, [sourceId]);
   revalidatePath("/dashboard/categories");
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "category.merged",
+    targetType: "category",
+    targetId: targetId,
+    targetLabel: null,
+    metadata: {
+      sourceId,
+      targetId,
+    },
+  });
 }
 
 // ---------- Tags ----------
@@ -209,6 +256,17 @@ export async function createTag(data: {
   if (!result) throw new Error("Failed to create tag");
 
   revalidateTagSurfaces();
+  await safeRecordAuditLog({
+    actorId: staff.user.id,
+    actorRole: staff.user.role,
+    action: "tag.created",
+    targetType: "tag",
+    targetId: result.id,
+    targetLabel: normalizedName,
+    metadata: {
+      status: "approved",
+    },
+  });
   return result;
 }
 
@@ -216,7 +274,7 @@ export async function updateTag(
   id: string,
   data: { name: string },
 ): Promise<void> {
-  await requireStaffSession();
+  const session = await requireStaffSession();
   const normalizedName = normalizeName(data.name);
   const slug = toSlug(normalizedName);
   if (!slug) {
@@ -237,20 +295,42 @@ export async function updateTag(
     id,
   ]);
   revalidateTagSurfaces();
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "tag.updated",
+    targetType: "tag",
+    targetId: id,
+    targetLabel: normalizedName,
+    metadata: null,
+  });
 }
 
 export async function deleteTag(id: string): Promise<void> {
-  await requireStaffSession();
+  const session = await requireStaffSession();
+  const existing = await queryOne<{ name: string }>(
+    `SELECT name FROM tag WHERE id = $1`,
+    [id],
+  );
   await execute(`DELETE FROM article_tag WHERE tag_id = $1`, [id]);
   await execute(`DELETE FROM tag WHERE id = $1`, [id]);
   revalidateTagSurfaces();
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "tag.deleted",
+    targetType: "tag",
+    targetId: id,
+    targetLabel: existing?.name || null,
+    metadata: null,
+  });
 }
 
 export async function mergeTags(
   sourceId: string,
   targetId: string,
 ): Promise<void> {
-  await requireStaffSession();
+  const session = await requireStaffSession();
   if (sourceId === targetId) {
     throw new Error("Cannot merge into the same tag");
   }
@@ -266,6 +346,18 @@ export async function mergeTags(
   await execute(`DELETE FROM article_tag WHERE tag_id = $1`, [sourceId]);
   await execute(`DELETE FROM tag WHERE id = $1`, [sourceId]);
   revalidateTagSurfaces();
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "tag.merged",
+    targetType: "tag",
+    targetId: targetId,
+    targetLabel: null,
+    metadata: {
+      sourceId,
+      targetId,
+    },
+  });
 }
 
 export async function submitTagForModeration(name: string): Promise<{
@@ -304,6 +396,17 @@ export async function submitTagForModeration(name: string): Promise<{
 
   if (existing) {
     if (existing.status === "approved") {
+      await safeRecordAuditLog({
+        actorId: session.user.id,
+        actorRole: session.user.role,
+        action: "tag.submission.reused",
+        targetType: "tag",
+        targetId: existing.id,
+        targetLabel: existing.name,
+        metadata: {
+          status: existing.status,
+        },
+      });
       return {
         id: existing.id,
         name: existing.name,
@@ -326,6 +429,15 @@ export async function submitTagForModeration(name: string): Promise<{
         [normalizedName, session.user.id, existing.id],
       );
       revalidateTagSurfaces();
+      await safeRecordAuditLog({
+        actorId: session.user.id,
+        actorRole: session.user.role,
+        action: "tag.submission.approved_by_staff",
+        targetType: "tag",
+        targetId: existing.id,
+        targetLabel: normalizedName,
+        metadata: null,
+      });
       return {
         id: existing.id,
         name: normalizedName,
@@ -340,6 +452,15 @@ export async function submitTagForModeration(name: string): Promise<{
     }
 
     if (existing.status === "pending") {
+      await safeRecordAuditLog({
+        actorId: session.user.id,
+        actorRole: session.user.role,
+        action: "tag.submission.pending_existing",
+        targetType: "tag",
+        targetId: existing.id,
+        targetLabel: existing.name,
+        metadata: null,
+      });
       return {
         id: existing.id,
         name: existing.name,
@@ -359,6 +480,15 @@ export async function submitTagForModeration(name: string): Promise<{
       [existing.id],
     );
     revalidateTagSurfaces();
+    await safeRecordAuditLog({
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: "tag.submission.resubmitted",
+      targetType: "tag",
+      targetId: existing.id,
+      targetLabel: existing.name,
+      metadata: null,
+    });
     return {
       id: existing.id,
       name: existing.name,
@@ -395,6 +525,17 @@ export async function submitTagForModeration(name: string): Promise<{
   }
 
   revalidateTagSurfaces();
+  await safeRecordAuditLog({
+    actorId: session.user.id,
+    actorRole: session.user.role,
+    action: "tag.submission.created",
+    targetType: "tag",
+    targetId: result.id,
+    targetLabel: result.name,
+    metadata: {
+      status: result.status,
+    },
+  });
   return {
     id: result.id,
     name: result.name,
