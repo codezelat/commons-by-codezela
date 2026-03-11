@@ -1,21 +1,41 @@
+import dns from "node:dns";
 import { Pool } from "pg";
+
+// Force IPv4 preference so hosts with AAAA records do not fail in IPv4-only runtimes.
+dns.setDefaultResultOrder("ipv4first");
 
 /**
  * Resolve the database connection string.
- * Set DB_PROVIDER=local  → uses DATABASE_URL_LOCAL  (default)
- * Set DB_PROVIDER=supabase → uses DATABASE_URL_SUPABASE
- * Falls back to DATABASE_URL if neither of the above is set.
+ * - DB_PROVIDER=local     → DATABASE_URL_LOCAL
+ * - DB_PROVIDER=supabase  → DATABASE_URL_SUPABASE
+ * - Production/Vercel defaults to non-local URLs first.
+ * - Local development defaults to local URL first.
  */
 function getDatabaseUrl(): string {
-  const provider = (process.env.DB_PROVIDER ?? "local").toLowerCase();
-  if (provider === "supabase" && process.env.DATABASE_URL_SUPABASE) {
-    return process.env.DATABASE_URL_SUPABASE;
+  const provider = process.env.DB_PROVIDER?.toLowerCase();
+
+  if (provider === "supabase") {
+    return process.env.DATABASE_URL_SUPABASE ?? process.env.DATABASE_URL ?? "";
   }
-  if (provider === "local" && process.env.DATABASE_URL_LOCAL) {
-    return process.env.DATABASE_URL_LOCAL;
+  if (provider === "local") {
+    return process.env.DATABASE_URL_LOCAL ?? process.env.DATABASE_URL ?? "";
   }
-  // Fallback: bare DATABASE_URL (backward-compat)
-  return process.env.DATABASE_URL ?? process.env.DATABASE_URL_LOCAL ?? "";
+
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+    return (
+      process.env.DATABASE_URL ??
+      process.env.DATABASE_URL_SUPABASE ??
+      process.env.DATABASE_URL_LOCAL ??
+      ""
+    );
+  }
+
+  return (
+    process.env.DATABASE_URL_LOCAL ??
+    process.env.DATABASE_URL_SUPABASE ??
+    process.env.DATABASE_URL ??
+    ""
+  );
 }
 
 const globalForDb = globalThis as unknown as { pool: Pool };
