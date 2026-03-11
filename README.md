@@ -357,9 +357,17 @@ Copy `.env.example` to `.env.local` and configure the following:
 
 ### Database (Supabase)
 
-| Variable                | Description                                            |
-| ----------------------- | ------------------------------------------------------ |
-| `DATABASE_URL_SUPABASE` | PostgreSQL connection string for your Supabase project |
+| Variable                         | Description                                                                 |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| `DATABASE_URL_SUPABASE_POOLER`   | Supabase pooler URL (recommended for Vercel/free tier and IPv4-only setups) |
+| `DATABASE_URL_SUPABASE`          | Direct Supabase database URL (`db.<project-ref>.supabase.co`)               |
+
+### Supabase Client (Optional)
+
+| Variable                               | Description                           |
+| -------------------------------------- | ------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Project URL (`https://<ref>.supabase.co`) |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable (anon) key       |
 
 ### OAuth Providers (Optional)
 
@@ -1100,15 +1108,15 @@ commons-by-codezela/
 2. Import the project in [Vercel](https://vercel.com)
 3. Configure the environment variables in the Vercel dashboard:
    - All variables from [Environment Variables](#environment-variables) section
-   - Set `DB_PROVIDER=supabase` and `DATABASE_URL_SUPABASE` for Supabase
+   - Set `DB_PROVIDER=supabase` and `DATABASE_URL_SUPABASE_POOLER` for Supabase
    - Set `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to your production domain
 4. Deploy
 
 ### Supabase Database Setup
 
 1. Create a new project in [Supabase](https://supabase.com)
-2. Copy the PostgreSQL connection string from Settings → Database
-3. Set `DB_PROVIDER=supabase` and `DATABASE_URL_SUPABASE` in your environment
+2. Copy the pooler connection string from Settings → Database (free tier: use Supavisor/Pooler URL)
+3. Set `DB_PROVIDER=supabase` and `DATABASE_URL_SUPABASE_POOLER` in your environment
 4. Push the schema:
    ```bash
    npm run db:push:live

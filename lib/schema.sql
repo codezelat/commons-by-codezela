@@ -31,6 +31,22 @@ ALTER TABLE "user" DROP CONSTRAINT IF EXISTS user_role_check;
 ALTER TABLE "user"
   ADD CONSTRAINT user_role_check CHECK (role IN ('admin', 'moderator', 'reader'));
 
+CREATE OR REPLACE FUNCTION normalize_user_role()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.role IS NULL OR NEW.role = 'user' THEN
+    NEW.role := 'reader';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_normalize_user_role ON "user";
+CREATE TRIGGER trg_normalize_user_role
+BEFORE INSERT OR UPDATE OF role ON "user"
+FOR EACH ROW
+EXECUTE FUNCTION normalize_user_role();
+
 CREATE TABLE IF NOT EXISTS "session" (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,

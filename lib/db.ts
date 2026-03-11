@@ -1,5 +1,5 @@
 import dns from "node:dns";
-import { Pool } from "pg";
+import { Pool, type PoolConfig } from "pg";
 
 // Force IPv4 preference so hosts with AAAA records do not fail in IPv4-only runtimes.
 dns.setDefaultResultOrder("ipv4first");
@@ -7,7 +7,7 @@ dns.setDefaultResultOrder("ipv4first");
 /**
  * Resolve the database connection string.
  * - DB_PROVIDER=local     → DATABASE_URL_LOCAL
- * - DB_PROVIDER=supabase  → DATABASE_URL_SUPABASE
+ * - DB_PROVIDER=supabase  → DATABASE_URL_SUPABASE_POOLER (preferred) or DATABASE_URL_SUPABASE
  * - Production/Vercel defaults to non-local URLs first.
  * - Local development defaults to local URL first.
  */
@@ -15,7 +15,12 @@ function getDatabaseUrl(): string {
   const provider = process.env.DB_PROVIDER?.toLowerCase();
 
   if (provider === "supabase") {
-    return process.env.DATABASE_URL_SUPABASE ?? process.env.DATABASE_URL ?? "";
+    return (
+      process.env.DATABASE_URL_SUPABASE_POOLER ??
+      process.env.DATABASE_URL_SUPABASE ??
+      process.env.DATABASE_URL ??
+      ""
+    );
   }
   if (provider === "local") {
     return process.env.DATABASE_URL_LOCAL ?? process.env.DATABASE_URL ?? "";
@@ -24,6 +29,7 @@ function getDatabaseUrl(): string {
   if (process.env.VERCEL || process.env.NODE_ENV === "production") {
     return (
       process.env.DATABASE_URL ??
+      process.env.DATABASE_URL_SUPABASE_POOLER ??
       process.env.DATABASE_URL_SUPABASE ??
       process.env.DATABASE_URL_LOCAL ??
       ""
@@ -32,19 +38,39 @@ function getDatabaseUrl(): string {
 
   return (
     process.env.DATABASE_URL_LOCAL ??
+    process.env.DATABASE_URL_SUPABASE_POOLER ??
     process.env.DATABASE_URL_SUPABASE ??
     process.env.DATABASE_URL ??
     ""
   );
 }
 
+function isSupabaseConnection(url: string): boolean {
+  return /supabase\.(co|in)/i.test(url) || /db\.[^.]+\.supabase\.(co|in)/i.test(url);
+}
+
+function getPoolConfig(): PoolConfig {
+  const connectionString = getDatabaseUrl();
+
+  if (!connectionString) {
+    return { connectionString };
+  }
+
+  if (isSupabaseConnection(connectionString)) {
+    return {
+      connectionString,
+      ssl: { rejectUnauthorized: false },
+    };
+  }
+
+  return { connectionString };
+}
+
 const globalForDb = globalThis as unknown as { pool: Pool };
 
 export const pool =
   globalForDb.pool ??
-  new Pool({
-    connectionString: getDatabaseUrl(),
-  });
+  new Pool(getPoolConfig());
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb.pool = pool;

@@ -15,14 +15,36 @@ import { Pool } from "pg";
 dotenv.config({ path: resolve(__dirname, "..", ".env.local") });
 
 function getDatabaseUrl(): string {
-  const provider = (process.env.DB_PROVIDER ?? "local").toLowerCase();
-  if (provider === "supabase" && process.env.DATABASE_URL_SUPABASE) {
-    return process.env.DATABASE_URL_SUPABASE;
+  const provider = process.env.DB_PROVIDER?.toLowerCase();
+  if (provider === "supabase") {
+    return (
+      process.env.DATABASE_URL_SUPABASE_POOLER ??
+      process.env.DATABASE_URL_SUPABASE ??
+      process.env.DATABASE_URL ??
+      ""
+    );
   }
-  if (provider === "local" && process.env.DATABASE_URL_LOCAL) {
-    return process.env.DATABASE_URL_LOCAL;
+  if (provider === "local") {
+    return process.env.DATABASE_URL_LOCAL ?? process.env.DATABASE_URL ?? "";
   }
-  return process.env.DATABASE_URL ?? process.env.DATABASE_URL_LOCAL ?? "";
+
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+    return (
+      process.env.DATABASE_URL ??
+      process.env.DATABASE_URL_SUPABASE_POOLER ??
+      process.env.DATABASE_URL_SUPABASE ??
+      process.env.DATABASE_URL_LOCAL ??
+      ""
+    );
+  }
+
+  return (
+    process.env.DATABASE_URL_LOCAL ??
+    process.env.DATABASE_URL_SUPABASE_POOLER ??
+    process.env.DATABASE_URL_SUPABASE ??
+    process.env.DATABASE_URL ??
+    ""
+  );
 }
 
 async function main() {

@@ -21,7 +21,7 @@ export async function POST() {
     }
 
     // Set role to admin
-    await execute(`UPDATE "user" SET role = 'admin' WHERE id = $1`, [
+    await execute(`UPDATE "user" SET role = 'admin', "emailVerified" = TRUE WHERE id = $1`, [
       ctx.user.id,
     ]);
 
