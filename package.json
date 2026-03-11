@@ -11,7 +11,8 @@
     "db:push:live": "DB_PROVIDER=supabase tsx scripts/db-push.ts",
     "db:seed": "tsx scripts/db-seed.ts",
     "db:seed:live": "DB_PROVIDER=supabase tsx scripts/db-seed.ts",
-    "db:reset": "tsx scripts/db-reset.ts"
+    "db:reset": "tsx scripts/db-reset.ts",
+    "r2:check": "tsx scripts/r2-check.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1004.0",

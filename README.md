@@ -386,7 +386,7 @@ Copy `.env.example` to `.env.local` and configure the following:
 | `R2_ACCESS_KEY_ID`     | R2 API token access key                     |
 | `R2_SECRET_ACCESS_KEY` | R2 API token secret key                     |
 | `R2_BUCKET_NAME`       | R2 bucket name (default: `commons-uploads`) |
-| `R2_PUBLIC_URL`        | Public URL prefix for R2 assets             |
+| `R2_PUBLIC_URL`        | Public URL prefix for R2 assets (required when R2 is enabled) |
 
 ### Brevo Email (Optional in Development)
 
@@ -1097,6 +1097,7 @@ commons-by-codezela/
 | **Seed (Local)**           | `npm run db:seed`      | Seed admin user on local database                    |
 | **Seed (Supabase)**        | `npm run db:seed:live` | Seed admin user on Supabase database                 |
 | **Reset Database**         | `npm run db:reset`     | Drop all tables, re-push schema, re-seed             |
+| **R2 Health Check**        | `npm run r2:check`     | Verify R2 API access, upload/delete, and public URL  |
 
 ---
 
@@ -1128,11 +1129,25 @@ commons-by-codezela/
 
 ### Cloudflare R2 Setup
 
-1. Create a Cloudflare account and enable R2 storage
-2. Create a bucket (default name: `commons-uploads`)
-3. Create an R2 API token with read/write permissions
-4. Set a custom domain or public URL for the bucket
-5. Configure the `R2_*` environment variables
+1. Create a bucket (e.g., `commons-up`)
+2. Create API credentials:
+   - Go to R2 → Manage R2 API tokens → Create API token
+   - Permissions: `Object Read` + `Object Write`
+   - Scope: at least the target bucket
+   - Copy `Access Key ID` and `Secret Access Key`
+3. Configure environment variables:
+   - `R2_ACCOUNT_ID` (from the S3 API endpoint host prefix)
+   - `R2_ACCESS_KEY_ID`
+   - `R2_SECRET_ACCESS_KEY`
+   - `R2_BUCKET_NAME`
+   - `R2_PUBLIC_URL`
+4. Configure public delivery (one option):
+   - Enable **Public Development URL** for quick testing, then set `R2_PUBLIC_URL` to that URL
+   - Or configure a **Custom Domain** and set `R2_PUBLIC_URL` to `https://your-domain`
+5. Verify end-to-end:
+   ```bash
+   npm run r2:check
+   ```
 
 ### Brevo Email Setup
 

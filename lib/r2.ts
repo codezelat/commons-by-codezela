@@ -15,14 +15,23 @@ const r2 = new S3Client({
 });
 
 const BUCKET = process.env.R2_BUCKET_NAME || "commons-uploads";
-const PUBLIC_URL = process.env.R2_PUBLIC_URL || "";
+const PUBLIC_URL = (process.env.R2_PUBLIC_URL || "").replace(/\/$/, "");
+
+function getExtensionFromContentType(contentType: string): string {
+  const normalized = contentType.split(";")[0].trim().toLowerCase();
+  if (normalized === "image/svg+xml") {
+    return "svg";
+  }
+  const fromSlash = normalized.split("/")[1];
+  return fromSlash || "bin";
+}
 
 export async function uploadFile(
   file: Buffer,
   contentType: string,
   folder: string = "uploads",
 ): Promise<{ key: string; url: string }> {
-  const ext = contentType.split("/")[1] || "bin";
+  const ext = getExtensionFromContentType(contentType);
   const key = `${folder}/${randomUUID()}.${ext}`;
 
   await r2.send(
@@ -33,6 +42,12 @@ export async function uploadFile(
       ContentType: contentType,
     }),
   );
+
+  if (!PUBLIC_URL) {
+    throw new Error(
+      "R2_PUBLIC_URL is required to serve uploaded files publicly. Configure a custom domain or the R2 public development URL.",
+    );
+  }
 
   return {
     key,

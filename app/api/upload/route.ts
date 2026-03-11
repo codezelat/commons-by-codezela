@@ -20,13 +20,20 @@ const ALLOWED_TYPES = [
 ];
 
 /** Check whether R2 env vars are configured */
-function isR2Configured(): boolean {
-  return !!(
+function getR2ConfigState() {
+  const hasCoreCredentials = !!(
     process.env.R2_ACCOUNT_ID &&
     process.env.R2_ACCESS_KEY_ID &&
     process.env.R2_SECRET_ACCESS_KEY &&
     process.env.R2_BUCKET_NAME
   );
+
+  const hasPublicUrl = !!process.env.R2_PUBLIC_URL;
+  return {
+    enabled: hasCoreCredentials && hasPublicUrl,
+    hasCoreCredentials,
+    hasPublicUrl,
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -65,6 +72,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const r2 = getR2ConfigState();
+    if (r2.hasCoreCredentials && !r2.hasPublicUrl) {
+      return NextResponse.json(
+        {
+          error:
+            "R2 is partially configured. Set R2_PUBLIC_URL (custom domain or R2 public development URL) to serve uploaded files.",
+        },
+        { status: 500 },
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
@@ -88,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    if (isR2Configured()) {
+    if (r2.enabled) {
       // Production: upload to Cloudflare R2
       const { uploadFile } = await import("@/lib/r2");
       const result = await uploadFile(buffer, file.type, "images");

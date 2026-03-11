@@ -76,13 +76,20 @@ function isSafeUrl(raw: string): { safe: boolean; reason?: string } {
   return { safe: true };
 }
 
-function isR2Configured(): boolean {
-  return !!(
+function getR2ConfigState() {
+  const hasCoreCredentials = !!(
     process.env.R2_ACCOUNT_ID &&
     process.env.R2_ACCESS_KEY_ID &&
     process.env.R2_SECRET_ACCESS_KEY &&
     process.env.R2_BUCKET_NAME
   );
+
+  const hasPublicUrl = !!process.env.R2_PUBLIC_URL;
+  return {
+    enabled: hasCoreCredentials && hasPublicUrl,
+    hasCoreCredentials,
+    hasPublicUrl,
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -144,6 +151,17 @@ export async function POST(request: NextRequest) {
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
+    const r2 = getR2ConfigState();
+    if (r2.hasCoreCredentials && !r2.hasPublicUrl) {
+      return NextResponse.json(
+        {
+          error:
+            "R2 is partially configured. Set R2_PUBLIC_URL (custom domain or R2 public development URL) to serve uploaded files.",
+        },
+        { status: 500 },
+      );
+    }
+
     const res = await fetch(rawUrl, {
       signal: controller.signal,
       headers: { Accept: "image/*,*/*;q=0.8" },
@@ -200,7 +218,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.concat(chunks.map((c) => Buffer.from(c)));
 
     // Save to R2 (prod) or a local upload directory served through a route (dev)
-    if (isR2Configured()) {
+    if (r2.enabled) {
       const { uploadFile } = await import("@/lib/r2");
       const result = await uploadFile(buffer, contentType, "images");
       return NextResponse.json({ url: result.url, key: result.key });
