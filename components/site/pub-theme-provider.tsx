@@ -24,7 +24,7 @@ const PubThemeContext = createContext<PubThemeContextValue>({
 });
 
 const STORAGE_KEY = "pub-theme";
-const DEFAULT_THEME: PubTheme = "lavender";
+const DEFAULT_THEME: PubTheme = "cream";
 
 const listeners = new Set<() => void>();
 

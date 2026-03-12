@@ -18,17 +18,18 @@ const lora = Lora({
 
 export const metadata: Metadata = {
   title: {
-    default: "Commons by Codezela Technologies — Open Research Publishing Platform",
-    template: "%s | Commons by Codezela Technologies",
+    default: "Commons by Codezela",
+    template: "%s | Commons by Codezela",
   },
   description:
-    "An open-source platform for publishing and discovering research papers, technical articles, and peer-reviewed content.",
+    "A credibility-first platform for publishing technical essays, postmortems, and lessons worth keeping.",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   ),
   openGraph: {
-    title: "Commons by Codezela Technologies",
-    description: "Open-source research publishing platform",
+    title: "Commons by Codezela",
+    description:
+      "Technical publishing for readers who want signal and contributors who care where their work appears.",
     type: "website",
   },
 };

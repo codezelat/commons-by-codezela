@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { PubThemeProvider } from "@/components/site/pub-theme-provider";
-import { PubThemeToggle } from "@/components/site/pub-theme-toggle";
+import { PublicNav } from "@/components/site/public-nav";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -13,127 +13,121 @@ export async function PublicShell({ children }: PublicShellProps) {
   const session = await auth.api
     .getSession({ headers: await headers() })
     .catch(() => null);
+  const accountLink = session
+    ? { href: "/dashboard", label: "Dashboard" }
+    : { href: "/login", label: "Sign in" };
+
   return (
     <PubThemeProvider>
       <div className="min-h-screen bg-[var(--pub-bg)] text-[var(--pub-text)]">
-        <header className="sticky top-0 z-40 border-b border-[var(--pub-border)] bg-[var(--pub-bg-alpha)] backdrop-blur-lg">
-          <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--pub-brand-bg)]">
+        <header className="sticky top-0 z-40 border-b border-[var(--pub-border)] bg-[var(--pub-bg-alpha)] backdrop-blur-xl">
+          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-8 lg:h-14 lg:px-10">
+            <Link href="/" className="flex min-w-0 items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--pub-brand-bg)] shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
                 <span className="font-display text-xs font-bold italic text-[var(--pub-brand-fg)]">
                   C
                 </span>
               </div>
-              <span className="text-sm font-semibold tracking-tight text-[var(--pub-text)]">
-                Commons
+              <span className="truncate text-sm font-semibold tracking-tight text-[var(--pub-text)] sm:max-w-none">
+                Commons by Codezela
               </span>
             </Link>
 
-            <nav className="flex items-center gap-1">
-              <Link
-                href="/"
-                className="px-3 py-1.5 text-[13px] text-[var(--pub-text-secondary)] transition-colors hover:text-[var(--pub-text)]"
-              >
-                Home
-              </Link>
-              <Link
-                href="/articles"
-                className="px-3 py-1.5 text-[13px] text-[var(--pub-text-secondary)] transition-colors hover:text-[var(--pub-text)]"
-              >
-                Articles
-              </Link>
-              {session ? (
-                <Link
-                  href="/dashboard"
-                  className="ml-1 px-3 py-1.5 text-[13px] text-[var(--pub-text-secondary)] transition-colors hover:text-[var(--pub-text)]"
-                >
-                  Dashboard
-                </Link>
-              ) : (
-                <Link
-                  href="/login"
-                  className="ml-1 px-3 py-1.5 text-[13px] text-[var(--pub-text-muted)] transition-colors hover:text-[var(--pub-text-secondary)]"
-                >
-                  Sign in
-                </Link>
-              )}
-              <PubThemeToggle />
-            </nav>
+            <PublicNav isSignedIn={Boolean(session)} />
           </div>
         </header>
 
         {children}
 
         <footer className="border-t border-[var(--pub-border)] bg-[var(--pub-footer-bg)]">
-          <div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10 sm:flex-row sm:items-end sm:justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded bg-[var(--pub-footer-brand-bg)]">
-                  <span className="font-display text-[10px] font-bold italic text-[var(--pub-footer-brand-fg)]">
-                    C
+          <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-10">
+            <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded bg-[var(--pub-footer-brand-bg)]">
+                    <span className="font-display text-[10px] font-bold italic text-[var(--pub-footer-brand-fg)]">
+                      C
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-neutral-200">
+                    Commons by Codezela
                   </span>
                 </div>
-                <span className="text-sm font-semibold text-neutral-200">
-                  Commons
-                </span>
+                <p className="max-w-md text-sm leading-7 text-neutral-400">
+                  Credibility-first publishing for technical essays,
+                  postmortems, and lessons worth keeping.
+                </p>
+                <div className="pt-1">
+                  <Link
+                    href={accountLink.href}
+                    className="inline-flex items-center rounded-full border border-white/12 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-300 transition-colors hover:bg-white/6 hover:text-white"
+                  >
+                    {accountLink.label}
+                  </Link>
+                </div>
               </div>
-              <p className="max-w-xs text-xs leading-relaxed text-neutral-500">
-                Open-source publishing for research, technical writing, and
-                long-form articles.
-              </p>
+
+              <div className="grid gap-6 sm:grid-cols-2 lg:justify-self-end">
+                <div className="space-y-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-500">
+                    Explore
+                  </p>
+                  <div className="grid gap-2 text-sm text-neutral-400">
+                    <Link href="/" className="transition-colors hover:text-neutral-200">
+                      Home
+                    </Link>
+                    <Link
+                      href="/articles"
+                      className="transition-colors hover:text-neutral-200"
+                    >
+                      Articles
+                    </Link>
+                    <Link
+                      href={accountLink.href}
+                      className="transition-colors hover:text-neutral-200"
+                    >
+                      {accountLink.label}
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-500">
+                    Policies
+                  </p>
+                  <div className="grid gap-2 text-sm text-neutral-400">
+                    <Link
+                      href="/moderation-policy"
+                      className="transition-colors hover:text-neutral-200"
+                    >
+                      Moderation
+                    </Link>
+                    <Link
+                      href="/reporting"
+                      className="transition-colors hover:text-neutral-200"
+                    >
+                      Reporting
+                    </Link>
+                    <Link
+                      href="/terms"
+                      className="transition-colors hover:text-neutral-200"
+                    >
+                      Terms
+                    </Link>
+                    <Link
+                      href="/privacy"
+                      className="transition-colors hover:text-neutral-200"
+                    >
+                      Privacy
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-5 text-xs text-neutral-500">
-              <Link
-                href="/"
-                className="transition-colors hover:text-neutral-300"
-              >
-                Home
-              </Link>
-              <Link
-                href="/articles"
-                className="transition-colors hover:text-neutral-300"
-              >
-                Articles
-              </Link>
-              {session ? (
-                <Link
-                  href="/dashboard"
-                  className="transition-colors hover:text-neutral-300"
-                >
-                  Dashboard
-                </Link>
-              ) : (
-                <Link
-                  href="/login"
-                  className="transition-colors hover:text-neutral-300"
-                >
-                  Sign in
-                </Link>
-              )}
-              <Link
-                href="/moderation-policy"
-                className="transition-colors hover:text-neutral-300"
-              >
-                Moderation
-              </Link>
-              <Link
-                href="/reporting"
-                className="transition-colors hover:text-neutral-300"
-              >
-                Reporting
-              </Link>
-              <Link
-                href="/terms"
-                className="transition-colors hover:text-neutral-300"
-              >
-                Terms
-              </Link>
-              <Link
-                href="/privacy"
-                className="transition-colors hover:text-neutral-300"
-              >
-                Privacy
-              </Link>
+
+            <div className="mt-8 border-t border-white/8 pt-4 text-xs text-neutral-500">
+              Built for readers who want signal and contributors who care where
+              their work appears.
             </div>
           </div>
         </footer>

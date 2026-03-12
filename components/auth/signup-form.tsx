@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signUp, signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,17 @@ import { Loader2 } from "lucide-react";
 
 export function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
+  const callbackUrl = searchParams.get("callbackUrl");
+  const destination =
+    callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
+      ? callbackUrl
+      : "/dashboard";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +43,7 @@ export function SignupForm() {
         return;
       }
       toast.success("Account created successfully!");
-      router.push("/dashboard");
+      router.push(destination);
       router.refresh();
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -51,7 +57,7 @@ export function SignupForm() {
     try {
       await signIn.social({
         provider,
-        callbackURL: "/dashboard",
+        callbackURL: destination,
       });
     } catch {
       toast.error(`Failed to sign in with ${provider}`);
