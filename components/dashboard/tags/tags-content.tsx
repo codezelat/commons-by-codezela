@@ -7,6 +7,7 @@ import {
   updateTag,
   deleteTag,
   mergeTags,
+  moderateTag,
   type Tag,
 } from "@/lib/actions/taxonomy";
 import {
@@ -60,6 +61,8 @@ import {
   Trash2,
   Merge,
   TagIcon,
+  Check,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -163,6 +166,22 @@ export function TagsContent() {
         loadTags();
       } catch {
         toast.error("Failed to merge tags");
+      }
+    });
+  }
+
+  function handleModerate(tag: Tag, decision: "approved" | "rejected") {
+    startTransition(async () => {
+      try {
+        await moderateTag(tag.id, decision);
+        toast.success(
+          decision === "approved" ? "Tag approved" : "Tag rejected",
+        );
+        loadTags();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to moderate tag",
+        );
       }
     });
   }
@@ -274,6 +293,25 @@ export function TagsContent() {
                         <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {tag.status !== "approved" && (
+                          <DropdownMenuItem
+                            onClick={() => handleModerate(tag, "approved")}
+                            disabled={isPending}
+                          >
+                            <Check className="mr-2 h-4 w-4" />
+                            Approve
+                          </DropdownMenuItem>
+                        )}
+                        {tag.status === "pending" && (
+                          <DropdownMenuItem
+                            onClick={() => handleModerate(tag, "rejected")}
+                            disabled={isPending}
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            Reject
+                          </DropdownMenuItem>
+                        )}
+                        {tag.status !== "approved" && <DropdownMenuSeparator />}
                         <DropdownMenuItem onClick={() => openEdit(tag)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Rename

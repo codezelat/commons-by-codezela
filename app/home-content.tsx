@@ -86,7 +86,7 @@ const HOME_THEMES: Record<"cream" | "lavender", ThemeConfig> = {
       "--home-surface-2": "rgba(255,255,255,0.92)",
       "--home-border": "rgba(72,57,43,0.12)",
       "--home-accent": "#8a6330",
-      "--home-accent-2": "#c89a5b",
+      "--home-accent-2": "#9f6d30",
       "--home-text": "#16120f",
       "--home-muted": "rgba(22,18,15,0.66)",
       "--home-mesh":
@@ -114,7 +114,7 @@ const HOME_THEMES: Record<"cream" | "lavender", ThemeConfig> = {
       "--home-surface-2": "rgba(255,255,255,0.9)",
       "--home-border": "rgba(72,52,106,0.12)",
       "--home-accent": "#6a4fb0",
-      "--home-accent-2": "#8e71d4",
+      "--home-accent-2": "#6e53b8",
       "--home-text": "#181421",
       "--home-muted": "rgba(24,20,33,0.64)",
       "--home-mesh":
@@ -291,7 +291,11 @@ function useMotionSettings() {
       transition: { duration: 0.7 },
     },
     popIn: {
-      initial: { opacity: 0, scale: reduceMotion ? 1 : 0.96, y: reduceMotion ? 0 : 18 },
+      initial: {
+        opacity: 0,
+        scale: reduceMotion ? 1 : 0.96,
+        y: reduceMotion ? 0 : 18,
+      },
       animate: { opacity: 1, scale: 1, y: 0 },
       transition: { duration: 0.75 },
     },
@@ -390,12 +394,12 @@ function SpotlightCard({
     return (
       <div
         className={cn(
-          "relative overflow-hidden rounded-[2rem] border p-8",
+          "relative overflow-hidden rounded-[2rem] border p-8 sm:p-9",
           theme.frameClass,
         )}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_60%)]" />
-        <p className="relative text-sm leading-7 text-[var(--home-muted)]">
+        <p className="relative max-w-md text-sm leading-7 text-[var(--home-muted)]">
           Featured work will live here as soon as the first editorial set is
           published.
         </p>
@@ -416,7 +420,8 @@ function SpotlightCard({
         theme.frameClass,
       )}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_20%,rgba(0,0,0,0.44)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.14)_0%,rgba(0,0,0,0.72)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(255,255,255,0.15),transparent_40%)]" />
       <div className="relative min-h-[21rem] sm:min-h-[26rem]">
         {article.cover_image ? (
           <motion.div
@@ -442,34 +447,44 @@ function SpotlightCard({
           transition={{ duration: 0.75, delay: 0.28 }}
           className="absolute inset-x-0 bottom-0 p-5 sm:p-7"
         >
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className={cn("rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em]", theme.accentChipClass)}>
-              Featured
-            </span>
-            {article.category_name ? (
-              <span className="text-[11px] uppercase tracking-[0.18em] text-white/75">
-                {article.category_name}
+          <div className="rounded-[1.2rem] border border-white/20 bg-black/52 p-4 backdrop-blur-[2px] sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  "rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em]",
+                  theme.accentChipClass,
+                )}
+              >
+                Featured
               </span>
-            ) : null}
-          </div>
+              {article.category_name ? (
+                <span className="text-[11px] uppercase tracking-[0.16em] text-white/80">
+                  {article.category_name}
+                </span>
+              ) : null}
+            </div>
 
-          <Link href={`/articles/${article.slug}`} className="block max-w-xl">
-            <h2 className="max-w-2xl text-[1.95rem] font-semibold leading-[1.02] text-white sm:text-4xl">
-              {article.title}
-            </h2>
-            <p className="mt-3 max-w-lg text-sm leading-7 text-white/76">
-              {summarize(article, 112)}
-            </p>
-          </Link>
+            <Link href={`/articles/${article.slug}`} className="block max-w-xl">
+              <h2 className="max-w-2xl text-[1.65rem] font-semibold leading-[1.06] text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.45)] sm:text-[2.05rem]">
+                {article.title}
+              </h2>
+              <p className="mt-3 max-w-[34rem] text-sm leading-7 text-white/94 [text-shadow:0_1px_4px_rgba(0,0,0,0.42)]">
+                {summarize(article, 112)}
+              </p>
+            </Link>
 
-          <div className="mt-5 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.16em] text-white/65">
-            {article.author_name ? (
-              <Link href={`/authors/${article.author_id}`} className="hover:text-white">
-                {article.author_name}
-              </Link>
-            ) : null}
-            <span>{meta.readingTime} min</span>
-            {meta.date ? <span>{meta.date}</span> : null}
+            <div className="mt-5 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.14em] text-white/86">
+              {article.author_name ? (
+                <Link
+                  href={`/authors/${article.author_id}`}
+                  className="hover:text-white"
+                >
+                  {article.author_name}
+                </Link>
+              ) : null}
+              <span>{meta.readingTime} min</span>
+              {meta.date ? <span>{meta.date}</span> : null}
+            </div>
           </div>
         </motion.div>
       </div>
@@ -511,7 +526,9 @@ function StoryMini({
       </Link>
       <div className="mt-4 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.16em] text-[var(--home-muted)]">
         {article.author_name ? (
-          <Link href={`/authors/${article.author_id}`}>{article.author_name}</Link>
+          <Link href={`/authors/${article.author_id}`}>
+            {article.author_name}
+          </Link>
         ) : null}
         <span>{meta.readingTime} min</span>
       </div>
@@ -565,7 +582,10 @@ export function HomeContent({ data }: HomeContentProps) {
     reduceMotion ? ["18rem", "18rem"] : ["18rem", "34rem"],
   );
   const haloGradient = useMotionTemplate`radial-gradient(circle at center, color-mix(in srgb, var(--home-accent) 28%, transparent) 0%, transparent 70%)`;
-  const ribbonItems = [...categories.map((item) => item.label), ...tags.map((item) => item.label)];
+  const ribbonItems = [
+    ...categories.map((item) => item.label),
+    ...tags.map((item) => item.label),
+  ];
 
   return (
     <main
@@ -598,21 +618,32 @@ export function HomeContent({ data }: HomeContentProps) {
         ref={heroRef}
         className="relative mx-auto max-w-7xl px-5 pb-12 pt-20 sm:px-8 sm:pb-14 sm:pt-24 lg:px-10"
       >
-        <div className="grid gap-10 xl:grid-cols-[0.88fr_1.12fr] xl:items-end">
-          <motion.div {...popIn} style={{ y: heroContentY }} className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[var(--home-accent-2)]">
+        <div className="grid gap-12 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
+          <motion.div
+            {...popIn}
+            style={{ y: heroContentY }}
+            className="max-w-[40rem] pt-1 sm:pt-2"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--home-accent-2)]">
               {theme.kicker}
             </p>
-            <h1 className="mt-5 text-[2.9rem] font-semibold leading-[0.94] tracking-[-0.05em] sm:text-7xl lg:text-[5.55rem]">
+            <h1 className="mt-4 text-[2.55rem] font-semibold leading-[0.96] tracking-[-0.045em] sm:mt-5 sm:text-[4.25rem] lg:text-[5.3rem]">
               {theme.title.split(theme.accent)[0]}
-              <span className="text-[var(--home-accent-2)]">{theme.accent}</span>
+              <span className="text-[var(--home-accent-2)]">
+                {theme.accent}
+              </span>
               {theme.title.split(theme.accent)[1]}
             </h1>
-            <p className={cn("mt-6 max-w-xl text-lg leading-8", theme.mutedClass)}>
+            <p
+              className={cn(
+                "mt-7 max-w-[35rem] text-base leading-7 sm:text-lg sm:leading-8",
+                theme.mutedClass,
+              )}
+            >
               {theme.body}
             </p>
 
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/signup"
                 className={cn(
@@ -648,7 +679,7 @@ export function HomeContent({ data }: HomeContentProps) {
 
           <motion.div
             style={{ y: heroTranslateY }}
-            className="relative min-h-0 sm:min-h-[34rem]"
+            className="relative min-h-0 sm:min-h-[35rem]"
           >
             <div className="relative sm:absolute sm:inset-x-0 sm:top-6 sm:bottom-0">
               <SpotlightCard
@@ -716,7 +747,9 @@ export function HomeContent({ data }: HomeContentProps) {
                 <StoryMini key={article.id} article={article} theme={theme} />
               ))
             ) : (
-              <div className={cn("rounded-[1.8rem] border p-6", theme.cardClass)}>
+              <div
+                className={cn("rounded-[1.8rem] border p-6", theme.cardClass)}
+              >
                 <p className={cn("text-sm leading-7", theme.mutedClass)}>
                   Recent articles will appear here once the first editorial set
                   is live.
@@ -741,7 +774,9 @@ export function HomeContent({ data }: HomeContentProps) {
                   <p className="text-xs uppercase tracking-[0.24em] text-[var(--home-muted)]">
                     Topic structure
                   </p>
-                  <h2 className="mt-1 text-2xl font-semibold">Browse by topic, not by noise.</h2>
+                  <h2 className="mt-1 text-2xl font-semibold">
+                    Browse by topic, not by noise.
+                  </h2>
                 </div>
               </div>
 
@@ -776,7 +811,9 @@ export function HomeContent({ data }: HomeContentProps) {
                   <p className="text-xs uppercase tracking-[0.24em] text-[var(--home-muted)]">
                     Useful entry points
                   </p>
-                  <h2 className="mt-1 text-2xl font-semibold">Readers should know where to begin.</h2>
+                  <h2 className="mt-1 text-2xl font-semibold">
+                    Readers should know where to begin.
+                  </h2>
                 </div>
               </div>
 
@@ -808,7 +845,9 @@ export function HomeContent({ data }: HomeContentProps) {
                   <p className="text-xs uppercase tracking-[0.24em] text-[var(--home-muted)]">
                     Publishing flow
                   </p>
-                  <h2 className="mt-1 text-2xl font-semibold">Draft. Review. Publish.</h2>
+                  <h2 className="mt-1 text-2xl font-semibold">
+                    Draft. Review. Publish.
+                  </h2>
                 </div>
               </div>
 
@@ -820,7 +859,10 @@ export function HomeContent({ data }: HomeContentProps) {
                 ].map((item, index) => (
                   <div
                     key={item}
-                    className={cn("rounded-[1.25rem] border p-4", theme.softCardClass)}
+                    className={cn(
+                      "rounded-[1.25rem] border p-4",
+                      theme.softCardClass,
+                    )}
                   >
                     <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--home-muted)]">
                       0{index + 1}
@@ -856,7 +898,12 @@ export function HomeContent({ data }: HomeContentProps) {
               <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-[-0.03em] sm:text-5xl">
                 The homepage should feel like the audience got more serious.
               </h2>
-              <p className={cn("mt-4 max-w-xl text-base leading-8", theme.mutedClass)}>
+              <p
+                className={cn(
+                  "mt-4 max-w-xl text-base leading-8",
+                  theme.mutedClass,
+                )}
+              >
                 That is the standard here: less clutter, more signal, and a
                 product surface contributors would actually be happy to share.
               </p>

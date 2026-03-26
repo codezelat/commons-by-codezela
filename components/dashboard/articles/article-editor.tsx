@@ -212,6 +212,9 @@ export function ArticleEditor({
     html: string;
     text: string;
   } | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    "draft" | "published" | null
+  >(null);
 
   const publicBaseUrl = useMemo(
     () =>
@@ -266,7 +269,9 @@ export function ArticleEditor({
         if (prev.some((tag) => tag.id === submitted.id)) {
           return prev;
         }
-        return [...prev, submitted].sort((a, b) => a.name.localeCompare(b.name));
+        return [...prev, submitted].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        );
       });
       setSelectedTags((prev) =>
         prev.includes(submitted.id) ? prev : [...prev, submitted.id],
@@ -287,7 +292,14 @@ export function ArticleEditor({
     }
   }
 
-  async function handleSave(status: string = "draft") {
+  async function handleSave(
+    status:
+      | "draft"
+      | "pending"
+      | "published"
+      | "rejected"
+      | "archived" = "draft",
+  ) {
     if (!title.trim()) {
       toast.error("Title is required");
       return;
@@ -295,6 +307,12 @@ export function ArticleEditor({
     if (!slug.trim()) {
       toast.error("Slug is required");
       return;
+    }
+
+    if (status === "draft" || status === "published") {
+      setPendingAction(status);
+    } else {
+      setPendingAction(null);
     }
 
     startTransition(async () => {
@@ -340,7 +358,11 @@ export function ArticleEditor({
           router.refresh();
         }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to save article");
+        toast.error(
+          error instanceof Error ? error.message : "Failed to save article",
+        );
+      } finally {
+        setPendingAction(null);
       }
     });
   }
@@ -384,7 +406,11 @@ export function ArticleEditor({
             onClick={() => handleSave("draft")}
             disabled={isPending}
           >
-            {isPending ? <Loader2 className="animate-spin" /> : <Save />}
+            {pendingAction === "draft" ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <Save />
+            )}
             Save Draft
           </Button>
           <Button
@@ -392,7 +418,11 @@ export function ArticleEditor({
             onClick={() => handleSave("published")}
             disabled={isPending}
           >
-            {isPending ? <Loader2 className="animate-spin" /> : <Send />}
+            {pendingAction === "published" ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <Send />
+            )}
             {isStaff ? "Publish" : "Submit for review"}
           </Button>
         </div>
@@ -524,7 +554,9 @@ export function ArticleEditor({
                     key={tag.id}
                     variant={isSelected ? "default" : "outline"}
                     className={`text-xs transition-colors ${
-                      canToggle ? "cursor-pointer" : "cursor-not-allowed opacity-70"
+                      canToggle
+                        ? "cursor-pointer"
+                        : "cursor-not-allowed opacity-70"
                     } ${
                       isPendingTag
                         ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
@@ -591,8 +623,12 @@ export function ArticleEditor({
                 <SelectContent>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="pending">Pending Review</SelectItem>
-                  {isStaff && <SelectItem value="published">Published</SelectItem>}
-                  {isStaff && <SelectItem value="rejected">Rejected</SelectItem>}
+                  {isStaff && (
+                    <SelectItem value="published">Published</SelectItem>
+                  )}
+                  {isStaff && (
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  )}
                   <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
