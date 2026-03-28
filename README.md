@@ -16,6 +16,7 @@
   <a href="https://github.com/codezelat/commons-by-codezela"><img src="https://img.shields.io/github/stars/codezelat/commons-by-codezela?style=flat&color=0f172a" alt="Stars" /></a>
   <a href="https://github.com/codezelat/commons-by-codezela"><img src="https://img.shields.io/github/forks/codezelat/commons-by-codezela?style=flat&color=0f172a" alt="Forks" /></a>
   <a href="https://github.com/codezelat/commons-by-codezela/issues"><img src="https://img.shields.io/github/issues/codezelat/commons-by-codezela?style=flat&color=0f172a" alt="Issues" /></a>
+  <img src="https://img.shields.io/badge/License-MIT-0f172a?style=flat" alt="MIT License" />
   <img src="https://img.shields.io/badge/Next.js-16-black?style=flat" alt="Next.js 16" />
   <img src="https://img.shields.io/badge/React-19-61dafb?style=flat" alt="React 19" />
   <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat" alt="TypeScript" />
@@ -53,6 +54,7 @@
 - [Available Scripts](#available-scripts)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
+- [License](#license)
 - [About Codezela](#about-codezela)
 
 ---
@@ -1178,6 +1180,12 @@ Contributions are welcome! Here's how you can help:
    - Use `cn()` from `@/lib/utils` for conditional class names
 4. **Test** your changes thoroughly
 5. **Submit a Pull Request** with a clear description of what you changed and why
+
+---
+
+## License
+
+This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for the full text.
 
 ---
 
