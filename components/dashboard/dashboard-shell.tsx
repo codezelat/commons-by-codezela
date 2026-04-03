@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { CommonsLogo } from "@/components/ui/commons-logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -149,11 +150,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
         )}
       >
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-foreground">
-            <span className="font-display italic text-xs font-semibold text-background">
-              C
-            </span>
-          </div>
+          <CommonsLogo size="sm" />
           {!collapsed && (
             <span className="text-sm font-semibold text-foreground">
               Commons
@@ -322,11 +319,7 @@ export function DashboardShell({ children, session }: DashboardShellProps) {
             </SheetTrigger>
           </Sheet>
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground">
-              <span className="font-display italic text-xs font-semibold text-background">
-                C
-              </span>
-            </div>
+            <CommonsLogo size="sm" />
             <span className="text-sm font-semibold text-foreground">
               Commons
             </span>

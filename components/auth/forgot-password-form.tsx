@@ -6,6 +6,7 @@ import { requestPasswordReset } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CommonsLogo } from "@/components/ui/commons-logo";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 
@@ -73,11 +74,7 @@ export function ForgotPasswordForm() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-2 text-center">
         <Link href="/" className="mb-2 flex items-center gap-2 lg:hidden">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground">
-            <span className="font-display italic text-sm font-semibold text-background">
-              C
-            </span>
-          </div>
+          <CommonsLogo size="md" />
         </Link>
         <h1 className="text-xl font-semibold tracking-tight">
           Forgot your password?
