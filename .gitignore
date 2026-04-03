@@ -38,7 +38,8 @@ yarn-error.log*
 # vercel
 .vercel
 
-# typescript
+# vscode
+.vscode/
 
 # local uploads (dev fallback when R2 not configured)
 /public/uploads
