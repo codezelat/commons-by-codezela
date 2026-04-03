@@ -33,7 +33,7 @@ export async function PublicShell({ children }: PublicShellProps) {
 
         {children}
 
-        <footer className="border-t border-[var(--home-border)] bg-[var(--home-surface)]">
+        <footer className="border-t border-[var(--home-border)]/50 bg-[var(--home-surface)]">
           <div className="mx-auto max-w-6xl px-6 py-16 sm:px-8 sm:py-20 lg:px-12">
             <div className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
               <div>
@@ -103,7 +103,7 @@ export async function PublicShell({ children }: PublicShellProps) {
               </div>
             </div>
 
-            <div className="mt-12 border-t border-[var(--home-border)] pt-8 text-sm text-[var(--home-text-subtle)]">
+            <div className="mt-12 border-t border-[var(--home-border)]/50 pt-8 text-sm text-[var(--home-text-subtle)]">
               © {new Date().getFullYear()}{" "}
               <a
                 href="https://codezela.com"

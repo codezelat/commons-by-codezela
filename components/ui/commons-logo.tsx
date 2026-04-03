@@ -15,7 +15,7 @@ export function CommonsLogo({ size = "md", className = "" }: CommonsLogoProps) {
   const { container, image } = sizeMap[size];
 
   return (
-    <div className={`${container} ${className} relative flex-shrink-0 overflow-hidden rounded-xl`}>
+    <div className={`${container} ${className} relative flex-shrink-0 overflow-hidden rounded-full`}>
       <Image
         src="/images/Frame 5.png"
         alt="Commons Logo"

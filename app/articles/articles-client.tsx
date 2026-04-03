@@ -26,6 +26,7 @@ interface ArticlesClientProps {
   total: number;
   page: number;
   totalPages: number;
+  contributorCount: number;
 }
 
 export function ArticlesClient({
@@ -35,6 +36,7 @@ export function ArticlesClient({
   total,
   page,
   totalPages,
+  contributorCount,
 }: ArticlesClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -93,7 +95,9 @@ export function ArticlesClient({
             <p className="mt-6 text-xl leading-relaxed text-[var(--pub-text-secondary)]">
               {hasFilters
                 ? `${total} article${total === 1 ? "" : "s"} matching your search`
-                : `${total} article${total === 1 ? "" : "s"} from specialists who value depth and clarity`}
+                : contributorCount > 0
+                  ? `${total} article${total === 1 ? "" : "s"} from ${contributorCount} specialist${contributorCount === 1 ? "" : "s"} who value depth and clarity`
+                  : `${total} article${total === 1 ? "" : "s"} from specialists who value depth and clarity`}
             </p>
           </motion.div>
 

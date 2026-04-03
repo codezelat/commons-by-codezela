@@ -6,6 +6,7 @@ import {
   getPublicCategories,
   getPublicTags,
 } from "@/lib/actions/articles";
+import { getHomePageStats } from "@/lib/actions/home";
 import { ArticlesClient } from "./articles-client";
 
 export const metadata: Metadata = {
@@ -29,7 +30,7 @@ export default async function ArticlesPage({
   const params = (await searchParams) || {};
   const page = Math.max(1, Number(params.page) || 1);
   
-  const [articlesResult, categories, tags] = await Promise.all([
+  const [articlesResult, categories, tags, stats] = await Promise.all([
     getPublicArticles({
       search: params.q || undefined,
       category: params.category || undefined,
@@ -39,6 +40,7 @@ export default async function ArticlesPage({
     }),
     getPublicCategories(),
     getPublicTags(20),
+    getHomePageStats(),
   ]);
 
   return (
@@ -51,6 +53,7 @@ export default async function ArticlesPage({
           total={articlesResult.total}
           page={articlesResult.page}
           totalPages={articlesResult.totalPages}
+          contributorCount={stats.contributorCount}
         />
       </Suspense>
     </PublicShell>

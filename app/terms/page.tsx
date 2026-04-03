@@ -452,7 +452,7 @@ export default function TermsPage() {
             </h2>
             <div className="space-y-4 text-[var(--pub-text-secondary)]">
               <p>
-                These Terms are governed by the laws of [Your Jurisdiction], without regard to conflict of law principles. Any disputes arising from these Terms or your use of Commons shall be resolved through:
+                These Terms are governed by applicable laws, without regard to conflict of law principles. Any disputes arising from these Terms or your use of Commons shall be resolved through:
               </p>
               <ul className="space-y-2">
                 <li className="flex gap-2">
