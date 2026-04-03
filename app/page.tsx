@@ -13,9 +13,9 @@ import {
 } from "./home-content";
 
 export const metadata: Metadata = {
-  title: "Technical publishing with standards",
+  title: "Where specialists share knowledge worth keeping",
   description:
-    "Commons by Codezela is a credibility-first home for technical essays, postmortems, and lessons worth keeping.",
+    "A publishing platform built for technical depth, human curation, and lasting value. Join a community that values quality over quantity.",
 };
 
 async function loadHomeContentData(): Promise<HomeContentData> {
