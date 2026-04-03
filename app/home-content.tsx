@@ -127,6 +127,76 @@ function useMotionSettings() {
   };
 }
 
+function SplitText({ children, delay = 0 }: { children: string; delay?: number }) {
+  const reduceMotion = useReducedMotion();
+  const words = children.split(" ");
+  
+  return (
+    <>
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.3,
+            delay: delay + i * 0.03,
+            ease: [0.25, 0.4, 0.25, 1],
+          }}
+          className="inline-block"
+          style={{ marginRight: "0.25em" }}
+        >
+          {word}
+        </motion.span>
+      ))}
+    </>
+  );
+}
+
+function FloatingShape({ 
+  delay = 0, 
+  duration = 20,
+  x = [0, 100],
+  y = [0, -100],
+  rotate = [0, 360],
+  scale = [1, 1.2, 1],
+  className = "",
+}: {
+  delay?: number;
+  duration?: number;
+  x?: number[];
+  y?: number[];
+  rotate?: number[];
+  scale?: number[];
+  className?: string;
+}) {
+  const reduceMotion = useReducedMotion();
+  
+  if (reduceMotion) {
+    return <div className={className} />;
+  }
+  
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0 }}
+      animate={{
+        opacity: [0, 0.6, 0.6, 0],
+        x,
+        y,
+        rotate,
+        scale,
+      }}
+      transition={{
+        duration,
+        delay,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    />
+  );
+}
+
 function ArticleCard({ article, index }: { article: Article; index: number }) {
   const meta = formatMeta(article);
   const reduceMotion = useReducedMotion();
@@ -221,43 +291,110 @@ export function HomeContent({ data }: HomeContentProps) {
         style={{ position: "relative" }}
         className="relative overflow-hidden border-b border-[var(--home-border)]"
       >
+        {/* Animated Background */}
         <div className="absolute inset-0 bg-[var(--home-gradient)]" />
+        
+        {/* Floating Shapes */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <FloatingShape
+            delay={0}
+            duration={25}
+            x={[0, 150, -50, 0]}
+            y={[0, -100, -50, 0]}
+            rotate={[0, 180, 360]}
+            scale={[1, 1.3, 0.9, 1]}
+            className="absolute -left-20 top-20 h-64 w-64 rounded-full bg-gradient-to-br from-[var(--home-accent)]/10 via-[var(--home-accent)]/5 to-transparent blur-2xl"
+          />
+          <FloatingShape
+            delay={2}
+            duration={30}
+            x={[0, -100, 50, 0]}
+            y={[0, 100, -80, 0]}
+            rotate={[0, -180, -360]}
+            scale={[1, 1.2, 1.1, 1]}
+            className="absolute right-10 top-40 h-96 w-96 rounded-full bg-gradient-to-tl from-[var(--home-accent)]/12 via-[var(--home-accent)]/6 to-transparent blur-2xl"
+          />
+          <FloatingShape
+            delay={4}
+            duration={28}
+            x={[0, 80, -30, 0]}
+            y={[0, -60, 40, 0]}
+            rotate={[0, 90, 180]}
+            scale={[1, 1.15, 1, 1]}
+            className="absolute bottom-20 left-1/3 h-72 w-72 rounded-full bg-gradient-to-tr from-[var(--home-accent)]/8 via-[var(--home-accent)]/4 to-transparent blur-2xl"
+          />
+        </div>
         
         <motion.div
           style={{ y: heroY }}
           className="relative mx-auto max-w-6xl px-6 pb-24 pt-32 sm:px-8 sm:pb-32 sm:pt-40 lg:px-12"
         >
-          <motion.div {...fadeUp} className="max-w-4xl">
+          <div className="max-w-4xl">
+            {/* Main Headline with Staggered Animation */}
             <h1 className="font-display text-5xl font-medium leading-[1.1] tracking-tight text-[var(--home-text)] sm:text-6xl lg:text-7xl">
-              Where specialists share knowledge worth keeping
+              <SplitText delay={0.1}>
+                Where specialists share knowledge worth keeping
+              </SplitText>
             </h1>
             
-            <p className="mt-8 max-w-2xl text-xl leading-relaxed text-[var(--home-text-muted)] sm:text-2xl">
+            {/* Subtitle with Fade In */}
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.5, ease: "easeOut" }}
+              className="mt-8 max-w-2xl text-xl leading-relaxed text-[var(--home-text-muted)] sm:text-2xl"
+            >
               A publishing platform built for technical depth, human curation, and lasting value.
-            </p>
+            </motion.p>
 
-            <div className="mt-12 flex flex-wrap gap-4">
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--home-accent)] px-8 py-4 text-base font-medium text-white transition-all hover:bg-[var(--home-accent-soft)] hover:shadow-lg"
+            {/* CTA Buttons with Magnetic Effect */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.7, ease: "easeOut" }}
+              className="mt-12 flex flex-wrap gap-4"
+            >
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                Start writing
-                <ArrowRight className="size-5" />
-              </Link>
-              <Link
-                href="/articles"
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--home-border-strong)] bg-[var(--home-surface)] px-8 py-4 text-base font-medium text-[var(--home-text)] transition-all hover:border-[var(--home-accent)] hover:shadow-md"
+                <Link
+                  href="/signup"
+                  className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-[var(--home-accent)] px-8 py-4 text-base font-medium text-white transition-all hover:shadow-2xl hover:shadow-[var(--home-accent)]/20"
+                >
+                  <span className="relative z-10">Start writing</span>
+                  <ArrowRight className="relative z-10 size-5 transition-transform group-hover:translate-x-1" />
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-[var(--home-accent)] to-[var(--home-accent-soft)]"
+                    initial={{ x: "-100%" }}
+                    whileHover={{ x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </Link>
+              </motion.div>
+              
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                Explore articles
-              </Link>
-            </div>
-          </motion.div>
+                <Link
+                  href="/articles"
+                  className="group inline-flex items-center gap-2 rounded-full border-2 border-[var(--home-border-strong)] bg-[var(--home-surface)]/80 px-8 py-4 text-base font-medium text-[var(--home-text)] backdrop-blur-sm transition-all hover:border-[var(--home-accent)] hover:bg-[var(--home-surface)] hover:shadow-lg"
+                >
+                  Explore articles
+                  <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </motion.div>
+            </motion.div>
+          </div>
 
           {hasStats && (
             <motion.div
-              initial={{ opacity: 0, y: reduceMotion ? 0 : 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              transition={{ duration: 0.4, delay: 0.9 }}
               className="mt-20 grid grid-cols-2 gap-8 sm:grid-cols-4"
             >
               {[
@@ -265,15 +402,31 @@ export function HomeContent({ data }: HomeContentProps) {
                 { label: "Contributors", value: data.stats.contributorCount },
                 { label: "Categories", value: data.stats.categoryCount },
                 { label: "Topics", value: data.stats.tagCount },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <div className="text-4xl font-medium text-[var(--home-text)] sm:text-5xl">
+              ].map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: 0.9 + index * 0.05,
+                    ease: "easeOut",
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  className="group"
+                >
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 1 + index * 0.05 }}
+                    className="text-4xl font-medium text-[var(--home-text)] sm:text-5xl"
+                  >
                     {stat.value.toLocaleString()}
-                  </div>
-                  <div className="mt-2 text-sm text-[var(--home-text-subtle)]">
+                  </motion.div>
+                  <div className="mt-2 text-sm text-[var(--home-text-subtle)] transition-colors group-hover:text-[var(--home-text-muted)]">
                     {stat.label}
                   </div>
-                </div>
+                </motion.div>
               ))}
             </motion.div>
           )}

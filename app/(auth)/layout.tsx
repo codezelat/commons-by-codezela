@@ -23,7 +23,7 @@ export default function AuthLayout({
 
           <div className="relative z-10 flex flex-1 flex-col justify-center py-12">
             <p className="mb-6 text-xs font-semibold uppercase tracking-widest text-white/30">
-              Open Research Publishing
+              Open Publishing
             </p>
             <blockquote>
               <p className="font-display text-3xl italic leading-snug text-white/85 sm:text-4xl">
@@ -34,7 +34,7 @@ export default function AuthLayout({
           </div>
 
           <p className="relative z-10 text-xs text-white/25">
-            By Codezela &middot; Open Source
+            By Codezela Technologies &middot; Open Source
           </p>
 
           {/* Subtle radial shimmer */}

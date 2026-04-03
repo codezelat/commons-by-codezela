@@ -111,7 +111,16 @@ export async function PublicShell({ children }: PublicShellProps) {
             </div>
 
             <div className="mt-12 border-t border-[var(--home-border)] pt-8 text-sm text-[var(--home-text-subtle)]">
-              © {new Date().getFullYear()} Codezela Technologies. Built for quality contributions by the community.
+              © {new Date().getFullYear()}{" "}
+              <a
+                href="https://codezela.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-[var(--home-text)]"
+              >
+                Codezela Technologies
+              </a>
+              . Built for quality contributions by the community.
             </div>
           </div>
         </footer>

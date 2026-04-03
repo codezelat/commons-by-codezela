@@ -24,10 +24,10 @@ export default function ReportingPage() {
             <p>
               Send a report to{" "}
               <a
-                href="mailto:safety@codezela.com"
+                href="mailto:info@codezela.com"
                 className="font-medium text-[var(--pub-accent)] hover:underline"
               >
-                safety@codezela.com
+                info@codezela.com
               </a>{" "}
               with links, screenshots, and context.
             </p>
