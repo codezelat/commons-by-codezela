@@ -218,6 +218,7 @@ export function HomeContent({ data }: HomeContentProps) {
       {/* Hero Section */}
       <section
         ref={heroRef}
+        style={{ position: "relative" }}
         className="relative overflow-hidden border-b border-[var(--home-border)]"
       >
         <div className="absolute inset-0 bg-[var(--home-gradient)]" />

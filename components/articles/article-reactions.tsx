@@ -147,14 +147,14 @@ export function ArticleReactions({
         }
       `}</style>
 
-      <p className="text-xs font-medium text-(--pub-text-muted)">
+      <p className="text-xs font-medium text-[var(--pub-text-muted)]">
         {isLoggedIn ? (
           "How did this article make you feel?"
         ) : (
           <span>
             <a
               href="/login"
-              className="underline underline-offset-2 transition-colors hover:text-(--pub-text-secondary)"
+              className="underline underline-offset-2 transition-colors hover:text-[var(--pub-text-secondary)]"
             >
               Sign in
             </a>{" "}
@@ -179,10 +179,10 @@ export function ArticleReactions({
               aria-pressed={isActive}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-all duration-150 active:scale-[0.97]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--pub-accent) focus-visible:ring-offset-1",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pub-accent)] focus-visible:ring-offset-1",
                 isActive
-                  ? "border-(--pub-accent) bg-(--pub-brand-bg) text-(--pub-brand-fg) shadow-sm"
-                  : "border-(--pub-border) bg-(--pub-surface) text-(--pub-text-secondary) hover:border-(--pub-accent)/50 hover:bg-(--pub-tag-bg)",
+                  ? "border-[var(--pub-accent)] bg-[var(--pub-brand-bg)] text-[var(--pub-brand-fg)] shadow-sm"
+                  : "border-[var(--pub-border)] bg-[var(--pub-surface)] text-[var(--pub-text-secondary)] hover:border-[var(--pub-accent)]/50 hover:bg-[var(--pub-tag-bg)]",
                 isPending && !isActive && "cursor-wait opacity-60",
                 isPopping && "reaction-btn-ring",
               )}
@@ -203,8 +203,8 @@ export function ArticleReactions({
                   className={cn(
                     "ml-0.5 tabular-nums transition-all duration-150",
                     isActive
-                      ? "text-(--pub-brand-fg)"
-                      : "text-(--pub-text-muted)",
+                      ? "text-[var(--pub-brand-fg)]"
+                      : "text-[var(--pub-text-muted)]",
                   )}
                 >
                   {count}

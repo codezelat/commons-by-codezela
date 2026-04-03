@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ManagedImage } from "@/components/ui/managed-image";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button-variants";
 import { ArticleBody } from "@/components/articles/article-body";
 import { ArticleReactions } from "@/components/articles/article-reactions";
 import { PublicShell } from "@/components/site/public-shell";
@@ -29,7 +28,6 @@ import {
   formatArticleDate,
   isSameUtcCalendarDay,
 } from "@/lib/article-metadata";
-import { cn } from "@/lib/utils";
 
 async function getArticleOrThrow(slug: string) {
   const article = await getPublishedArticleBySlug(slug);
@@ -272,10 +270,7 @@ export default async function PublicArticlePage({
               </div>
               <Link
                 href="/articles"
-                className={cn(
-                  buttonVariants(),
-                  "inline-flex shrink-0 rounded-lg bg-white text-neutral-900 hover:bg-neutral-100",
-                )}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-neutral-900 transition-all hover:bg-neutral-200 hover:shadow-lg"
               >
                 All articles
               </Link>
