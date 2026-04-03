@@ -212,7 +212,7 @@ export function HomeContent({ data }: HomeContentProps) {
 
   return (
     <main
-      style={theme.palette}
+      style={{ ...theme.palette, position: "relative" }}
       className="relative -mt-14 bg-[var(--home-bg)] text-[var(--home-text)]"
     >
       {/* Hero Section */}
