@@ -1,0 +1,11 @@
+<svg width="1200" height="600" viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="600" fill="#fafaf9"/>
+  <g opacity="0.3">
+    <rect x="400" y="200" width="400" height="200" rx="8" stroke="#a8a29e" stroke-width="2" fill="none"/>
+    <circle cx="500" cy="280" r="30" fill="#d6d3d1"/>
+    <rect x="560" y="260" width="200" height="12" rx="6" fill="#d6d3d1"/>
+    <rect x="560" y="290" width="160" height="12" rx="6" fill="#e7e5e4"/>
+    <rect x="560" y="320" width="180" height="12" rx="6" fill="#e7e5e4"/>
+  </g>
+  <text x="600" y="450" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#a8a29e" text-anchor="middle" opacity="0.5">Article</text>
+</svg>

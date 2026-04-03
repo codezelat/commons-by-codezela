@@ -29,7 +29,10 @@ export async function proxy(request: NextRequest) {
   );
   const isApiRoute = pathname.startsWith("/api");
   const isStaticRoute =
-    pathname.startsWith("/_next") || pathname.startsWith("/favicon");
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/images") ||
+    pathname.startsWith("/uploads");
 
   // Public, static, and API routes are always allowed through. Auth pages
   // validate sessions server-side to avoid cookie-only redirect loops.

@@ -141,51 +141,51 @@ function ArticleCard({ article, index }: { article: Article; index: number }) {
         delay: index * 0.08,
         ease: "easeOut" as const,
       }}
-      className="group relative"
+      className="group relative flex h-full"
     >
       <Link
         href={`/articles/${article.slug}`}
-        className="block rounded-2xl border border-[var(--home-border)] bg-[var(--home-surface)] p-6 transition-all duration-300 hover:border-[var(--home-border-strong)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:p-8"
+        className="flex h-full w-full flex-col rounded-2xl border border-[var(--home-border)] bg-[var(--home-surface)] p-6 transition-all duration-300 hover:border-[var(--home-border-strong)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:p-8"
       >
-        {article.cover_image && (
-          <div className="relative mb-6 aspect-[2/1] overflow-hidden rounded-xl">
-            <ManagedImage
-              src={article.cover_image}
-              alt={article.title}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-          </div>
-        )}
-
-        <div className="flex items-center gap-3 text-xs text-[var(--home-text-subtle)]">
-          {article.category_name && (
-            <span className="font-medium">{article.category_name}</span>
-          )}
-          <span>·</span>
-          <span>{meta.readingTime} min read</span>
+        <div className="relative mb-6 aspect-[2/1] overflow-hidden rounded-xl bg-[var(--home-highlight)]">
+          <ManagedImage
+            src={article.cover_image || "/images/article-default.svg"}
+            alt={article.title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
         </div>
 
-        <h3 className="mt-3 font-display text-2xl font-medium leading-tight text-[var(--home-text)] transition-colors group-hover:text-[var(--home-accent-soft)]">
-          {article.title}
-        </h3>
-
-        <p className="mt-3 leading-relaxed text-[var(--home-text-muted)]">
-          {summarize(article, 140)}
-        </p>
-
-        {article.author_name && (
-          <div className="mt-5 flex items-center gap-3 text-sm text-[var(--home-text-subtle)]">
-            <span>{article.author_name}</span>
-            {meta.date && (
-              <>
-                <span>·</span>
-                <span>{meta.date}</span>
-              </>
+        <div className="flex flex-1 flex-col">
+          <div className="flex items-center gap-3 text-xs text-[var(--home-text-subtle)]">
+            {article.category_name && (
+              <span className="font-medium">{article.category_name}</span>
             )}
+            <span>·</span>
+            <span>{meta.readingTime} min read</span>
           </div>
-        )}
+
+          <h3 className="mt-3 font-display text-2xl font-medium leading-tight text-[var(--home-text)] transition-colors group-hover:text-[var(--home-accent-soft)]">
+            {article.title}
+          </h3>
+
+          <p className="mt-3 flex-1 leading-relaxed text-[var(--home-text-muted)]">
+            {summarize(article, 140)}
+          </p>
+
+          {article.author_name && (
+            <div className="mt-5 flex items-center gap-3 text-sm text-[var(--home-text-subtle)]">
+              <span>{article.author_name}</span>
+              {meta.date && (
+                <>
+                  <span>·</span>
+                  <span>{meta.date}</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </Link>
     </motion.article>
   );
