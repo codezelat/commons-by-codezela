@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PubThemeProvider } from "@/components/site/pub-theme-provider";
 import { PubThemeToggle } from "@/components/site/pub-theme-toggle";
+import { CommonsLogo } from "@/components/ui/commons-logo";
 
 export default function AuthLayout({
   children,
@@ -13,11 +14,7 @@ export default function AuthLayout({
         {/* Brand panel — desktop only */}
         <div className="relative hidden overflow-hidden bg-[var(--pub-footer-bg)] p-12 lg:flex lg:flex-col">
           <Link href="/" className="relative z-10 flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--pub-brand-bg)]">
-              <span className="font-display text-sm font-semibold italic text-[var(--pub-brand-fg)]">
-                C
-              </span>
-            </div>
+            <CommonsLogo size="md" />
             <span className="text-sm font-semibold text-white/90">Commons</span>
           </Link>
 

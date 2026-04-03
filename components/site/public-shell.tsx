@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { PubThemeProvider } from "@/components/site/pub-theme-provider";
 import { PublicNav } from "@/components/site/public-nav";
+import { CommonsLogo } from "@/components/ui/commons-logo";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -19,13 +20,9 @@ export async function PublicShell({ children }: PublicShellProps) {
       <div className="min-h-screen bg-[var(--pub-bg)] text-[var(--pub-text)]">
         <header className="sticky top-0 z-40 border-b border-[var(--pub-border)] bg-[var(--pub-bg-alpha)] backdrop-blur-xl">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-8 lg:h-14 lg:px-10">
-            <Link href="/" className="flex min-w-0 items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--pub-brand-bg)] shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
-                <span className="font-display text-xs font-bold italic text-[var(--pub-brand-fg)]">
-                  C
-                </span>
-              </div>
-              <span className="truncate text-sm font-semibold tracking-tight text-[var(--pub-text)] sm:max-w-none">
+            <Link href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+              <CommonsLogo size="sm" />
+              <span className="truncate text-sm font-semibold tracking-tight text-[var(--pub-text)] sm:text-base sm:max-w-none">
                 Commons by Codezela
               </span>
             </Link>
@@ -40,13 +37,9 @@ export async function PublicShell({ children }: PublicShellProps) {
           <div className="mx-auto max-w-6xl px-6 py-16 sm:px-8 sm:py-20 lg:px-12">
             <div className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
               <div>
-                <Link href="/" className="inline-flex items-center gap-2.5">
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-[var(--home-accent)]">
-                    <span className="font-display text-sm font-bold italic text-white">
-                      C
-                    </span>
-                  </div>
-                  <span className="text-lg font-semibold text-[var(--home-text)]">
+                <Link href="/" className="inline-flex items-center gap-2.5 sm:gap-3">
+                  <CommonsLogo size="md" />
+                  <span className="text-lg font-semibold text-[var(--home-text)] sm:text-xl">
                     Commons by Codezela
                   </span>
                 </Link>
@@ -120,7 +113,7 @@ export async function PublicShell({ children }: PublicShellProps) {
               >
                 Codezela Technologies
               </a>
-              . Built for quality contributions by the community.
+              . Built for quality contributions for the community by the community.
             </div>
           </div>
         </footer>
