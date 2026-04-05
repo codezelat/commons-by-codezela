@@ -272,13 +272,14 @@ function DragonStack({ reduceMotion }: { reduceMotion: boolean }) {
           <motion.div
             animate={reduceMotion || hovered ? {} : { y: [0, stackPos === 2 ? -10 : -6, 0], rotate: stackPos === 2 ? [-1.5, 1.5, -1.5] : [0, 0, 0] }}
             transition={{ duration: 5 + stackPos * 0.5, repeat: Infinity, ease: "easeInOut", delay: stackPos * 0.4 }}
+            className="relative h-[220px] w-[200px]"
           >
             <ManagedImage
               src="/images/baby-dragon.png"
               alt={dragons[dragonIdx].alt}
-              width={200}
-              height={220}
-              className={stackPos === 2 ? "drop-shadow-2xl" : "drop-shadow-lg"}
+              fill
+              sizes="200px"
+              className={`object-contain ${stackPos === 2 ? "drop-shadow-2xl" : "drop-shadow-lg"}`}
               style={dragons[dragonIdx].filter ? { filter: dragons[dragonIdx].filter } : undefined}
             />
           </motion.div>
@@ -303,7 +304,7 @@ function DragonStack({ reduceMotion }: { reduceMotion: boolean }) {
 export function HomeContent({ data }: HomeContentProps) {
   const { theme: pubTheme } = usePubTheme();
   const theme = HOME_THEMES[pubTheme];
-  const { fadeUp, reduceMotion } = useMotionSettings();
+  const { reduceMotion } = useMotionSettings();
   const deck = getArticleDeck(data);
   const heroRef = useRef<HTMLElement | null>(null);
 

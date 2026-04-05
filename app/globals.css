@@ -129,6 +129,7 @@
   }
   html {
     @apply font-sans;
+    position: relative;
   }
 
   /* Selected image node — clean ring indicator */
