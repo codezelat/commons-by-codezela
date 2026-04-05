@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   motion,
@@ -225,6 +225,81 @@ function ArticleCard({ article, index }: { article: Article; index: number }) {
   );
 }
 
+function DragonStack({ reduceMotion }: { reduceMotion: boolean }) {
+  const [hovered, setHovered] = useState(false);
+  const [frontIndex, setFrontIndex] = useState(0);
+
+  const spring = { type: "spring" as const, stiffness: 260, damping: 22 };
+
+  const dragons = [
+    { filter: undefined, alt: "Baby dragon mascot" },
+    { filter: "grayscale(1) brightness(1.1) contrast(0.85)", alt: "" },
+    { filter: "sepia(0.9) saturate(1.5) hue-rotate(5deg) brightness(1.05)", alt: "" },
+  ];
+
+  // Rotate order so frontIndex is always last (on top)
+  const order = [0, 1, 2].map((i) => (i + frontIndex) % 3);
+
+  function getTransform(stackPos: number) {
+    // stackPos: 0=back, 1=mid, 2=front
+    if (hovered) {
+      if (stackPos === 2) return { x: 0, y: -16, rotate: 0, scale: 1.08, opacity: 1 };
+      if (stackPos === 1) return { x: -52, y: -10, rotate: -12, scale: 1.04, opacity: 1 };
+      return { x: 52, y: -10, rotate: 12, scale: 1.04, opacity: 1 };
+    }
+    if (stackPos === 2) return { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 };
+    if (stackPos === 1) return { x: -8, y: 4, rotate: -3, scale: 0.94, opacity: 0.65 };
+    return { x: 10, y: 6, rotate: 4, scale: 0.92, opacity: 0.7 };
+  }
+
+  return (
+    <div
+      className="relative cursor-pointer select-none"
+      style={{ width: 200, height: 220 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={() => setFrontIndex((prev) => (prev + 1) % 3)}
+      title="Click to swap"
+    >
+      {order.map((dragonIdx, stackPos) => (
+        <motion.div
+          key={dragonIdx}
+          className="absolute inset-0"
+          animate={reduceMotion ? {} : getTransform(stackPos)}
+          transition={spring}
+          style={{ zIndex: stackPos + 1 }}
+        >
+          <motion.div
+            animate={reduceMotion || hovered ? {} : { y: [0, stackPos === 2 ? -10 : -6, 0], rotate: stackPos === 2 ? [-1.5, 1.5, -1.5] : [0, 0, 0] }}
+            transition={{ duration: 5 + stackPos * 0.5, repeat: Infinity, ease: "easeInOut", delay: stackPos * 0.4 }}
+          >
+            <ManagedImage
+              src="/images/baby-dragon.png"
+              alt={dragons[dragonIdx].alt}
+              width={200}
+              height={220}
+              className={stackPos === 2 ? "drop-shadow-2xl" : "drop-shadow-lg"}
+              style={dragons[dragonIdx].filter ? { filter: dragons[dragonIdx].filter } : undefined}
+            />
+          </motion.div>
+        </motion.div>
+      ))}
+
+      {/* Ground glow */}
+      <div
+        className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full"
+        style={{
+          width: 100,
+          height: 18,
+          background: "radial-gradient(ellipse, rgba(167,139,250,0.35), transparent 70%)",
+          filter: "blur(10px)",
+          zIndex: 0,
+        }}
+      />
+    </div>
+  );
+}
+
 export function HomeContent({ data }: HomeContentProps) {
   const { theme: pubTheme } = usePubTheme();
   const theme = HOME_THEMES[pubTheme];
@@ -308,42 +383,15 @@ export function HomeContent({ data }: HomeContentProps) {
           style={{ y: heroY }}
           className="relative mx-auto max-w-6xl px-6 pb-24 pt-32 sm:px-8 sm:pb-32 sm:pt-40 lg:px-12"
         >
-          {/* Baby Dragon Mascot */}
+          {/* Baby Dragon Stack */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, rotate: reduceMotion ? 0 : -15 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ duration: 0.8, delay: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-            className="absolute right-8 top-8 hidden lg:block"
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, delay: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+            className="absolute right-6 top-1/2 hidden -translate-y-1/2 lg:block"
+            style={{ zIndex: 0 }}
           >
-            <motion.div
-              animate={reduceMotion ? {} : {
-                y: [0, -12, 0],
-                rotate: [-3, 3, -3],
-                scale: [1, 1.05, 1],
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="relative"
-            >
-              <ManagedImage
-                src="/images/baby-dragon.png"
-                alt="Baby dragon mascot"
-                width={220}
-                height={220}
-                className="drop-shadow-2xl"
-              />
-              {/* Glassy glow behind dragon */}
-              <div 
-                className="absolute inset-0 -z-10 scale-110 rounded-full opacity-40"
-                style={{
-                  background: "radial-gradient(circle, rgba(167, 139, 250, 0.3), transparent 70%)",
-                  filter: "blur(30px)",
-                }}
-              />
-            </motion.div>
+            <DragonStack reduceMotion={!!reduceMotion} />
           </motion.div>
 
           <div className="max-w-4xl">
