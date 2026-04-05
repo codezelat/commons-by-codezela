@@ -227,9 +227,10 @@ function ArticleCard({ article, index }: { article: Article; index: number }) {
 
 function DragonStack({ reduceMotion }: { reduceMotion: boolean }) {
   const [hovered, setHovered] = useState(false);
-  const [frontIndex, setFrontIndex] = useState(0);
+  // positions[i] = where dragon i currently is: "front" | "left" | "right"
+  const [positions, setPositions] = useState<("front" | "left" | "right")[]>(["front", "left", "right"]);
 
-  const spring = { type: "spring" as const, stiffness: 260, damping: 22 };
+  const spring = { type: "spring" as const, stiffness: 220, damping: 24 };
 
   const dragons = [
     { filter: undefined, alt: "Baby dragon mascot" },
@@ -237,62 +238,82 @@ function DragonStack({ reduceMotion }: { reduceMotion: boolean }) {
     { filter: "sepia(0.9) saturate(1.5) hue-rotate(5deg) brightness(1.05)", alt: "" },
   ];
 
-  // Rotate order so frontIndex is always last (on top)
-  const order = [0, 1, 2].map((i) => (i + frontIndex) % 3);
+  const positionStyles: Record<"front" | "left" | "right", Record<string, number>> = {
+    front: { x: 0,   y: 0,   rotate: 0,   scale: 1,    opacity: 1,    zIndex: 3 },
+    left:  { x: -8,  y: 4,   rotate: -3,  scale: 0.94, opacity: 0.65, zIndex: 2 },
+    right: { x: 10,  y: 6,   rotate: 4,   scale: 0.92, opacity: 0.7,  zIndex: 1 },
+  };
 
-  function getTransform(stackPos: number) {
-    // stackPos: 0=back, 1=mid, 2=front
-    if (hovered) {
-      if (stackPos === 2) return { x: 0, y: -16, rotate: 0, scale: 1.08, opacity: 1 };
-      if (stackPos === 1) return { x: -52, y: -10, rotate: -12, scale: 1.04, opacity: 1 };
-      return { x: 52, y: -10, rotate: 12, scale: 1.04, opacity: 1 };
-    }
-    if (stackPos === 2) return { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 };
-    if (stackPos === 1) return { x: -8, y: 4, rotate: -3, scale: 0.94, opacity: 0.65 };
-    return { x: 10, y: 6, rotate: 4, scale: 0.92, opacity: 0.7 };
+  const hoveredStyles: Record<"front" | "left" | "right", Record<string, number>> = {
+    front: { x: 0,   y: -16, rotate: 0,   scale: 1.08, opacity: 1,    zIndex: 3 },
+    left:  { x: -52, y: -10, rotate: -12, scale: 1.04, opacity: 1,    zIndex: 2 },
+    right: { x: 52,  y: -10, rotate: 12,  scale: 1.04, opacity: 1,    zIndex: 1 },
+  };
+
+  function bringToFront(clickedIdx: number) {
+    const clickedPos = positions[clickedIdx];
+    if (clickedPos === "front") return;
+    // find who is currently front
+    const currentFrontIdx = positions.indexOf("front");
+    setPositions((prev) => {
+      const next = [...prev] as ("front" | "left" | "right")[];
+      // swap: clicked takes front, front takes clicked's old spot
+      next[currentFrontIdx] = clickedPos;
+      next[clickedIdx] = "front";
+      return next;
+    });
   }
 
   return (
     <div
-      className="relative cursor-pointer select-none"
+      className="relative select-none"
       style={{ width: 200, height: 220 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={() => setFrontIndex((prev) => (prev + 1) % 3)}
-      title="Click to swap"
     >
-      {order.map((dragonIdx, stackPos) => (
-        <motion.div
-          key={dragonIdx}
-          className="absolute inset-0"
-          animate={reduceMotion ? {} : getTransform(stackPos)}
-          transition={spring}
-          style={{ zIndex: stackPos + 1 }}
-        >
+      {dragons.map((dragon, idx) => {
+        const pos = positions[idx];
+        const style = hovered ? hoveredStyles[pos] : positionStyles[pos];
+        const { zIndex, ...animProps } = style;
+        return (
           <motion.div
-            animate={reduceMotion || hovered ? {} : { y: [0, stackPos === 2 ? -10 : -6, 0], rotate: stackPos === 2 ? [-1.5, 1.5, -1.5] : [0, 0, 0] }}
-            transition={{ duration: 5 + stackPos * 0.5, repeat: Infinity, ease: "easeInOut", delay: stackPos * 0.4 }}
-            className="relative h-[220px] w-[200px]"
+            key={idx}
+            className={pos !== "front" ? "absolute inset-0 cursor-pointer" : "absolute inset-0"}
+            animate={reduceMotion ? {} : animProps}
+            transition={spring}
+            style={{
+              zIndex,
+              pointerEvents: pos === "front" && hovered ? "none" : "auto",
+            }}
+            onClick={() => bringToFront(idx)}
           >
-            <ManagedImage
-              src="/images/baby-dragon.png"
-              alt={dragons[dragonIdx].alt}
-              fill
-              loading={stackPos === 2 ? "eager" : "lazy"}
-              sizes="200px"
-              className={`object-contain ${stackPos === 2 ? "drop-shadow-2xl" : "drop-shadow-lg"}`}
-              style={dragons[dragonIdx].filter ? { filter: dragons[dragonIdx].filter } : undefined}
-            />
+            <motion.div
+              animate={reduceMotion || hovered ? {} : {
+                y: pos === "front" ? [0, -10, 0] : [0, -5, 0],
+                rotate: pos === "front" ? [-1.5, 1.5, -1.5] : [0, 0, 0],
+              }}
+              transition={{ duration: pos === "front" ? 5 : 6, repeat: Infinity, ease: "easeInOut" }}
+              className="relative h-[220px] w-[200px]"
+            >
+              <ManagedImage
+                src="/images/baby-dragon.png"
+                alt={dragon.alt}
+                fill
+                loading={pos === "front" ? "eager" : "lazy"}
+                sizes="200px"
+                className={`object-contain ${pos === "front" ? "drop-shadow-2xl" : "drop-shadow-lg"}`}
+                style={dragon.filter ? { filter: dragon.filter } : undefined}
+              />
+            </motion.div>
           </motion.div>
-        </motion.div>
-      ))}
+        );
+      })}
 
       {/* Ground glow */}
       <div
         className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full"
         style={{
-          width: 100,
-          height: 18,
+          width: 100, height: 18,
           background: "radial-gradient(ellipse, rgba(167,139,250,0.35), transparent 70%)",
           filter: "blur(10px)",
           zIndex: 0,
