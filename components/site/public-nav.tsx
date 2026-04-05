@@ -45,10 +45,10 @@ export function PublicNav({ isSignedIn }: PublicNavProps) {
         <Link
           href={accountLink.href}
           className={cn(
-            "ml-1 px-3 py-1.5 text-[13px] transition-colors",
+            "ml-1 rounded-full border px-3.5 py-1.5 text-[13px] transition-colors",
             isSignedIn
-              ? "text-[var(--pub-text-secondary)] hover:text-[var(--pub-text)]"
-              : "text-[var(--pub-text-muted)] hover:text-[var(--pub-text-secondary)]",
+              ? "border-[var(--pub-border)] text-[var(--pub-text-secondary)] hover:border-[var(--pub-accent)] hover:text-[var(--pub-text)]"
+              : "border-[var(--pub-border)] text-[var(--pub-text-muted)] hover:border-[var(--pub-accent)] hover:text-[var(--pub-text-secondary)]",
           )}
         >
           {accountLink.label}

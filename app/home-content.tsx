@@ -278,6 +278,7 @@ function DragonStack({ reduceMotion }: { reduceMotion: boolean }) {
               src="/images/baby-dragon.png"
               alt={dragons[dragonIdx].alt}
               fill
+              loading={stackPos === 2 ? "eager" : "lazy"}
               sizes="200px"
               className={`object-contain ${stackPos === 2 ? "drop-shadow-2xl" : "drop-shadow-lg"}`}
               style={dragons[dragonIdx].filter ? { filter: dragons[dragonIdx].filter } : undefined}
