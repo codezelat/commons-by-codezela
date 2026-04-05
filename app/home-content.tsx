@@ -225,12 +225,15 @@ function ArticleCard({ article, index }: { article: Article; index: number }) {
   );
 }
 
-function DragonStack({ reduceMotion }: { reduceMotion: boolean }) {
-  const [hovered, setHovered] = useState(false);
-  // positions[i] = where dragon i currently is: "front" | "left" | "right"
+function DragonStack({ reduceMotion, size = "lg" }: { reduceMotion: boolean; size?: "lg" | "mobile" }) {
+  const [fanned, setFanned] = useState(false);
   const [positions, setPositions] = useState<("front" | "left" | "right")[]>(["front", "left", "right"]);
 
   const spring = { type: "spring" as const, stiffness: 220, damping: 24 };
+
+  const dims = { lg: [200, 220], mobile: [280, 308] } as const;
+  const [w, h] = dims[size];
+  const s = size === "mobile" ? 1.4 : 1;
 
   const dragons = [
     { filter: undefined, alt: "Baby dragon mascot" },
@@ -238,70 +241,75 @@ function DragonStack({ reduceMotion }: { reduceMotion: boolean }) {
     { filter: "sepia(0.9) saturate(1.5) hue-rotate(5deg) brightness(1.05)", alt: "" },
   ];
 
-  const positionStyles: Record<"front" | "left" | "right", Record<string, number>> = {
-    front: { x: 0,   y: 0,   rotate: 0,   scale: 1,    opacity: 1,    zIndex: 3 },
-    left:  { x: -8,  y: 4,   rotate: -3,  scale: 0.94, opacity: 0.65, zIndex: 2 },
-    right: { x: 10,  y: 6,   rotate: 4,   scale: 0.92, opacity: 0.7,  zIndex: 1 },
+  const stackedStyles: Record<"front" | "left" | "right", Record<string, number>> = {
+    front: { x: 0,       y: 0,      rotate: 0,  scale: 1,    opacity: 1,    zIndex: 3 },
+    left:  { x: -8 * s,  y: 4 * s,  rotate: -3, scale: 0.94, opacity: 0.65, zIndex: 2 },
+    right: { x: 10 * s,  y: 6 * s,  rotate: 4,  scale: 0.92, opacity: 0.7,  zIndex: 1 },
   };
 
-  const hoveredStyles: Record<"front" | "left" | "right", Record<string, number>> = {
-    front: { x: 0,   y: -16, rotate: 0,   scale: 1.08, opacity: 1,    zIndex: 3 },
-    left:  { x: -52, y: -10, rotate: -12, scale: 1.04, opacity: 1,    zIndex: 2 },
-    right: { x: 52,  y: -10, rotate: 12,  scale: 1.04, opacity: 1,    zIndex: 1 },
+  const fannedStyles: Record<"front" | "left" | "right", Record<string, number>> = {
+    front: { x: 0,        y: -16 * s, rotate: 0,   scale: 1.08, opacity: 1, zIndex: 3 },
+    left:  { x: -72 * s,  y: -10 * s, rotate: -12, scale: 1.04, opacity: 1, zIndex: 2 },
+    right: { x: 72  * s,  y: -10 * s, rotate: 12,  scale: 1.04, opacity: 1, zIndex: 1 },
   };
+
+  function handleFrontTap() {
+    // on desktop this is covered by hover; on touch, tap front to toggle fan
+    setFanned((f) => !f);
+  }
 
   function bringToFront(clickedIdx: number) {
     const clickedPos = positions[clickedIdx];
-    if (clickedPos === "front") return;
-    // find who is currently front
+    if (clickedPos === "front") {
+      handleFrontTap();
+      return;
+    }
     const currentFrontIdx = positions.indexOf("front");
     setPositions((prev) => {
       const next = [...prev] as ("front" | "left" | "right")[];
-      // swap: clicked takes front, front takes clicked's old spot
       next[currentFrontIdx] = clickedPos;
       next[clickedIdx] = "front";
       return next;
     });
+    setFanned(false);
   }
 
   return (
     <div
       className="relative select-none"
-      style={{ width: 200, height: 220 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      style={{ width: w, height: h }}
+      onMouseEnter={() => setFanned(true)}
+      onMouseLeave={() => setFanned(false)}
     >
       {dragons.map((dragon, idx) => {
         const pos = positions[idx];
-        const style = hovered ? hoveredStyles[pos] : positionStyles[pos];
+        const isFront = pos === "front";
+        const style = fanned ? fannedStyles[pos] : stackedStyles[pos];
         const { zIndex, ...animProps } = style;
         return (
           <motion.div
             key={idx}
-            className={pos !== "front" ? "absolute inset-0 cursor-pointer" : "absolute inset-0"}
+            className={fanned && !isFront ? "absolute inset-0 cursor-pointer" : "absolute inset-0 cursor-pointer"}
             animate={reduceMotion ? {} : animProps}
             transition={spring}
-            style={{
-              zIndex,
-              pointerEvents: pos === "front" && hovered ? "none" : "auto",
-            }}
+            style={{ zIndex, pointerEvents: "auto" }}
             onClick={() => bringToFront(idx)}
           >
             <motion.div
-              animate={reduceMotion || hovered ? {} : {
-                y: pos === "front" ? [0, -10, 0] : [0, -5, 0],
-                rotate: pos === "front" ? [-1.5, 1.5, -1.5] : [0, 0, 0],
+              animate={reduceMotion || fanned ? {} : {
+                y: isFront ? [0, -10, 0] : [0, -5, 0],
+                rotate: isFront ? [-1.5, 1.5, -1.5] : [0, 0, 0],
               }}
-              transition={{ duration: pos === "front" ? 5 : 6, repeat: Infinity, ease: "easeInOut" }}
-              className="relative h-[220px] w-[200px]"
+              transition={{ duration: isFront ? 5 : 6, repeat: Infinity, ease: "easeInOut" }}
+              style={{ position: "relative", width: w, height: h }}
             >
               <ManagedImage
                 src="/images/baby-dragon.png"
                 alt={dragon.alt}
                 fill
-                loading={pos === "front" ? "eager" : "lazy"}
-                sizes="200px"
-                className={`object-contain ${pos === "front" ? "drop-shadow-2xl" : "drop-shadow-lg"}`}
+                loading={isFront ? "eager" : "lazy"}
+                sizes={`${w}px`}
+                className={`object-contain ${isFront ? "drop-shadow-2xl" : "drop-shadow-lg"}`}
                 style={dragon.filter ? { filter: dragon.filter } : undefined}
               />
             </motion.div>
@@ -313,7 +321,7 @@ function DragonStack({ reduceMotion }: { reduceMotion: boolean }) {
       <div
         className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full"
         style={{
-          width: 100, height: 18,
+          width: w * 0.5, height: 18,
           background: "radial-gradient(ellipse, rgba(167,139,250,0.35), transparent 70%)",
           filter: "blur(10px)",
           zIndex: 0,
@@ -476,6 +484,16 @@ export function HomeContent({ data }: HomeContentProps) {
                 </Link>
               </motion.div>
             </motion.div>
+
+            {/* Mobile dragon stack — shown below CTA buttons, hidden on lg where it floats in hero */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.9 }}
+              className="mt-10 flex justify-center lg:hidden"
+            >
+              <DragonStack reduceMotion={!!reduceMotion} size="mobile" />
+            </motion.div>
           </div>
 
           {hasStats && (
@@ -483,7 +501,7 @@ export function HomeContent({ data }: HomeContentProps) {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.9 }}
-              className="mt-20 grid grid-cols-2 gap-8 sm:grid-cols-4"
+              className="mt-20 hidden grid-cols-2 gap-8 sm:grid sm:grid-cols-4"
             >
               {[
                 { label: "Published articles", value: data.stats.publishedCount },
