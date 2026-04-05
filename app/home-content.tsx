@@ -66,6 +66,10 @@ const HOME_THEMES: Record<"cream" | "lavender", ThemeConfig> = {
       "--home-text-subtle": "#9b9b9b",
       "--home-highlight": "#f0ede8",
       "--home-gradient": "linear-gradient(135deg, #faf8f5 0%, #f5f2ed 100%)",
+      // warm amber + rose + soft violet — very low opacity, light-on-light
+      "--home-glass-1": "rgba(251, 191, 36, 0.18)",
+      "--home-glass-2": "rgba(244, 114, 182, 0.13)",
+      "--home-glass-3": "rgba(167, 139, 250, 0.11)",
     } as CSSProperties,
   },
   lavender: {
@@ -82,6 +86,10 @@ const HOME_THEMES: Record<"cream" | "lavender", ThemeConfig> = {
       "--home-text-subtle": "#9b9b9b",
       "--home-highlight": "#f0eef5",
       "--home-gradient": "linear-gradient(135deg, #f8f7fb 0%, #f3f1f8 100%)",
+      // violet + sky + indigo — cool tones, very soft
+      "--home-glass-1": "rgba(139, 92, 246, 0.16)",
+      "--home-glass-2": "rgba(56, 189, 248, 0.12)",
+      "--home-glass-3": "rgba(99, 102, 241, 0.1)",
     } as CSSProperties,
   },
 };
@@ -150,50 +158,6 @@ function SplitText({ children, delay = 0 }: { children: string; delay?: number }
         </motion.span>
       ))}
     </>
-  );
-}
-
-function FloatingShape({ 
-  delay = 0, 
-  duration = 20,
-  x = [0, 100],
-  y = [0, -100],
-  rotate = [0, 360],
-  scale = [1, 1.2, 1],
-  className = "",
-}: {
-  delay?: number;
-  duration?: number;
-  x?: number[];
-  y?: number[];
-  rotate?: number[];
-  scale?: number[];
-  className?: string;
-}) {
-  const reduceMotion = useReducedMotion();
-  
-  if (reduceMotion) {
-    return <div className={className} />;
-  }
-  
-  return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0 }}
-      animate={{
-        opacity: [0, 0.6, 0.6, 0],
-        x,
-        y,
-        rotate,
-        scale,
-      }}
-      transition={{
-        duration,
-        delay,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-    />
   );
 }
 
@@ -291,37 +255,52 @@ export function HomeContent({ data }: HomeContentProps) {
         style={{ position: "relative" }}
         className="relative overflow-hidden border-b border-[var(--home-border)]"
       >
-        {/* Animated Background */}
+        {/* Base gradient background */}
         <div className="absolute inset-0 bg-[var(--home-gradient)]" />
         
-        {/* Floating Shapes */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <FloatingShape
-            delay={0}
-            duration={25}
-            x={[0, 150, -50, 0]}
-            y={[0, -100, -50, 0]}
-            rotate={[0, 180, 360]}
-            scale={[1, 1.3, 0.9, 1]}
-            className="absolute -left-20 top-20 h-64 w-64 rounded-full bg-gradient-to-br from-[var(--home-accent)]/10 via-[var(--home-accent)]/5 to-transparent blur-2xl"
+        {/* Soft glassmorphism color washes — no hard edges, no backdrop-filter */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+          {/* Top-left wash */}
+          <motion.div
+            animate={reduceMotion ? {} : { x: [0, 40, 0], y: [0, -20, 0] }}
+            transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute"
+            style={{
+              top: "-20%",
+              left: "-15%",
+              width: "65%",
+              height: "80%",
+              background: `radial-gradient(ellipse at center, var(--home-glass-1) 0%, transparent 65%)`,
+              filter: "blur(48px)",
+            }}
           />
-          <FloatingShape
-            delay={2}
-            duration={30}
-            x={[0, -100, 50, 0]}
-            y={[0, 100, -80, 0]}
-            rotate={[0, -180, -360]}
-            scale={[1, 1.2, 1.1, 1]}
-            className="absolute right-10 top-40 h-96 w-96 rounded-full bg-gradient-to-tl from-[var(--home-accent)]/12 via-[var(--home-accent)]/6 to-transparent blur-2xl"
+          {/* Top-right wash */}
+          <motion.div
+            animate={reduceMotion ? {} : { x: [0, -30, 0], y: [0, 30, 0] }}
+            transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute"
+            style={{
+              top: "-10%",
+              right: "-20%",
+              width: "60%",
+              height: "75%",
+              background: `radial-gradient(ellipse at center, var(--home-glass-2) 0%, transparent 65%)`,
+              filter: "blur(56px)",
+            }}
           />
-          <FloatingShape
-            delay={4}
-            duration={28}
-            x={[0, 80, -30, 0]}
-            y={[0, -60, 40, 0]}
-            rotate={[0, 90, 180]}
-            scale={[1, 1.15, 1, 1]}
-            className="absolute bottom-20 left-1/3 h-72 w-72 rounded-full bg-gradient-to-tr from-[var(--home-accent)]/8 via-[var(--home-accent)]/4 to-transparent blur-2xl"
+          {/* Bottom-center wash */}
+          <motion.div
+            animate={reduceMotion ? {} : { x: [0, 20, -20, 0], y: [0, -15, 0] }}
+            transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute"
+            style={{
+              bottom: "-20%",
+              left: "25%",
+              width: "55%",
+              height: "70%",
+              background: `radial-gradient(ellipse at center, var(--home-glass-3) 0%, transparent 65%)`,
+              filter: "blur(52px)",
+            }}
           />
         </div>
         
@@ -329,6 +308,44 @@ export function HomeContent({ data }: HomeContentProps) {
           style={{ y: heroY }}
           className="relative mx-auto max-w-6xl px-6 pb-24 pt-32 sm:px-8 sm:pb-32 sm:pt-40 lg:px-12"
         >
+          {/* Baby Dragon Mascot */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, rotate: reduceMotion ? 0 : -15 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+            className="absolute right-8 top-8 hidden lg:block"
+          >
+            <motion.div
+              animate={reduceMotion ? {} : {
+                y: [0, -12, 0],
+                rotate: [-3, 3, -3],
+                scale: [1, 1.05, 1],
+              }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="relative"
+            >
+              <ManagedImage
+                src="/images/baby-dragon.png"
+                alt="Baby dragon mascot"
+                width={220}
+                height={220}
+                className="drop-shadow-2xl"
+              />
+              {/* Glassy glow behind dragon */}
+              <div 
+                className="absolute inset-0 -z-10 scale-110 rounded-full opacity-40"
+                style={{
+                  background: "radial-gradient(circle, rgba(167, 139, 250, 0.3), transparent 70%)",
+                  filter: "blur(30px)",
+                }}
+              />
+            </motion.div>
+          </motion.div>
+
           <div className="max-w-4xl">
             {/* Main Headline with Staggered Animation */}
             <h1 className="font-display text-5xl font-medium leading-[1.1] tracking-tight text-[var(--home-text)] sm:text-6xl lg:text-7xl">
