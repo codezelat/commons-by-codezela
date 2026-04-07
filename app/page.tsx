@@ -12,7 +12,9 @@ import { HomeContent, type HomeContentData } from "./home-content";
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
 
 export const metadata: Metadata = {
-  title: "Sri Lanka's Curated Knowledge Platform for Specialists",
+  title: {
+    absolute: "Commons by Codezela — Sri Lanka's Curated Knowledge Platform",
+  },
   description:
     "Commons by Codezela — where Sri Lankan specialists share in-depth technical articles, research, and expert knowledge. Quality-curated publishing for the community.",
   alternates: {
