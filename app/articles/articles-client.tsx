@@ -144,7 +144,7 @@ export function ArticlesClient({
                   onClick={() => removeFilter("search")}
                   className="group inline-flex items-center gap-2 rounded-full border border-[var(--pub-accent)] bg-[var(--pub-accent)] px-4 py-2 text-sm font-medium text-white transition-all hover:bg-[var(--pub-accent-hover)]"
                 >
-                  Search: "{activeSearch}"
+                  Search: &quot;{activeSearch}&quot;
                   <Xmark className="size-4" />
                 </button>
               )}

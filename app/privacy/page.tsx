@@ -30,7 +30,7 @@ export default function PrivacyPage() {
             Privacy Policy
           </h1>
           <p className="mt-4 text-lg text-[var(--pub-text-secondary)]">
-            Your privacy matters. Here's how we collect, use, and protect your information.
+            Your privacy matters. Here&apos;s how we collect, use, and protect your information.
           </p>
           <p className="mt-2 text-sm text-[var(--pub-text-muted)]">
             Last updated: March 10, 2026
@@ -414,7 +414,7 @@ export default function PrivacyPage() {
           {/* Children's Privacy */}
           <div className="rounded-xl border border-[var(--pub-border)] bg-[var(--pub-surface)] p-8">
             <h2 className="mb-4 text-2xl font-semibold text-[var(--pub-text)]">
-              8. Children's Privacy
+              8. Children&apos;s Privacy
             </h2>
             <p className="text-[var(--pub-text-secondary)]">
               Commons is not intended for users under 13 years of age. We do not knowingly collect personal information from children. If you believe we have collected information from a child, please contact us immediately at{" "}
@@ -446,7 +446,7 @@ export default function PrivacyPage() {
             Questions About Privacy?
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-sm leading-relaxed text-neutral-300 sm:text-base">
-            We're committed to protecting your privacy. If you have questions or concerns about how we handle your data, we're here to help.
+            We&apos;re committed to protecting your privacy. If you have questions or concerns about how we handle your data, we&apos;re here to help.
           </p>
           <a
             href="mailto:info@codezela.com"

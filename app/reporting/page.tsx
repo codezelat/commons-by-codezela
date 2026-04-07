@@ -43,7 +43,7 @@ export default function ReportingPage() {
             Need to report something?
           </h2>
           <p className="mb-6 text-[var(--pub-text-secondary)]">
-            Send us a detailed report and we'll review it promptly.
+            Send us a detailed report and we&apos;ll review it promptly.
           </p>
           <a
             href="mailto:info@codezela.com?subject=Report: [Brief description]"

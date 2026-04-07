@@ -43,7 +43,7 @@ export default function ModerationPolicyPage() {
             Why We Moderate
           </h2>
           <p className="leading-relaxed text-[var(--pub-text-secondary)]">
-            Commons is built on the principle that quality matters more than quantity. Every article published here represents our community's commitment to technical depth, factual accuracy, and lasting value. Our moderation process ensures that what you read here is worth your time—curated by humans, for humans.
+            Commons is built on the principle that quality matters more than quantity. Every article published here represents our community&apos;s commitment to technical depth, factual accuracy, and lasting value. Our moderation process ensures that what you read here is worth your time—curated by humans, for humans.
           </p>
         </div>
 
@@ -318,7 +318,7 @@ export default function ModerationPolicyPage() {
             Questions About Our Policy?
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-sm leading-relaxed text-neutral-300 sm:text-base">
-            We're here to help. If you have questions about our moderation standards or need clarification on any aspect of this policy, please reach out.
+            We&apos;re here to help. If you have questions about our moderation standards or need clarification on any aspect of this policy, please reach out.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <a

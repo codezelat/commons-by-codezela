@@ -40,7 +40,7 @@ export default function TermsPage() {
         {/* Introduction */}
         <div className="mb-16 rounded-2xl border border-[var(--pub-border)] bg-[var(--pub-surface)] p-8">
           <p className="leading-relaxed text-[var(--pub-text-secondary)]">
-            Welcome to Commons by Codezela. By accessing or using our platform, you agree to be bound by these Terms of Service. Please read them carefully. If you don't agree with these terms, please don't use our services.
+            Welcome to Commons by Codezela. By accessing or using our platform, you agree to be bound by these Terms of Service. Please read them carefully. If you don&apos;t agree with these terms, please don&apos;t use our services.
           </p>
         </div>
 
@@ -60,7 +60,7 @@ export default function TermsPage() {
             </div>
             <div className="space-y-4 text-[var(--pub-text-secondary)]">
               <p>
-                Commons by Codezela Technologies ("Commons," "we," "us," or "our") provides a publishing platform for:
+                Commons by Codezela Technologies (&quot;Commons,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) provides a publishing platform for:
               </p>
               <ul className="space-y-2">
                 <li className="flex gap-2">
@@ -389,10 +389,10 @@ export default function TermsPage() {
             <div className="space-y-4 text-[var(--pub-text-secondary)]">
               <div>
                 <h3 className="mb-2 text-lg font-semibold text-[var(--pub-text)]">
-                  Service "As Is"
+                  Service &quot;As Is&quot;
                 </h3>
                 <p>
-                  Commons is provided "as is" without warranties of any kind. We don't guarantee uninterrupted access, error-free operation, or that the service will meet your specific needs.
+                  Commons is provided &quot;as is&quot; without warranties of any kind. We don&apos;t guarantee uninterrupted access, error-free operation, or that the service will meet your specific needs.
                 </p>
               </div>
               <div>
@@ -420,7 +420,7 @@ export default function TermsPage() {
               8. Changes to Terms
             </h2>
             <p className="text-[var(--pub-text-secondary)]">
-              We may update these Terms from time to time. Material changes will be communicated via email or platform notification. Continued use of Commons after changes constitutes acceptance of the updated Terms. If you don't agree with changes, you should stop using the platform.
+              We may update these Terms from time to time. Material changes will be communicated via email or platform notification. Continued use of Commons after changes constitutes acceptance of the updated Terms. If you don&apos;t agree with changes, you should stop using the platform.
             </p>
           </div>
 
