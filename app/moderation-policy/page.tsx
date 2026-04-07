@@ -6,7 +6,15 @@ import { Check, Shield, AlertTriangle, FileCheck, Users, Scale } from "lucide-re
 export const metadata: Metadata = {
   title: "Moderation Policy",
   description:
-    "Our commitment to quality: How we review, approve, and maintain standards for content on Commons by Codezela.",
+    "Our commitment to quality: how Commons by Codezela reviews, approves, and maintains standards for published content. Human curation, transparent process.",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/moderation-policy`,
+  },
+  openGraph: {
+    title: "Moderation Policy | Commons by Codezela",
+    description: "How we review, approve, and maintain quality standards for content on Commons by Codezela.",
+    type: "website",
+  },
 };
 
 export default function ModerationPolicyPage() {

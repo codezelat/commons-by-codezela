@@ -6,7 +6,15 @@ import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Create Account",
-  description: "Create your Commons account",
+  description:
+    "Join Commons by Codezela — Sri Lanka's curated publishing platform. Create your free account to write and share in-depth technical articles with the community.",
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: "Create Account | Commons by Codezela",
+    description:
+      "Join Sri Lanka's curated knowledge platform. Share your expertise with the community.",
+    type: "website",
+  },
 };
 
 interface SignupPageProps {

@@ -6,7 +6,14 @@ import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Sign In",
-  description: "Sign in to Commons by Codezela",
+  description:
+    "Sign in to your Commons by Codezela account to write, publish, and manage your articles on Sri Lanka's curated knowledge platform.",
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: "Sign In | Commons by Codezela",
+    description: "Sign in to your Commons account to start publishing.",
+    type: "website",
+  },
 };
 
 interface LoginPageProps {

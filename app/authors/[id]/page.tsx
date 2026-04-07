@@ -48,9 +48,30 @@ export async function generateMetadata({
     };
   }
 
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  const canonical = `${appUrl}/authors/${id}`;
+  const title = `${author.name} — Articles on Commons by Codezela`;
+  const description = `Read ${author.published_count} published article${author.published_count === 1 ? "" : "s"} by ${author.name} on Commons by Codezela — Sri Lanka's curated knowledge platform.`;
+
   return {
-    title: `${author.name} · Articles`,
-    description: `Read published articles by ${author.name} on Commons by Codezela.`,
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "profile",
+      url: canonical,
+      title,
+      description,
+      images: author.image
+        ? [{ url: author.image, alt: author.name }]
+        : [{ url: `${appUrl}/images/og-default.png`, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+      images: author.image ? [author.image] : [`${appUrl}/images/og-default.png`],
+    },
   };
 }
 
@@ -77,6 +98,23 @@ export default async function AuthorPage({ params, searchParams }: AuthorPagePro
 
   return (
     <PublicShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Person",
+            name: author.name,
+            url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/authors/${id}`,
+            image: author.image || undefined,
+            worksFor: {
+              "@type": "Organization",
+              name: "Commons by Codezela",
+              url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+            },
+          }),
+        }}
+      />
       <main className="mx-auto max-w-5xl px-6 py-10">
         <div className="pub-fade-in mb-8 rounded-2xl border border-[var(--pub-border)] bg-[var(--pub-surface)] p-6 sm:p-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

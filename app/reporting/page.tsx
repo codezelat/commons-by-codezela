@@ -6,7 +6,15 @@ import { Flag, AlertTriangle, Clock, CheckCircle, Mail, Shield, FileText, User }
 export const metadata: Metadata = {
   title: "Reporting & Safety",
   description:
-    "How to report abuse, policy violations, and safety issues on Commons by Codezela.",
+    "How to report abuse, policy violations, and safety issues on Commons by Codezela. We take every report seriously and respond within 5 working days.",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reporting`,
+  },
+  openGraph: {
+    title: "Reporting & Safety | Commons by Codezela",
+    description: "How to report abuse, policy violations, and safety issues on Commons by Codezela.",
+    type: "website",
+  },
 };
 
 export default function ReportingPage() {

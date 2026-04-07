@@ -86,6 +86,9 @@ export async function generateMetadata({
       canonical,
     },
     robots,
+    authors: article.author_name
+      ? [{ name: article.author_name, url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/authors/${article.author_id}` }]
+      : undefined,
     openGraph: {
       title,
       description: description || undefined,
@@ -93,6 +96,10 @@ export async function generateMetadata({
       type: "article",
       publishedTime: getArticlePublishedDate(article) || undefined,
       modifiedTime: getArticleModifiedDate(article) || undefined,
+      authors: article.author_name
+        ? [`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/authors/${article.author_id}`]
+        : undefined,
+      tags: article.tags?.map((t) => t.name),
       images: image ? [{ url: image, alt: article.title }] : undefined,
     },
     twitter: {
@@ -154,11 +161,40 @@ export default async function PublicArticlePage({
     mainEntityOfPage: canonical,
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Articles",
+        item: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/articles`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: article.title,
+        item: canonical,
+      },
+    ],
+  };
+
   return (
     <PublicShell>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
       <main className="mx-auto max-w-5xl px-6 py-10">

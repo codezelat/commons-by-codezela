@@ -6,7 +6,15 @@ import { FileText, Users, Shield, AlertCircle, Scale, Ban } from "lucide-react";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "Terms of Service for Commons by Codezela - your rights and responsibilities when using our platform.",
+    "Terms of Service for Commons by Codezela — your rights and responsibilities when using our platform. Read before creating an account.",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/terms`,
+  },
+  openGraph: {
+    title: "Terms of Service | Commons by Codezela",
+    description: "Your rights and responsibilities when using Commons by Codezela.",
+    type: "website",
+  },
 };
 
 export default function TermsPage() {

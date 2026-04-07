@@ -7,15 +7,79 @@ import {
   getPublicTags,
 } from "@/lib/actions/articles";
 import { getHomePageStats, type HomePageStats } from "@/lib/actions/home";
-import {
-  HomeContent,
-  type HomeContentData,
-} from "./home-content";
+import { HomeContent, type HomeContentData } from "./home-content";
+
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
 
 export const metadata: Metadata = {
-  title: "Where specialists share knowledge worth keeping",
+  title: "Sri Lanka's Curated Knowledge Platform for Specialists",
   description:
-    "A publishing platform built for technical depth, human curation, and lasting value. Join a community that values quality over quantity.",
+    "Commons by Codezela — where Sri Lankan specialists share in-depth technical articles, research, and expert knowledge. Quality-curated publishing for the community.",
+  alternates: {
+    canonical: APP_URL,
+  },
+  openGraph: {
+    type: "website",
+    url: APP_URL,
+    title: "Commons by Codezela — Sri Lanka's Curated Knowledge Platform",
+    description:
+      "Where Sri Lankan specialists share knowledge worth keeping. In-depth technical articles, research, and expert insights — human-curated for lasting value.",
+    images: [
+      {
+        url: `${APP_URL}/images/og-default.png`,
+        width: 1200,
+        height: 630,
+        alt: "Commons by Codezela — Sri Lanka's curated knowledge platform",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Commons by Codezela — Sri Lanka's Curated Knowledge Platform",
+    description:
+      "Where Sri Lankan specialists share knowledge worth keeping. In-depth technical articles, research, and expert insights.",
+    images: [`${APP_URL}/images/og-default.png`],
+  },
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Commons by Codezela",
+  url: APP_URL,
+  description:
+    "Sri Lanka's curated publishing platform for specialists. In-depth technical articles, research, and expert knowledge.",
+  inLanguage: "en-LK",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${APP_URL}/articles?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Codezela Technologies",
+  url: "https://codezela.com",
+  logo: {
+    "@type": "ImageObject",
+    url: `${APP_URL}/images/Frame 5.png`,
+  },
+  sameAs: [],
+  contactPoint: {
+    "@type": "ContactPoint",
+    email: "info@codezela.com",
+    contactType: "customer support",
+  },
+  foundingLocation: {
+    "@type": "Place",
+    addressCountry: "LK",
+    addressLocality: "Sri Lanka",
+  },
 };
 
 async function loadHomeContentData(): Promise<HomeContentData> {
@@ -67,6 +131,14 @@ export default async function Home() {
 
   return (
     <PublicShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       <HomeContent data={data} />
     </PublicShell>
   );

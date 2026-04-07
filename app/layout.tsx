@@ -18,21 +18,76 @@ const fraunces = Fraunces({
   axes: ["SOFT", "WONK"],
 });
 
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+const SITE_NAME = "Commons by Codezela";
+const DEFAULT_DESCRIPTION =
+  "Sri Lanka's curated publishing platform for specialists. Read and share in-depth technical articles, research, and expert knowledge — quality over quantity.";
+const DEFAULT_OG_IMAGE = `${APP_URL}/images/og-default.png`;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(APP_URL),
   title: {
-    default: "Commons by Codezela",
-    template: "%s | Commons by Codezela",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Where specialists share knowledge worth keeping. A publishing platform built for technical depth, human curation, and lasting value.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  ),
+  description: DEFAULT_DESCRIPTION,
+  keywords: [
+    "Sri Lanka tech articles",
+    "Sri Lanka knowledge platform",
+    "technical writing Sri Lanka",
+    "expert articles Sri Lanka",
+    "Codezela",
+    "Commons",
+    "publishing platform",
+    "curated knowledge",
+    "software engineering Sri Lanka",
+    "research articles",
+  ],
+  authors: [{ name: "Codezela Technologies", url: "https://codezela.com" }],
+  creator: "Codezela Technologies",
+  publisher: "Codezela Technologies",
+  category: "Technology",
   openGraph: {
-    title: "Commons by Codezela",
-    description:
-      "Where specialists share knowledge worth keeping. A publishing platform built for technical depth, human curation, and lasting value.",
     type: "website",
+    locale: "en_LK",
+    url: APP_URL,
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: DEFAULT_DESCRIPTION,
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} — Sri Lanka's curated knowledge platform`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@codezela",
+    creator: "@codezela",
+    title: SITE_NAME,
+    description: DEFAULT_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: APP_URL,
+  },
+  verification: {
+    // Add your Google Search Console verification token here
+    // google: "your-google-verification-token",
   },
 };
 
@@ -42,7 +97,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en-LK" suppressHydrationWarning>
       <body
         suppressHydrationWarning
         className={`${inter.variable} ${fraunces.variable} font-sans antialiased`}

@@ -9,11 +9,7 @@ import {
 import { getHomePageStats } from "@/lib/actions/home";
 import { ArticlesClient } from "./articles-client";
 
-export const metadata: Metadata = {
-  title: "Articles",
-  description:
-    "Browse published articles, essays, and research pieces on Commons by Codezela.",
-};
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
 
 interface ArticlesPageProps {
   searchParams?: Promise<{
@@ -24,12 +20,63 @@ interface ArticlesPageProps {
   }>;
 }
 
+export async function generateMetadata({
+  searchParams,
+}: ArticlesPageProps): Promise<Metadata> {
+  const params = (await searchParams) || {};
+  const { q, category, tag } = params;
+
+  // Filtered views: noindex to avoid duplicate/thin content
+  if (q || category || tag) {
+    const label = q
+      ? `"${q}"`
+      : category
+        ? `category: ${category}`
+        : `tag: ${tag}`;
+    return {
+      title: `Articles — ${label}`,
+      description: `Browse articles filtered by ${label} on Commons by Codezela.`,
+      robots: { index: false, follow: true },
+    };
+  }
+
+  const canonical = `${APP_URL}/articles`;
+  return {
+    title: "Articles — In-Depth Technical Knowledge from Sri Lanka",
+    description:
+      "Browse curated technical articles, research, and expert insights published on Commons by Codezela. Quality writing from Sri Lankan specialists across technology, science, and more.",
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      url: canonical,
+      title: "Articles | Commons by Codezela",
+      description:
+        "Curated technical articles and expert knowledge from Sri Lankan specialists. Browse by category, tag, or search.",
+      images: [
+        {
+          url: `${APP_URL}/images/og-default.png`,
+          width: 1200,
+          height: 630,
+          alt: "Articles — Commons by Codezela",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Articles | Commons by Codezela",
+      description:
+        "Curated technical articles and expert knowledge from Sri Lankan specialists.",
+      images: [`${APP_URL}/images/og-default.png`],
+    },
+  };
+}
+
 export default async function ArticlesPage({
   searchParams,
 }: ArticlesPageProps) {
   const params = (await searchParams) || {};
   const page = Math.max(1, Number(params.page) || 1);
-  
+
   const [articlesResult, categories, tags, stats] = await Promise.all([
     getPublicArticles({
       search: params.q || undefined,

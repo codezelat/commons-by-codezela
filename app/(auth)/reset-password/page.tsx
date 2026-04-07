@@ -4,7 +4,8 @@ import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Reset Password",
-  description: "Set your new Commons account password",
+  description: "Set your new Commons by Codezela account password.",
+  robots: { index: false, follow: false },
 };
 
 export default function ResetPasswordPage() {

@@ -6,7 +6,15 @@ import { Shield, Eye, Lock, Database, UserCheck, Mail } from "lucide-react";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How Commons by Codezela collects, uses, and protects your personal information.",
+    "How Commons by Codezela collects, uses, and protects your personal information. We are committed to transparency and your privacy rights.",
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/privacy`,
+  },
+  openGraph: {
+    title: "Privacy Policy | Commons by Codezela",
+    description: "How Commons by Codezela collects, uses, and protects your personal information.",
+    type: "website",
+  },
 };
 
 export default function PrivacyPage() {
