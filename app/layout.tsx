@@ -3,6 +3,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Inter, Fraunces } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import "./globals.css";
 
 const inter = Inter({
@@ -85,10 +86,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: APP_URL,
   },
-  verification: {
-    // Add your Google Search Console verification token here
-    // google: "your-google-verification-token",
-  },
 };
 
 export default function RootLayout({
@@ -104,6 +101,7 @@ export default function RootLayout({
       >
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster position="top-right" richColors closeButton />
+        <GoogleAnalytics />
         <SpeedInsights />
       </body>
     </html>
