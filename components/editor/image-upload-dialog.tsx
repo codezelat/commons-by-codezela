@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -90,16 +90,12 @@ export function ImageUploadDialog({
     e.target.value = "";
   }
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragOver(false);
-      const file = e.dataTransfer.files[0];
-      if (file) handleFileSelect(file);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  }
 
   async function handleUpload() {
     if (!selectedFile) return;
@@ -248,6 +244,7 @@ export function ImageUploadDialog({
                 {/* Preview */}
                 <div className="relative bg-muted/40">
                   {preview && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={preview}
                       alt="Preview"
@@ -298,6 +295,7 @@ export function ImageUploadDialog({
             </div>
             {urlValue.trim() && (
               <div className="rounded-lg border overflow-hidden bg-muted/40">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={urlValue.trim()}
                   alt="Preview"

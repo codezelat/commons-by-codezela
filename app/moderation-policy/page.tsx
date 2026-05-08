@@ -211,7 +211,7 @@ export default function ModerationPolicyPage() {
                 title: "Publication",
                 description: "Approved articles are published immediately. Authors are notified of all decisions via email.",
               },
-            ].map((step, index) => (
+            ].map((step) => (
               <div
                 key={step.step}
                 className="flex gap-6 rounded-xl border border-[var(--pub-border)] bg-[var(--pub-surface)] p-6"
