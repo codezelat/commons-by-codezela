@@ -146,7 +146,12 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    setSelected(new Set());
+  }, [currentPage, currentStatus, currentCategory, currentSearch]);
+
   function updateParams(updates: Record<string, string>) {
+    setSelected(new Set());
     const params = new URLSearchParams();
     const merged = {
       status: currentStatus,
@@ -175,10 +180,23 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
 
   function toggleAll() {
     if (!data) return;
-    if (selected.size === data.articles.length) {
-      setSelected(new Set());
+    const pageArticleIds = data.articles.map((article) => article.id);
+    const allPageArticlesSelected =
+      pageArticleIds.length > 0 &&
+      pageArticleIds.every((id) => selected.has(id));
+
+    if (allPageArticlesSelected) {
+      setSelected((current) => {
+        const next = new Set(current);
+        pageArticleIds.forEach((id) => next.delete(id));
+        return next;
+      });
     } else {
-      setSelected(new Set(data.articles.map((a) => a.id)));
+      setSelected((current) => {
+        const next = new Set(current);
+        pageArticleIds.forEach((id) => next.add(id));
+        return next;
+      });
     }
   }
 
@@ -221,8 +239,11 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
     }
   }
 
+  const currentPageSelectedCount = data
+    ? data.articles.filter((article) => selected.has(article.id)).length
+    : 0;
   const allSelected = data
-    ? data.articles.length > 0 && selected.size === data.articles.length
+    ? data.articles.length > 0 && currentPageSelectedCount === data.articles.length
     : false;
   const someSelected = selected.size > 0;
 
@@ -495,6 +516,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                               try {
                                 await bulkUpdateStatus([article.id], "draft");
                                 toast.success("Article unpublished");
+                                setSelected(new Set());
                                 fetchData();
                               } catch (error) {
                                 toast.error(
@@ -514,6 +536,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                               try {
                                 await bulkUpdateStatus([article.id], "pending");
                                 toast.success("Article submitted for review");
+                                setSelected(new Set());
                                 fetchData();
                               } catch (error) {
                                 toast.error(
@@ -532,6 +555,7 @@ export function ArticlesContent({ searchParams }: ArticlesContentProps) {
                             try {
                               await bulkUpdateStatus([article.id], "archived");
                               toast.success("Article archived");
+                              setSelected(new Set());
                               fetchData();
                             } catch (error) {
                               toast.error(

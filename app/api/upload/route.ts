@@ -16,8 +16,19 @@ const ALLOWED_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
-  "image/svg+xml",
 ];
+
+const FILE_SIGNATURES: Record<string, number[][]> = {
+  "image/jpeg": [[0xff, 0xd8, 0xff]],
+  "image/png": [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
+  "image/webp": [
+    [0x52, 0x49, 0x46, 0x46],
+  ],
+  "image/gif": [
+    [0x47, 0x49, 0x46, 0x38, 0x37, 0x61],
+    [0x47, 0x49, 0x46, 0x38, 0x39, 0x61],
+  ],
+};
 
 /** Check whether R2 env vars are configured */
 function getR2ConfigState() {
@@ -34,6 +45,25 @@ function getR2ConfigState() {
     hasCoreCredentials,
     hasPublicUrl,
   };
+}
+
+function isProduction() {
+  return process.env.NODE_ENV === "production";
+}
+
+function isValidImageSignature(buffer: Buffer, contentType: string) {
+  if (contentType === "image/webp") {
+    return (
+      buffer.length >= 12 &&
+      buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+      buffer.subarray(8, 12).toString("ascii") === "WEBP"
+    );
+  }
+
+  const signatures = FILE_SIGNATURES[contentType] || [];
+  return signatures.some((signature) =>
+    signature.every((byte, index) => buffer[index] === byte),
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -73,6 +103,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const r2 = getR2ConfigState();
+    if (isProduction() && !r2.enabled) {
+      return NextResponse.json(
+        { error: "Cloudflare R2 must be configured for production uploads." },
+        { status: 500 },
+      );
+    }
     if (r2.hasCoreCredentials && !r2.hasPublicUrl) {
       return NextResponse.json(
         {
@@ -92,7 +128,7 @@ export async function POST(request: NextRequest) {
 
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: "Invalid file type. Allowed: JPEG, PNG, WebP, GIF, SVG" },
+        { error: "Invalid file type. Allowed: JPEG, PNG, WebP, GIF" },
         { status: 400 },
       );
     }
@@ -105,6 +141,12 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    if (!isValidImageSignature(buffer, file.type)) {
+      return NextResponse.json(
+        { error: "File content does not match the selected image type." },
+        { status: 400 },
+      );
+    }
 
     if (r2.enabled) {
       // Production: upload to Cloudflare R2

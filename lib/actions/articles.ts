@@ -14,6 +14,7 @@ import {
 import { isStaffRole } from "@/lib/roles";
 import { safeRecordAuditLog } from "@/lib/audit-log";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { sanitizeHtml } from "@/lib/markdown";
 
 // ---------- Types ----------
 
@@ -230,10 +231,9 @@ export async function getArticles(
 ): Promise<ArticleListResult> {
   const session = await requireSession();
   const isStaff = isStaffRole(session.user.role);
-  const writerLimit = isStaff ? 180 : 40;
   await enforceRateLimit({
-    key: `article:write:${session.user.id}`,
-    limit: writerLimit,
+    key: `article:list:${session.user.id}`,
+    limit: isStaff ? 600 : 240,
     windowSeconds: 60 * 60,
   });
 
@@ -459,7 +459,7 @@ export async function createArticle(data: {
       normalized.canonicalUrl,
       Boolean(data.robots_noindex),
       data.content ? JSON.stringify(data.content) : null,
-      data.content_html || null,
+      data.content_html ? sanitizeHtml(data.content_html) : null,
       normalized.contentText,
       data.cover_image || null,
       status,
@@ -662,7 +662,7 @@ export async function updateArticle(
   if (data.content_html !== undefined) {
     paramIdx++;
     fields.push(`content_html = $${paramIdx}`);
-    params.push(data.content_html);
+    params.push(data.content_html ? sanitizeHtml(data.content_html) : null);
   }
   if (data.content_text !== undefined) {
     paramIdx++;

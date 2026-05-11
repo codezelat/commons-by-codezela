@@ -1,15 +1,45 @@
 import { auth } from "@/lib/auth";
 import { execute } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST() {
+function isLocalSeedAllowed(request: NextRequest) {
+  if (process.env.NODE_ENV === "production") {
+    return false;
+  }
+
+  const seedSecret = process.env.SEED_ROUTE_SECRET;
+  if (seedSecret && request.headers.get("x-seed-secret") !== seedSecret) {
+    return false;
+  }
+
+  const host = request.headers.get("host") || "";
+  return host.startsWith("localhost:") || host.startsWith("127.0.0.1:");
+}
+
+export async function POST(request: NextRequest) {
+  if (!isLocalSeedAllowed(request)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || "info@codezela.com";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!adminPassword || adminPassword.length < 12) {
+    return NextResponse.json(
+      {
+        error:
+          "Set SEED_ADMIN_PASSWORD to a strong local seed password before using this route.",
+      },
+      { status: 400 },
+    );
+  }
+
   try {
     // Create admin user via Better Auth
     const ctx = await auth.api.signUpEmail({
       body: {
         name: "Codezela Admin",
-        email: "info@codezela.com",
-        password: "password",
+        email: adminEmail,
+        password: adminPassword,
       },
     });
 
@@ -27,8 +57,7 @@ export async function POST() {
 
     return NextResponse.json({
       message: "Admin user seeded",
-      email: "info@codezela.com",
-      password: "password",
+      email: adminEmail,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";

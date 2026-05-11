@@ -42,6 +42,7 @@ yarn-error.log*
 .vscode/
 
 # local uploads (dev fallback when R2 not configured)
+/.uploads
 /public/uploads
 *.tsbuildinfo
 next-env.d.ts

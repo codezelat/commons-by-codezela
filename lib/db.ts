@@ -1,4 +1,5 @@
 import dns from "node:dns";
+import net from "node:net";
 import { Pool, type PoolConfig } from "pg";
 
 // Force IPv4 preference so hosts with AAAA records do not fail in IPv4-only runtimes.
@@ -31,7 +32,6 @@ function getDatabaseUrl(): string {
       process.env.DATABASE_URL ??
       process.env.DATABASE_URL_SUPABASE_POOLER ??
       process.env.DATABASE_URL_SUPABASE ??
-      process.env.DATABASE_URL_LOCAL ??
       ""
     );
   }
@@ -49,12 +49,53 @@ function isSupabaseConnection(url: string): boolean {
   return /supabase\.(co|in)/i.test(url) || /db\.[^.]+\.supabase\.(co|in)/i.test(url);
 }
 
+function isLocalOrPrivateHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  if (host === "localhost") {
+    return true;
+  }
+
+  if (net.isIPv4(host)) {
+    const [a, b] = host.split(".").map(Number);
+    return (
+      a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168)
+    );
+  }
+
+  if (net.isIPv6(host)) {
+    return host === "::1" || host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe8");
+  }
+
+  return false;
+}
+
+function assertProductionDatabaseUrl(connectionString: string) {
+  if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    return;
+  }
+
+  if (!connectionString) {
+    throw new Error("Production database URL is required.");
+  }
+
+  const url = new URL(connectionString);
+  if (isLocalOrPrivateHost(url.hostname)) {
+    throw new Error("Production database URL must not point to a local or private host.");
+  }
+}
+
 function getPoolConfig(): PoolConfig {
   const connectionString = getDatabaseUrl();
 
   if (!connectionString) {
     return { connectionString };
   }
+
+  assertProductionDatabaseUrl(connectionString);
 
   if (isSupabaseConnection(connectionString)) {
     return {

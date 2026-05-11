@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import { extname } from "path";
 import {
+  getContainedUploadPath,
   getLegacyPublicUploadDir,
   getLocalUploadPath,
+  isValidLocalUploadFilename,
 } from "@/lib/local-upload";
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -11,7 +13,6 @@ const CONTENT_TYPES: Record<string, string> = {
   ".jpeg": "image/jpeg",
   ".jpg": "image/jpeg",
   ".png": "image/png",
-  ".svg": "image/svg+xml",
   ".webp": "image/webp",
 };
 
@@ -20,13 +21,18 @@ export async function GET(
   { params }: { params: Promise<{ filename: string }> },
 ) {
   const { filename } = await params;
+  if (!isValidLocalUploadFilename(filename)) {
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
+  }
 
   try {
     let buffer: Buffer;
     try {
       buffer = await readFile(getLocalUploadPath(filename));
     } catch {
-      buffer = await readFile(`${getLegacyPublicUploadDir()}/${filename}`);
+      buffer = await readFile(
+        getContainedUploadPath(getLegacyPublicUploadDir(), filename),
+      );
     }
     const extension = extname(filename).toLowerCase();
 
@@ -34,6 +40,8 @@ export async function GET(
       headers: {
         "Cache-Control": "public, max-age=31536000, immutable",
         "Content-Type": CONTENT_TYPES[extension] || "application/octet-stream",
+        "Content-Disposition": "inline",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch {

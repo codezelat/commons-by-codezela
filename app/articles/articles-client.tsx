@@ -72,6 +72,7 @@ export function ArticlesClient({
     if (type === "search") params.delete("q");
     if (type === "category") params.delete("category");
     if (type === "tag") params.delete("tag");
+    params.delete("page");
     router.push(`/articles${params.toString() ? `?${params.toString()}` : ""}`);
   };
 

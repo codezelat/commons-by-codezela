@@ -51,6 +51,27 @@ export async function getPublishedArticles(): Promise<ArticleForPicker[]> {
 
 export async function addFeaturedArticle(articleId: string): Promise<void> {
   const session = await requireStaffSession();
+  const article = await queryOne<{
+    id: string;
+    title: string;
+    status: string;
+    is_featured: boolean;
+  }>(
+    `SELECT id, title, status, is_featured
+     FROM article
+     WHERE id = $1`,
+    [articleId],
+  );
+
+  if (!article) {
+    throw new Error("Article not found");
+  }
+  if (article.status !== "published") {
+    throw new Error("Only published articles can be featured");
+  }
+  if (article.is_featured) {
+    throw new Error("Article is already featured");
+  }
 
   // Check count — max 3
   const result = await queryOne<{ count: string }>(
@@ -66,15 +87,15 @@ export async function addFeaturedArticle(articleId: string): Promise<void> {
   );
   const nextOrder = (maxOrder?.max_order ?? 0) + 1;
 
-  await execute(
-    `UPDATE article SET is_featured = true, featured_order = $1 WHERE id = $2`,
+  const updated = await execute(
+    `UPDATE article
+     SET is_featured = true, featured_order = $1
+     WHERE id = $2 AND status = 'published' AND is_featured = false`,
     [nextOrder, articleId],
   );
-
-  const article = await queryOne<{ title: string }>(
-    `SELECT title FROM article WHERE id = $1`,
-    [articleId],
-  );
+  if (updated !== 1) {
+    throw new Error("Article could not be featured");
+  }
 
   revalidatePath("/dashboard/featured");
   await safeRecordAuditLog({
@@ -83,7 +104,7 @@ export async function addFeaturedArticle(articleId: string): Promise<void> {
     action: "featured.added",
     targetType: "article",
     targetId: articleId,
-    targetLabel: article?.title || null,
+    targetLabel: article.title,
     metadata: {
       featuredOrder: nextOrder,
     },

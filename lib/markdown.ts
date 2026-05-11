@@ -285,6 +285,16 @@ export function renderMarkdownToHtmlWithBase(
   return String(createMarkdownProcessor(baseUrl).processSync(markdown));
 }
 
+export function sanitizeHtml(html: string): string {
+  return String(
+    unified()
+      .use(rehypeRaw)
+      .use(rehypeSanitize, sanitizeSchema)
+      .use(rehypeStringify)
+      .processSync(html),
+  );
+}
+
 export function extractPlainTextFromHtml(html: string): string {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }

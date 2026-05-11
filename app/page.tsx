@@ -116,6 +116,13 @@ async function loadHomeContentData(): Promise<HomeContentData> {
           tagCount:
             tagsResult.status === "fulfilled" ? tagsResult.value.length : 0,
         };
+  const hasLoadIssue = [
+    featuredResult,
+    recentResult,
+    categoriesResult,
+    tagsResult,
+    statsResult,
+  ].some((result) => result.status === "rejected");
 
   return {
     featured:
@@ -125,6 +132,7 @@ async function loadHomeContentData(): Promise<HomeContentData> {
       categoriesResult.status === "fulfilled" ? categoriesResult.value : [],
     tags: tagsResult.status === "fulfilled" ? tagsResult.value : [],
     stats,
+    hasLoadIssue,
   };
 }
 

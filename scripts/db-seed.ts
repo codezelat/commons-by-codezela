@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * db-seed.ts — Seed the admin user (info@codezela.com / password).
+ * db-seed.ts — Seed the admin user.
  *
  * Usage:
  *   npx tsx scripts/db-seed.ts
@@ -62,22 +62,6 @@ function getPoolConfig(url: string): PoolConfig {
   return { connectionString: url };
 }
 
-async function seedViaApiRoute() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const seedUrl = `${appUrl.replace(/\/$/, "")}/api/seed`;
-  console.log(`   Falling back to ${seedUrl}`);
-
-  const res = await fetch(seedUrl, { method: "POST" });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(
-      typeof data?.error === "string"
-        ? data.error
-        : `Seed API failed with status ${res.status}`,
-    );
-  }
-}
-
 async function main() {
   const url = getDatabaseUrl();
   if (!url) {
@@ -91,12 +75,20 @@ async function main() {
   console.log(`\n🌱 Seeding admin user on ${provider}...`);
 
   const pool = new Pool(getPoolConfig(url));
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || "info@codezela.com";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!adminPassword || adminPassword.length < 12) {
+    console.error(
+      "❌ Set SEED_ADMIN_PASSWORD to a strong password with at least 12 characters.",
+    );
+    process.exit(1);
+  }
 
   try {
     // Check if admin already exists
     const existing = await pool.query(
       `SELECT id FROM "user" WHERE email = $1`,
-      ["info@codezela.com"],
+      [adminEmail],
     );
 
     if (existing.rows.length > 0) {
@@ -109,8 +101,8 @@ async function main() {
       const result = await auth.api.signUpEmail({
         body: {
           name: "Codezela Admin",
-          email: "info@codezela.com",
-          password: "password",
+          email: adminEmail,
+          password: adminPassword,
         },
       });
 
@@ -125,17 +117,11 @@ async function main() {
         [result.user.id],
       );
     } catch (seedError) {
-      const message = seedError instanceof Error ? seedError.message : String(seedError);
-      if (message.includes("Cannot find module 'server-only'")) {
-        await seedViaApiRoute();
-      } else {
-        throw seedError;
-      }
+      throw seedError;
     }
 
     console.log("✅ Admin user seeded");
-    console.log("   Email:    info@codezela.com");
-    console.log("   Password: password\n");
+    console.log(`   Email:    ${adminEmail}\n`);
   } catch (err) {
     console.error("❌ Seed failed:\n", err);
     process.exit(1);

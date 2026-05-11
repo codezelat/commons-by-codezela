@@ -41,6 +41,7 @@ export interface HomeContentData {
   categories: HomeCategory[];
   tags: HomeTag[];
   stats: HomePageStats;
+  hasLoadIssue?: boolean;
 }
 
 interface HomeContentProps {
@@ -595,7 +596,7 @@ export function HomeContent({ data }: HomeContentProps) {
       </section>
 
       {/* Recent Articles */}
-      {deck.length > 0 && (
+      {(deck.length > 0 || data.hasLoadIssue) && (
         <section className="border-b border-[var(--home-border)]">
           <div className="mx-auto max-w-6xl px-6 py-20 sm:px-8 sm:py-28 lg:px-12">
             <motion.div
@@ -610,27 +611,35 @@ export function HomeContent({ data }: HomeContentProps) {
               </h2>
             </motion.div>
 
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {deck.slice(0, 6).map((article, index) => (
-                <ArticleCard key={article.id} article={article} index={index} />
-              ))}
-            </div>
+            {deck.length > 0 ? (
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                {deck.slice(0, 6).map((article, index) => (
+                  <ArticleCard key={article.id} article={article} index={index} />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[var(--home-border)] bg-[var(--home-surface)] px-6 py-8 text-sm text-[var(--home-text-muted)]">
+                Articles are temporarily unavailable.
+              </div>
+            )}
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="mt-12 text-center"
-            >
-              <Link
-                href="/articles"
-                className="inline-flex items-center gap-2 text-base font-medium text-[var(--home-accent)] transition-colors hover:text-[var(--home-accent-soft)]"
+            {deck.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="mt-12 text-center"
               >
-                View all articles
-                <ArrowRight className="size-5" />
-              </Link>
-            </motion.div>
+                <Link
+                  href="/articles"
+                  className="inline-flex items-center gap-2 text-base font-medium text-[var(--home-accent)] transition-colors hover:text-[var(--home-accent-soft)]"
+                >
+                  View all articles
+                  <ArrowRight className="size-5" />
+                </Link>
+              </motion.div>
+            )}
           </div>
         </section>
       )}

@@ -4,7 +4,6 @@ const ALLOWED_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
-  "image/svg+xml",
 ];
 
 export interface UploadResult {
@@ -26,7 +25,7 @@ export class UploadError extends Error {
 export function validateImageFile(file: File): void {
   if (!ALLOWED_TYPES.includes(file.type)) {
     throw new UploadError(
-      "Invalid file type. Only JPEG, PNG, WebP, GIF, and SVG are allowed.",
+      "Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.",
     );
   }
   if (file.size > MAX_SIZE) {

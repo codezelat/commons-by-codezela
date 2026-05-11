@@ -87,6 +87,12 @@ export async function PublicShell({ children }: PublicShellProps) {
                       Moderation
                     </Link>
                     <Link
+                      href="/reporting"
+                      className="text-base text-[var(--home-text-muted)] transition-colors hover:text-[var(--home-text)]"
+                    >
+                      Reporting
+                    </Link>
+                    <Link
                       href="/terms"
                       className="text-base text-[var(--home-text-muted)] transition-colors hover:text-[var(--home-text)]"
                     >

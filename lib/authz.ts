@@ -2,18 +2,28 @@ import "server-only";
 
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { execute } from "@/lib/db";
 import { isAdminRole, isStaffRole, type AppRole } from "@/lib/roles";
 
 export type { AppRole };
 
 export async function getOptionalSession() {
-  return auth.api.getSession({ headers: await headers() }).catch(() => null);
+  const requestHeaders = await headers();
+  return auth.api
+    .getSession({
+      headers: requestHeaders,
+      query: { disableCookieCache: true, disableRefresh: true },
+    })
+    .catch(() => null);
 }
 
 export async function requireSession() {
   const session = await getOptionalSession();
   if (!session) {
     throw new Error("Unauthorized");
+  }
+  if (session.user.banned) {
+    throw new Error("Forbidden");
   }
   return session;
 }
@@ -40,4 +50,8 @@ export function canManageArticle(
   authorId: string,
 ): boolean {
   return isStaffRole(role) || userId === authorId;
+}
+
+export async function revokeUserSessions(userId: string) {
+  await execute(`DELETE FROM "session" WHERE "userId" = $1`, [userId]);
 }

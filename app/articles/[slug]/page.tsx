@@ -272,7 +272,7 @@ export default async function PublicArticlePage({
               <ArticleBody html={html} className="[&_p:first-child]:mt-0" />
             ) : (
               <div className="rounded-xl border border-dashed border-[var(--pub-border)] bg-[var(--pub-bg)] p-8 text-sm leading-6 text-[var(--pub-text-secondary)]">
-                This article does not have renderable body HTML yet.
+                This article is not ready to read yet.
               </div>
             )}
           </div>
@@ -284,6 +284,14 @@ export default async function PublicArticlePage({
               initialCounts={reactions.counts}
               initialUserReaction={reactions.userReaction}
             />
+            <div className="mt-4 border-t border-[var(--pub-border)] pt-4 text-right">
+              <Link
+                href={`/reporting?article=${article.slug}`}
+                className="text-xs font-medium text-[var(--pub-text-muted)] transition-colors hover:text-[var(--pub-accent)]"
+              >
+                Report this article
+              </Link>
+            </div>
           </div>
 
           {/* Divider */}

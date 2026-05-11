@@ -612,6 +612,10 @@ export async function moderateTag(
   }
 
   const normalizedNote = sanitizeArticleText(note);
+  if (decision === "rejected" && !normalizedNote?.trim()) {
+    throw new Error("A rejection reason is required");
+  }
+
   await execute(
     `UPDATE tag
      SET status = $1,

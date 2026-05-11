@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { PublicShell } from "@/components/site/public-shell";
 import {
   getPublicArticles,
@@ -89,6 +90,15 @@ export default async function ArticlesPage({
     getPublicTags(20),
     getHomePageStats(),
   ]);
+
+  if (articlesResult.totalPages > 0 && page > articlesResult.totalPages) {
+    const normalizedParams = new URLSearchParams();
+    if (params.q) normalizedParams.set("q", params.q);
+    if (params.category) normalizedParams.set("category", params.category);
+    if (params.tag) normalizedParams.set("tag", params.tag);
+    normalizedParams.set("page", String(articlesResult.totalPages));
+    redirect(`/articles?${normalizedParams.toString()}`);
+  }
 
   return (
     <PublicShell>

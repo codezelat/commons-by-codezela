@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { randomUUID } from "crypto";
+import dns from "node:dns/promises";
+import net from "node:net";
 import { writeFile, mkdir } from "fs/promises";
 import { getLocalUploadDir, getLocalUploadPath, getLocalUploadUrl } from "@/lib/local-upload";
 import {
@@ -18,62 +20,153 @@ const ALLOWED_CONTENT_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
-  "image/svg+xml",
 ];
 
-/**
- * SSRF guard — rejects private/loopback/link-local IPs and non-http(s) schemes.
- * NOTE: this is a best-effort parse-time check.  Full protection requires
- * resolving the hostname after the TCP connection (not possible in standard
- * fetch/Node).  Keep this layer + restrict outbound networking in production.
- */
-function isSafeUrl(raw: string): { safe: boolean; reason?: string } {
+const FILE_SIGNATURES: Record<string, number[][]> = {
+  "image/jpeg": [[0xff, 0xd8, 0xff]],
+  "image/png": [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
+  "image/webp": [[0x52, 0x49, 0x46, 0x46]],
+  "image/gif": [
+    [0x47, 0x49, 0x46, 0x38, 0x37, 0x61],
+    [0x47, 0x49, 0x46, 0x38, 0x39, 0x61],
+  ],
+};
+
+function parseUploadUrl(raw: string): { url?: URL; error?: string } {
   let url: URL;
   try {
     url = new URL(raw);
   } catch {
-    return { safe: false, reason: "Invalid URL" };
+    return { error: "Invalid URL" };
   }
 
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    return { safe: false, reason: "URL must use http or https" };
+    return { error: "URL must use http or https" };
   }
 
-  const hostname = url.hostname.toLowerCase();
+  return { url };
+}
 
-  // Block well-known dangerous hostnames
-  const blockedHostnames = [
+function isBlockedHostname(hostname: string) {
+  const normalized = hostname.toLowerCase();
+  return [
     "localhost",
-    "127.0.0.1",
-    "::1",
-    "0.0.0.0",
-    "169.254.169.254", // AWS/GCP/Azure IMDS
     "metadata.google.internal",
     "metadata.internal",
-  ];
-  if (blockedHostnames.includes(hostname)) {
-    return { safe: false, reason: "URL points to a restricted address" };
-  }
+  ].includes(normalized);
+}
 
-  // Block private IPv4 ranges
-  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hostname);
-  if (ipv4) {
-    const [a, b] = ipv4.slice(1).map(Number);
-    const isPrivate =
-      a === 0 || // 0.0.0.0/8
-      a === 10 || // 10.0.0.0/8
-      (a === 100 && b >= 64 && b <= 127) || // 100.64.0.0/10 CGN
-      a === 127 || // 127.0.0.0/8 loopback
-      (a === 169 && b === 254) || // 169.254.0.0/16 link-local / IMDS
-      (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
-      (a === 192 && b === 168) || // 192.168.0.0/16
-      a >= 224; // multicast + reserved
-    if (isPrivate) {
-      return { safe: false, reason: "URL points to a restricted address" };
+function isPrivateIpv4(address: string) {
+  const parts = address.split(".").map(Number);
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+    return true;
+  }
+  const [a, b] = parts;
+  return (
+    a === 0 ||
+    a === 10 ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    a >= 224
+  );
+}
+
+function isPrivateIpv6(address: string) {
+  const normalized = address.toLowerCase();
+  return (
+    normalized === "::1" ||
+    normalized === "::" ||
+    normalized.startsWith("fc") ||
+    normalized.startsWith("fd") ||
+    normalized.startsWith("fe8") ||
+    normalized.startsWith("fe9") ||
+    normalized.startsWith("fea") ||
+    normalized.startsWith("feb") ||
+    normalized.startsWith("ff")
+  );
+}
+
+function isRestrictedAddress(address: string) {
+  if (net.isIPv4(address)) {
+    return isPrivateIpv4(address);
+  }
+  if (net.isIPv6(address)) {
+    if (address.toLowerCase().startsWith("::ffff:")) {
+      const mapped = address.slice(7);
+      return net.isIPv4(mapped) ? isPrivateIpv4(mapped) : true;
     }
+    return isPrivateIpv6(address);
+  }
+  return true;
+}
+
+async function assertSafeFetchUrl(url: URL) {
+  const hostname = url.hostname.toLowerCase();
+  if (isBlockedHostname(hostname)) {
+    throw new Error("URL points to a restricted address");
   }
 
-  return { safe: true };
+  if (net.isIP(hostname)) {
+    if (isRestrictedAddress(hostname)) {
+      throw new Error("URL points to a restricted address");
+    }
+    return;
+  }
+
+  const addresses = await dns.lookup(hostname, { all: true, verbatim: false });
+  if (addresses.length === 0 || addresses.some((entry) => isRestrictedAddress(entry.address))) {
+    throw new Error("URL points to a restricted address");
+  }
+}
+
+function isProduction() {
+  return process.env.NODE_ENV === "production";
+}
+
+function isValidImageSignature(buffer: Buffer, contentType: string) {
+  if (contentType === "image/webp") {
+    return (
+      buffer.length >= 12 &&
+      buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+      buffer.subarray(8, 12).toString("ascii") === "WEBP"
+    );
+  }
+
+  const signatures = FILE_SIGNATURES[contentType] || [];
+  return signatures.some((signature) =>
+    signature.every((byte, index) => buffer[index] === byte),
+  );
+}
+
+async function fetchImageUrl(initialUrl: URL, signal: AbortSignal) {
+  let currentUrl = initialUrl;
+  for (let redirectCount = 0; redirectCount <= 5; redirectCount++) {
+    await assertSafeFetchUrl(currentUrl);
+    const response = await fetch(currentUrl, {
+      signal,
+      headers: { Accept: "image/*,*/*;q=0.8" },
+      redirect: "manual",
+    });
+
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const location = response.headers.get("location");
+      if (!location) {
+        throw new Error(`Could not fetch image (HTTP ${response.status})`);
+      }
+      currentUrl = new URL(location, currentUrl);
+      if (currentUrl.protocol !== "http:" && currentUrl.protocol !== "https:") {
+        throw new Error("URL must use http or https");
+      }
+      continue;
+    }
+
+    return response;
+  }
+
+  throw new Error("Too many redirects while fetching image");
 }
 
 function getR2ConfigState() {
@@ -142,9 +235,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No URL provided" }, { status: 400 });
   }
 
-  const { safe, reason } = isSafeUrl(rawUrl);
-  if (!safe) {
-    return NextResponse.json({ error: reason }, { status: 400 });
+  const parsed = parseUploadUrl(rawUrl);
+  if (!parsed.url) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
   const controller = new AbortController();
@@ -152,6 +245,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const r2 = getR2ConfigState();
+    if (isProduction() && !r2.enabled) {
+      return NextResponse.json(
+        { error: "Cloudflare R2 must be configured for production uploads." },
+        { status: 500 },
+      );
+    }
     if (r2.hasCoreCredentials && !r2.hasPublicUrl) {
       return NextResponse.json(
         {
@@ -162,12 +261,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const res = await fetch(rawUrl, {
-      signal: controller.signal,
-      headers: { Accept: "image/*,*/*;q=0.8" },
-      redirect: "follow",
-    });
-    clearTimeout(timeout);
+    const res = await fetchImageUrl(parsed.url, controller.signal);
 
     if (!res.ok) {
       return NextResponse.json(
@@ -183,7 +277,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "URL does not point to a supported image type (JPEG, PNG, WebP, GIF, SVG)",
+            "URL does not point to a supported image type (JPEG, PNG, WebP, GIF)",
         },
         { status: 400 },
       );
@@ -216,6 +310,12 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.concat(chunks.map((c) => Buffer.from(c)));
+    if (!isValidImageSignature(buffer, contentType)) {
+      return NextResponse.json(
+        { error: "Image content does not match the remote content type." },
+        { status: 400 },
+      );
+    }
 
     // Save to R2 (prod) or a local upload directory served through a route (dev)
     if (r2.enabled) {
@@ -224,7 +324,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ url: result.url, key: result.key });
     }
 
-    const ext = contentType.split("/")[1]?.replace("svg+xml", "svg") || "jpg";
+    const ext = contentType.split("/")[1] || "jpg";
     const filename = `${randomUUID()}.${ext}`;
     await mkdir(getLocalUploadDir(), { recursive: true });
     await writeFile(getLocalUploadPath(filename), buffer);
@@ -234,17 +334,21 @@ export async function POST(request: NextRequest) {
       key: `uploads/${filename}`,
     });
   } catch (e: unknown) {
-    clearTimeout(timeout);
     if (e instanceof Error && e.name === "AbortError") {
       return NextResponse.json(
         { error: "Timed out fetching the image URL" },
         { status: 400 },
       );
     }
+    if (e instanceof Error) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
     console.error("[Upload URL]", e);
     return NextResponse.json(
       { error: "Failed to fetch and save image" },
       { status: 500 },
     );
+  } finally {
+    clearTimeout(timeout);
   }
 }

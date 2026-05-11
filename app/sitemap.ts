@@ -62,7 +62,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const [articles, authors, categories, tags] = await Promise.all([
+    const [articles, authors] = await Promise.all([
       query<{ slug: string; updated_at: string }>(
         `SELECT slug, updated_at
          FROM article
@@ -77,26 +77,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           AND a.status = 'published'
           AND a.robots_noindex = false
          GROUP BY u.id`,
-      ),
-      query<{ slug: string; updated_at: string }>(
-        `SELECT c.slug, MAX(a.updated_at) as updated_at
-         FROM category c
-         JOIN article a
-           ON a.category_id = c.id
-          AND a.status = 'published'
-          AND a.robots_noindex = false
-         GROUP BY c.slug`,
-      ),
-      query<{ slug: string; updated_at: string }>(
-        `SELECT t.slug, MAX(a.updated_at) as updated_at
-         FROM tag t
-         JOIN article_tag at ON at.tag_id = t.id
-         JOIN article a
-           ON a.id = at.article_id
-          AND a.status = 'published'
-          AND a.robots_noindex = false
-         WHERE t.status = 'approved'
-         GROUP BY t.slug`,
       ),
     ]);
 
@@ -115,20 +95,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: new Date(author.updated_at),
         changeFrequency: "weekly" as const,
         priority: 0.6,
-      })),
-      // Category filtered article pages
-      ...categories.map((cat) => ({
-        url: `${baseUrl}/articles?category=${cat.slug}`,
-        lastModified: new Date(cat.updated_at),
-        changeFrequency: "weekly" as const,
-        priority: 0.5,
-      })),
-      // Tag filtered article pages
-      ...tags.map((tag) => ({
-        url: `${baseUrl}/articles?tag=${tag.slug}`,
-        lastModified: new Date(tag.updated_at),
-        changeFrequency: "weekly" as const,
-        priority: 0.4,
       })),
     ];
   } catch (error) {

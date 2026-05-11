@@ -214,7 +214,7 @@ export function ArticleImageUploader({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+        accept="image/jpeg,image/png,image/webp,image/gif"
         className="hidden"
         onChange={handleInputChange}
       />

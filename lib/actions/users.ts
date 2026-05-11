@@ -3,6 +3,7 @@
 import { execute, query, queryOne } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/authz";
+import { revokeUserSessions } from "@/lib/authz";
 import { sanitizeArticleText } from "@/lib/article-metadata";
 import { normalizeRole, type AppRole } from "@/lib/roles";
 import { safeRecordAuditLog } from "@/lib/audit-log";
@@ -171,10 +172,10 @@ export async function updateUserRole(
     return { role };
   }
 
-  if (user.role === "admin" && role !== "admin") {
-    const adminCount = await getAdminCount();
-    if (adminCount <= 1) {
-      throw new Error("At least one admin must remain");
+  if (user.role === "admin" && role !== "admin" && !user.banned) {
+    const activeAdmins = await getActiveAdminCount();
+    if (activeAdmins <= 1) {
+      throw new Error("At least one active admin must remain");
     }
   }
 
@@ -199,6 +200,9 @@ export async function updateUserRole(
   });
 
   revalidateUserSurfaces();
+  if (user.role !== role) {
+    await revokeUserSessions(userId);
+  }
   if (session.user.id === userId) {
     revalidatePath("/dashboard/articles");
   }
@@ -264,6 +268,9 @@ export async function setUserBanState(
   });
 
   revalidateUserSurfaces();
+  if (banned) {
+    await revokeUserSessions(userId);
+  }
   return { banned };
 }
 
